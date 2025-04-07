@@ -1,16 +1,17 @@
-import { Store, StoreEvents, StoreState } from "./Base";
+import { Store, StoreEvents } from "./Base";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { api } from "../../API"
 import { VaultDataBreach } from "@vaultic/shared/Types/ClientServerTypes";
 import { ref, Ref } from "vue";
 import app from "./AppStore";
 import { ReactivePassword } from "./ReactivePassword";
-import { Field } from "@vaultic/shared/Types/Fields";
 import { BreachRequestVault } from "@vaultic/shared/Types/DataTypes";
+import { Password } from "../../Types/DataTypes";
+import { StateKeys, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 
 type DataBreachStoreEvent = StoreEvents | "onBreachDismissed" | "onBreachesUpdated";
 
-export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent>
+export class VaultDataBreachStore extends Store<StoreState, StateKeys, DataBreachStoreEvent>
 {
     private internalVaultDataBreaches: Ref<VaultDataBreach[]>;
     private internalVaultDataBreachesByPasswordID: Ref<Map<string, VaultDataBreach>>;
@@ -24,7 +25,7 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
 
     constructor()
     {
-        super('vaultDataBreachStore');
+        super(StoreType.VaultDataBreach);
 
         this.internalVaultDataBreaches = ref([]);
         this.internalVaultDataBreachesByPasswordID = ref(new Map());
@@ -35,7 +36,7 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
     protected defaultState()
     {
         return {
-            version: new Field(0)
+            version: 0
         };
     }
 
@@ -63,7 +64,7 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
         for (let i = 0; i < app.userVaults.value.length; i++)
         {
             const vault = app.userVaults.value[i];
-            const limitedPasswords: { id: string, domain: string }[] = [];
+            let limitedPasswords: { id: string, domain: string }[] = [];
 
             const vaultPostData: BreachRequestVault =
             {
@@ -71,22 +72,25 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
                 VaultID: vault.vaultID
             };
 
-            vault.passwordsByDomain?.value.forEach((v, k, map) => 
+            if (vault.passwordsByDomain)
             {
-                limitedPasswords.push(...v.value.passwordsByDomain.value.map((kk, vv) =>
+                Object.keys(vault.passwordsByDomain).forEach(k =>
                 {
-                    return {
-                        id: vv.value,
-                        domain: k
-                    }
-                }))
-            });
+                    limitedPasswords = limitedPasswords.concat(Object.keys(vault.passwordsByDomain![k]).map(v =>
+                    {
+                        return {
+                            id: v,
+                            domain: k
+                        }
+                    }))
+                });
+            }
 
             vaultPostData['LimitedPasswords'] = limitedPasswords;
             postData.Vaults.push(vaultPostData);
         }
 
-        const response = await api.server.vault.getVaultDataBreaches(JSON.vaulticStringify(postData));
+        const response = await api.server.vault.getVaultDataBreaches(JSON.stringify(postData));
         if (!response.Success)
         {
             this.internalFailedToLoadDataBreaches.value = true;
@@ -97,7 +101,7 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
         {
             for (let i = 0; i < response.DataBreaches.length; i++)
             {
-                this.setBreach(response.DataBreaches[i].PasswordID, response.DataBreaches[i]);
+                this.setBreach(response.DataBreaches[i]);
             }
 
             this.emit("onBreachesUpdated");
@@ -107,7 +111,46 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
         return true;
     };
 
-    public async checkPasswordForBreach(password: Field<ReactivePassword>)
+    public async checkPasswordsForBreach(passwords: Password[])
+    {
+        if (!app.isOnline)
+        {
+            return false;
+        }
+
+        const checkPasswordsForBreachData =
+        {
+            UserOrganizationID: app.currentVault.userOrganizationID,
+            VaultID: app.currentVault.vaultID,
+            LimitedPasswords: passwords.map(p =>
+            {
+                return {
+                    id: p.id,
+                    domain: p.d
+                }
+            })
+        };
+
+        const response = await api.server.vault.checkPasswordsForBreach(JSON.stringify(checkPasswordsForBreachData));
+        if (!response.Success)
+        {
+            return false;
+        }
+
+        if (response.DataBreaches && response.DataBreaches.length > 0)
+        {
+            for (let i = 0; i < response.DataBreaches.length; i++)
+            {
+                this.setBreach(response.DataBreaches[i]);
+            }
+
+            this.emit("onBreachesUpdated");
+        }
+
+        return true;
+    }
+
+    public async checkPasswordForBreach(password: ReactivePassword)
     {
         if (!app.isOnline)
         {
@@ -118,14 +161,14 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
         {
             UserOrganizationID: app.currentVault.userOrganizationID,
             VaultID: app.currentVault.vaultID,
-            LimitedPassword:
-            {
-                id: password.value.id.value,
-                domain: password.value.domain.value
-            }
+            LimitedPasswords:
+                [{
+                    id: password.id,
+                    domain: password.d
+                }]
         };
 
-        const response = await api.server.vault.checkPasswordForBreach(JSON.vaulticStringify(checkPasswordForBreachData));
+        const response = await api.server.vault.checkPasswordsForBreach(JSON.stringify(checkPasswordForBreachData));
         if (!response.Success)
         {
             return false;
@@ -133,7 +176,7 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
 
         if (response.DataBreaches && response.DataBreaches.length > 0)
         {
-            this.setBreach(password.value.id.value, response.DataBreaches[0]);
+            this.setBreach(response.DataBreaches[0]);
             this.emit("onBreachesUpdated");
         }
 
@@ -220,7 +263,8 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
         return true;
     }
 
-    private setBreach(passwordID: string, dataBreach: VaultDataBreach)
+    // TOOD: make sure this still works after removing PasswordID as a parameter
+    private setBreach(dataBreach: VaultDataBreach)
     {
         let currentBreachCount = this.internalVaultDataBreacheCountByVaultID.value.get(dataBreach.VaultID)
         if (currentBreachCount === undefined)
@@ -233,7 +277,7 @@ export class VaultDataBreachStore extends Store<StoreState, DataBreachStoreEvent
         }
 
         this.internalVaultDataBreaches.value.push(dataBreach);
-        this.internalVaultDataBreachesByPasswordID.value.set(passwordID, dataBreach);
+        this.internalVaultDataBreachesByPasswordID.value.set(dataBreach.PasswordID, dataBreach);
         this.internalVaultDataBreacheCountByVaultID.value.set(dataBreach.VaultID, currentBreachCount);
     }
 }

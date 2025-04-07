@@ -1,64 +1,98 @@
-import { ColorPalette, defaultColorPalettes, emptyColorPalette } from "../../Types/Colors";
-import { Store, StoreState } from "./Base";
-import { computed, ComputedRef, Ref, ref, watch } from "vue";
+import { emptyColorPalette } from "../../Types/Colors";
+import { Store } from "./Base";
+import { Ref, ref, watch } from "vue";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { api } from "../../API";
 import app, { AppStore } from "./AppStore";
 import { validateObject } from "../../Helpers/TypeScriptHelper";
 import { isHexString } from "../../Helpers/ColorHelper";
 import { DataType } from "../../Types/DataTypes";
-import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
-import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
+import { defaultUserPreferencesStoreState, DictionaryAsList, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import { ColorPalette } from "@vaultic/shared/Types/Color";
+import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
-export interface PinnedDataTypes extends IFieldedObject
+type PinnedDataTypeProperty = keyof PinnedDataTypes;
+
+export interface PinnedDataTypes
 {
-    pinnedFilters: Field<Map<string, Field<string>>>;
-    pinnedGroups: Field<Map<string, Field<string>>>;
-    pinnedPasswords: Field<Map<string, Field<string>>>;
-    pinnedValues: Field<Map<string, Field<string>>>;
+    /** Pinned Filters */
+    f: DictionaryAsList;
+    /** Pinned Groups */
+    g: DictionaryAsList;
+    /** Pinned Passwords */
+    p: DictionaryAsList;
+    /** Pinned Values */
+    v: DictionaryAsList;
 }
 
 // just used for validation
-const emptyDataTypes: Field<PinnedDataTypes> = new Field(
-    {
-        id: new Field(""),
-        pinnedFilters: new Field(new Map<string, Field<string>>()),
-        pinnedGroups: new Field(new Map<string, Field<string>>()),
-        pinnedPasswords: new Field(new Map<string, Field<string>>()),
-        pinnedValues: new Field(new Map<string, Field<string>>()),
-    });
+const emptyDataTypes: PinnedDataTypes =
+{
+    f: {},
+    g: {},
+    p: {},
+    v: {},
+};
 
 interface IUserPreferencesStoreState extends StoreState
 {
-    currentColorPalette: Field<ColorPalette>;
-    pinnedDataTypes: Field<Map<number, Field<KnownMappedFields<PinnedDataTypes>>>>; // keyed by userVaultID
-    pinnedDesktopDevices: Field<Map<number, Field<number>>>;
-    pinnedMobileDevices: Field<Map<number, Field<number>>>;
-    pinnedOrganizations: Field<Map<number, Field<number>>>;
+    /** Current Color Palette */
+    c: { p: ColorPalette };
+    /** Pinned Data Typtes Keyed by UserVaultID */
+    t: { [key: string]: PinnedDataTypes };
+    /** Pinned Organizations */
+    o: DictionaryAsList;
+    /** Active Filters by UserVautlID */
+    a: { [key: string]: DictionaryAsList };
 }
 
-export type UserPreferencesStoreState = KnownMappedFields<IUserPreferencesStoreState>;
+interface UserPreferencesStateKeys extends StateKeys
+{
+    'currentColorPalette': '';
+    'pinnedDataTypes': '';
+    'pinnedDataTypes.filters': '';
+    'pinnedDataTypes.groups': '';
+    'pinnedDataTypes.passwords': '';
+    'pinnedDataTypes.values': '';
+    'pinnedOrganizations': '';
+    'activeFilters': '';
+    'activeFiltersForUserVault': '';
+}
 
-export class UserPreferencesStore extends Store<UserPreferencesStoreState>
+const UserPreferencesPathRetriever: StorePathRetriever<UserPreferencesStateKeys> =
+{
+    'currentColorPalette': (...ids: string[]) => `c`,
+    'pinnedDataTypes': (...ids: string[]) => 't',
+    'pinnedDataTypes.filters': (...ids: string[]) => `t.${ids[0]}.f`,
+    'pinnedDataTypes.groups': (...ids: string[]) => `t.${ids[0]}.g`,
+    'pinnedDataTypes.passwords': (...ids: string[]) => `t.${ids[0]}.p`,
+    'pinnedDataTypes.values': (...ids: string[]) => `t.${ids[0]}.v`,
+    'pinnedOrganizations': (...ids: string[]) => 'o',
+    'activeFilters': (...ids: string[]) => `a`,
+    'activeFiltersForUserVault': (...ids: string[]) => `a.${ids[0]}`
+};
+
+export type UserPreferencesStoreState = IUserPreferencesStoreState;
+
+export class UserPreferencesStore extends Store<UserPreferencesStoreState, UserPreferencesStateKeys>
 {
     private internalCurrentPrimaryColor: Ref<string>;
     private initalized: Ref<boolean>;
 
-    get currentColorPalette() { return this.state.currentColorPalette.value; }
-    set currentColorPalette(value: ColorPalette) { this.state.currentColorPalette.value = value; }
+    get currentColorPalette() { return this.state.c.p; }
+    set currentColorPalette(value: ColorPalette) { this.state.c.p = value; }
     get currentPrimaryColor() { return this.internalCurrentPrimaryColor }
 
-    get pinnedFilters() { return this.getPinnedDataTypes(DataType.Filters) ?? new Field(new Map()); }
-    get pinnedGroups() { return this.getPinnedDataTypes(DataType.Groups) ?? new Field(new Map()); }
-    get pinnedPasswords() { return this.getPinnedDataTypes(DataType.Passwords) ?? new Field(new Map()); }
-    get pinnedValues() { return this.getPinnedDataTypes(DataType.NameValuePairs) ?? new Field(new Map()); }
-    get pinnedDesktopDevices() { return this.state.pinnedDesktopDevices; }
-    get pinnedMobileDevices() { return this.state.pinnedMobileDevices; }
-    get pinnedOrganizations() { return this.state.pinnedOrganizations; }
+    get pinnedFilters() { return this.getPinnedDataTypes(DataType.Filters) ?? {}; }
+    get pinnedGroups() { return this.getPinnedDataTypes(DataType.Groups) ?? {}; }
+    get pinnedPasswords() { return this.getPinnedDataTypes(DataType.Passwords) ?? {}; }
+    get pinnedValues() { return this.getPinnedDataTypes(DataType.NameValuePairs) ?? {}; }
+    get pinnedOrganizations() { return this.state.o; }
+    get activeFilters() { return this.state.a[app.currentVault.userVaultID.toString()] ?? {} }
 
     constructor()
     {
-        super("userPreferencesStoreState");
+        super(StoreType.UserPreferences, UserPreferencesPathRetriever);
 
         this.internalCurrentPrimaryColor = ref('');
         this.initalized = ref(false)
@@ -68,37 +102,75 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
     public updateState(state: UserPreferencesStoreState): void 
     {
         let stateToUse = state;
-        if (!stateToUse.currentColorPalette || !stateToUse.pinnedDataTypes)
+        if (!stateToUse.c || !stateToUse.t)
         {
             stateToUse = this.defaultState();
         }
         else 
         {
-            if (!validateObject(stateToUse.currentColorPalette, new Field(emptyColorPalette), testProperty) ||
-                !validateObject(stateToUse.pinnedDataTypes, new Field(new Map()), undefined, mapTest))
+            if (!validateObject(stateToUse.c, { p: emptyColorPalette }, testColorPaleetteProp))
             {
                 stateToUse = this.defaultState();
             }
 
-            for (const [key, value] of stateToUse.pinnedDataTypes.value)
+            if (!stateToUse.t || typeof stateToUse.t != "object")
             {
-                if (!validateObject(value, emptyDataTypes, undefined, mapTest))
+                stateToUse = this.defaultState();
+            }
+            else
+            {
+                for (const [key, value] of Object.entries(stateToUse.t))
                 {
-                    stateToUse = this.defaultState();
-                    break;
+                    if (!validateObject(value, emptyDataTypes, testPinnedProperties))
+                    {
+                        stateToUse = this.defaultState();
+                        break;
+                    }
+                }
+            }
+
+            if (!stateToUse.a || typeof stateToUse.a != "object")
+            {
+                stateToUse = this.defaultState();
+            }
+            else
+            {
+                for (const [key, value] of Object.entries(stateToUse.a))
+                {
+                    if (typeof value !== 'object')
+                    {
+                        stateToUse = this.defaultState();
+                        break;
+                    }
+                    else
+                    {
+                        const keys = Object.keys(value);
+                        if (!keys.every(k => typeof k === "string"))
+                        {
+                            stateToUse = this.defaultState();
+                            break;
+                        }
+
+                        const values = Object.values(value);
+                        if (!values.every(v => typeof v === "boolean"))
+                        {
+                            stateToUse = this.defaultState();
+                            break;
+                        }
+                    }
                 }
             }
         }
 
         super.updateState(stateToUse);
 
-        function testProperty(propName: string, propValue: any): boolean
+        function testColorPaleetteProp(propName: string, propValue: any): boolean
         {
             if (propName == 'id')
             {
-                return isGuid(propValue)
+                return typeof propValue === 'string';
             }
-            else if (propName == 'active' || propName == 'isCreated' || propName == 'editable')
+            else if (propName == 'a' || propName == 'i' || propName == 'e')
             {
                 return typeof propValue == 'boolean';
             }
@@ -108,30 +180,17 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
             }
         }
 
-        function mapTest(objName: string, propName: any, _: any)
+        function testPinnedProperties(objName: string, propValue: any)
         {
-            if (objName == nameof<PinnedDataTypes>("pinnedFilters") ||
-                objName == nameof<PinnedDataTypes>("pinnedGroups") ||
-                objName == nameof<PinnedDataTypes>("pinnedPasswords") ||
-                objName == nameof<PinnedDataTypes>("pinnedValues"))
-            {
-                return isGuid(propName);
-            }
-
-            return typeof propName == "number";
-        }
-
-        function isGuid(val: string)
-        {
-            return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val);
+            return typeof propValue === 'string';
         }
     }
 
     public init(appStore: AppStore)
     {
-        watch(() => this.state.currentColorPalette, () =>
+        watch(() => this.state.c.p, () =>
         {
-            this.setCurrentPrimaryColor(appStore.activePasswordValuesTable);
+            this.setCurrentPrimaryColor(appStore.activeDataType);
         });
 
         watch(() => appStore.activePasswordValuesTable, (newValue) =>
@@ -142,19 +201,6 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
         watch(() => appStore.activeDeviceOrganizationsTable, (newValue) =>
         {
             this.setCurrentPrimaryColor(newValue);
-        });
-
-        watch(() => appStore.currentVault.reactiveUserVaultID, (newValue) => 
-        {
-            if (!newValue)
-            {
-                return;
-            }
-
-            if (!this.state.pinnedDataTypes.value.get(newValue))
-            {
-                this.setDefaultPinnedDataTypes(newValue, this.state.pinnedDataTypes);
-            }
         });
 
         watch(() => appStore.isVaultView, (newValue, _) =>
@@ -175,31 +221,7 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
 
     protected defaultState(): UserPreferencesStoreState
     {
-        const defaultPinnedDataTypes = new Field(new Map<number, Field<PinnedDataTypes>>());
-        if (this.initalized?.value && app.currentVault.userVaultID)
-        {
-            this.setDefaultPinnedDataTypes(app.currentVault.userVaultID, defaultPinnedDataTypes);
-        }
-
-        return {
-            version: new Field(0),
-            currentColorPalette: defaultColorPalettes.entries().next().value![1],
-            pinnedDataTypes: defaultPinnedDataTypes,
-            pinnedDesktopDevices: new Field(new Map()),
-            pinnedMobileDevices: new Field(new Map()),
-            pinnedOrganizations: new Field(new Map())
-        };
-    }
-
-    protected setDefaultPinnedDataTypes(userVaultID: number, pinnedDataTypes: Field<Map<number, Field<PinnedDataTypes>>>)
-    {
-        pinnedDataTypes.value.set(userVaultID, new Field({
-            id: new Field(""),
-            pinnedFilters: new Field(new Map()),
-            pinnedGroups: new Field(new Map()),
-            pinnedPasswords: new Field(new Map()),
-            pinnedValues: new Field(new Map()),
-        }));
+        return defaultUserPreferencesStoreState();
     }
 
     protected getPinnedDataTypes(dataType: DataType)
@@ -209,21 +231,21 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
             return undefined;
         }
 
-        if (!this.state.pinnedDataTypes.value.get(app.currentVault.userVaultID))
+        if (!OH.has(this.state.t, app.currentVault.userVaultID.toString()))
         {
-            this.setDefaultPinnedDataTypes(app.currentVault.userVaultID, this.state.pinnedDataTypes);
+            return {};
         }
 
         switch (dataType)
         {
             case DataType.Filters:
-                return this.state.pinnedDataTypes.value.get(app.currentVault.userVaultID)!.value.pinnedFilters;
+                return this.state.t[app.currentVault.userVaultID]!.f;
             case DataType.Groups:
-                return this.state.pinnedDataTypes.value.get(app.currentVault.userVaultID)!.value.pinnedGroups;
+                return this.state.t[app.currentVault.userVaultID]!.g;
             case DataType.Passwords:
-                return this.state.pinnedDataTypes.value.get(app.currentVault.userVaultID)!.value.pinnedPasswords;
+                return this.state.t[app.currentVault.userVaultID]!.p;
             case DataType.NameValuePairs:
-                return this.state.pinnedDataTypes.value.get(app.currentVault.userVaultID)!.value.pinnedValues;
+                return this.state.t[app.currentVault.userVaultID]!.v;
         }
     }
 
@@ -232,8 +254,8 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
         const state = await api.repositories.users.getLastUsedUserPreferences();
         if (state)
         {
-            const parsedState: UserPreferencesStoreState = JSON.vaulticParse(state);
-            if (parsedState.currentColorPalette)
+            const parsedState: UserPreferencesStoreState = JSON.parse(state);
+            if (parsedState.c)
             {
                 Object.assign(this.state, parsedState);
             }
@@ -246,12 +268,12 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
         {
             case DataType.NameValuePairs:
             case DataType.Organizations:
-                this.currentPrimaryColor.value = this.state.currentColorPalette.value.valuesColor.value.primaryColor.value;
+                this.currentPrimaryColor.value = this.state.c.p.v.p;
                 break;
             case DataType.Passwords:
             case DataType.Devices:
             default:
-                this.currentPrimaryColor.value = this.state.currentColorPalette.value.passwordsColor.value.primaryColor.value;
+                this.currentPrimaryColor.value = this.state.c.p.p.p;
         }
     }
 
@@ -266,112 +288,147 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState>
     public async updateCurrentColorPalette(transaction: StoreUpdateTransaction, colorPalette: ColorPalette)
     {
         // Update the state right away so there is no potential delay for themeing
-        this.state.currentColorPalette.value = colorPalette;
-        this.setCurrentPrimaryColor(app.activePasswordValuesTable);
+        this.state.c.p = colorPalette;
+        this.setCurrentPrimaryColor(app.activeDataType);
 
-        const pendingState = this.cloneState();
-        transaction.updateUserStore(this, pendingState, () => this.setCurrentPrimaryColor(app.activePasswordValuesTable))
+        const pendingState = this.getPendingState()!;
+        pendingState.updateValue('currentColorPalette', 'p', colorPalette);
+
+        transaction.updateUserStore(this, pendingState, () => this.setCurrentPrimaryColor(app.activeDataType))
     }
 
-    private async update()
+    private async addPinnedDataType(
+        id: string,
+        path: keyof UserPreferencesStateKeys,
+        pinnedDataTypeProperty?: PinnedDataTypeProperty)
     {
+        const pendingUserPreferencesState = this.getPendingState()!;
+
+        const idString = app.currentVault.userVaultID.toString();
+        if (pinnedDataTypeProperty && !OH.has(pendingUserPreferencesState.state.t, idString))
+        {
+            const dataTypes: PinnedDataTypes = {
+                f: {},
+                g: {},
+                p: {},
+                v: {}
+            };
+
+            dataTypes[pinnedDataTypeProperty][id] = true;
+            pendingUserPreferencesState.addValue('pinnedDataTypes', idString, dataTypes);
+        }
+        else
+        {
+            pendingUserPreferencesState.addValue(path, id, true, idString);
+        }
+
         const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
-        transaction.updateUserVaultStore(this, this.state);
+        transaction.updateUserStore(this, pendingUserPreferencesState);
+
+        await transaction.commit('');
+    }
+
+    private async removePinnedDataType(path: keyof UserPreferencesStateKeys, id: string)
+    {
+        const state = this.getPendingState()!;
+        const userVaultIDAsString = app.currentVault.userVaultID.toString();
+        const currentPinedObject = state.getObject(path, userVaultIDAsString);
+
+        if (!currentPinedObject || !OH.has(currentPinedObject, id))
+        {
+            return;
+        }
+
+        state.deleteValue(path, id, userVaultIDAsString);
+
+        const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
+        transaction.updateUserStore(this, state);
 
         await transaction.commit('');
     }
 
     public async addPinnedFilter(id: string)
     {
-        this.getPinnedDataTypes(DataType.Filters)?.value.set(id, new Field(id));
-        await this.update();
+        await this.addPinnedDataType(id, 'pinnedDataTypes.filters', 'f');
     }
 
     public async removePinnedFilters(id: string)
     {
-        this.getPinnedDataTypes(DataType.Filters)?.value.delete(id);
-        await this.update();
+        await this.removePinnedDataType('pinnedDataTypes.filters', id);
     }
 
     public async addPinnedGroup(id: string)
     {
-        this.getPinnedDataTypes(DataType.Groups)?.value.set(id, new Field(id));
-        await this.update();
+        await this.addPinnedDataType(id, 'pinnedDataTypes.groups', 'g');
     }
 
     public async removePinnedGroups(id: string)
     {
-        this.getPinnedDataTypes(DataType.Groups)?.value.delete(id);
-        await this.update();
+        await this.removePinnedDataType('pinnedDataTypes.groups', id);
     }
 
     public async addPinnedPassword(id: string)
     {
-        this.getPinnedDataTypes(DataType.Passwords)?.value.set(id, new Field(id));
-        await this.update();
+        await this.addPinnedDataType(id, 'pinnedDataTypes.passwords', 'p');
     }
 
     public async removePinnedPasswords(id: string)
     {
-        this.getPinnedDataTypes(DataType.Passwords)?.value.delete(id);
-        await this.update();
+        await this.removePinnedDataType('pinnedDataTypes.passwords', id);
     }
 
     public async addPinnedValue(id: string)
     {
-        this.getPinnedDataTypes(DataType.NameValuePairs)?.value.set(id, new Field(id));
-        await this.update();
+        await this.addPinnedDataType(id, 'pinnedDataTypes.values', 'v');
     }
 
     public async removePinnedValues(id: string)
     {
-        this.getPinnedDataTypes(DataType.NameValuePairs)?.value.delete(id);
-        await this.update();
-    }
-
-    public async addPinnedDevice(id: number, desktop: boolean)
-    {
-        if (desktop)
-        {
-            this.state.pinnedDesktopDevices.value.set(id, new Field(id));
-        }
-        else 
-        {
-            this.state.pinnedMobileDevices.value.set(id, new Field(id));
-        }
-
-        await this.update();
-    }
-
-    public async removePinnedDevice(id: number, desktop: boolean)
-    {
-        if (desktop)
-        {
-            this.state.pinnedDesktopDevices.value.delete(id);
-        }
-        else 
-        {
-            this.state.pinnedMobileDevices.value.delete(id);
-        }
-
-        await this.update();
+        await this.removePinnedDataType('pinnedDataTypes.values', id);
     }
 
     public async addPinnedOrganization(id: number)
     {
-        if (!this.state.pinnedOrganizations.value.has(id))
+        const stringID = id.toString();
+        if (!OH.has(this.state.o, stringID))
         {
-            this.state.pinnedOrganizations.value.set(id, new Field(id));
-            await this.update();
+            await this.addPinnedDataType(stringID, 'pinnedOrganizations');
         }
     }
 
     public async removePinnedOrganization(id: number)
     {
-        if (this.state.pinnedOrganizations.value.has(id))
+        const stringID = id.toString();
+        if (OH.has(this.state.o, stringID))
         {
-            this.state.pinnedOrganizations.value.delete(id);
-            await this.update();
+            await this.removePinnedDataType('pinnedOrganizations', stringID);
         }
+    }
+
+    public async toggleFilter(id: string)
+    {
+        const pendingState = this.getPendingState()!;
+        const userVaultIDAsString = app.currentVault.userVaultID.toString();
+
+        if (!this.state.a[userVaultIDAsString])
+        {
+            const newActiveFilters: DictionaryAsList = {};
+            newActiveFilters[id] = true;
+
+            pendingState.addValue('activeFilters', userVaultIDAsString, newActiveFilters);
+        }
+        else if (!this.state.a[userVaultIDAsString][id])
+        {
+            pendingState.addValue('activeFiltersForUserVault', id, true, userVaultIDAsString);
+        }
+        else
+        {
+            pendingState.deleteValue('activeFiltersForUserVault', id, userVaultIDAsString);
+        }
+
+        const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
+        transaction.updateUserStore(this, pendingState);
+
+        await transaction.commit('');
     }
 }

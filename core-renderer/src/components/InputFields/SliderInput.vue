@@ -1,18 +1,19 @@
 <template>
     <div class="sliderContainer">
         <div class="sliderContainer__label">{{ label }}</div>
-        <Slider :dt="sliderStyle" class="sliderContainer__slider" v-model="valueHolder" @update:model-value="onInput" :min="minValue" :max="maxValue" 
+        <Slider class="sliderContainer__slider" v-model="valueHolder" @update:model-value="onInput" :min="minValue" :max="maxValue" 
             :pt="{
-                handle: 'sliderContainer__sliderHandle'
+                handle: 'sliderContainer__sliderHandle',
+                range: 'sliderContainer__sliderRange',
             }"/>
         <div class="sliderContainer__textContainer">
-            <InputText :dt="inputStyle" :fluid="true" v-model.number="valueHolder" :color="color" @update:model-value="onInput"
+            <InputText :fluid="true" v-model.number="valueHolder" :color="color" @update:model-value="onInput"
                 :pt="{
                 root: {
                     class: {
                         'sliderContainer__input': true,
                     }
-                }
+                },
             }" />
         </div>
     </div>
@@ -20,8 +21,8 @@
 <script lang="ts">
 import { computed, defineComponent, Ref, ref, watch } from 'vue';
 
-import Slider from 'primevue/slider';
-import InputText from 'primevue/inputtext';
+import Slider from 'primevue-vaultic/slider';
+import InputText from 'primevue-vaultic/inputtext';
 import { widgetBackgroundHexString } from '../../Constants/Colors';
 
 export default defineComponent({
@@ -39,30 +40,6 @@ export default defineComponent({
         const valueHolder: Ref<any> = ref(props.modelValue);
         const background: Ref<string> = ref(widgetBackgroundHexString());
 
-        let sliderStyle = computed(() => {
-            return {
-                range: 
-                {
-                    background: props.color
-                },
-                handle: 
-                {
-                    width: 'clamp(12px, 0.8vw, 20px)',
-                    height: 'clamp(12px, 0.8vw, 20px)'
-                }
-            }
-        });
-
-        let inputStyle = computed(() => {
-            return {
-                focus: 
-                {
-                    borderColor: props.color
-                },
-                background: background.value
-            }
-        });
-
         function onInput(value: any)
         {
             valueHolder.value = value;
@@ -76,8 +53,7 @@ export default defineComponent({
 
 		return {
             valueHolder,
-            sliderStyle,
-            inputStyle,
+            background,
             onInput
 		}
 	}
@@ -113,14 +89,32 @@ export default defineComponent({
     font-size: var(--input-font-size);
     padding-inline: clamp(5px, 0.45vw, 12px);
     padding-block: clamp(2px, 0.3vw, 8px);
+    background: v-bind(background) !important;
+}
+
+:deep(.sliderContainer__input:focus) {
+    border-color: v-bind(color) !important;
 }
 
 :deep(.sliderContainer__sliderHandle) {
     border: clamp(1px, 0.1vw, 3px) solid #3f3f46;
     background: black;
+    width: clamp(12px, 0.8vw, 20px) !important;
+    height: clamp(12px, 0.8vw, 20px) !important;
+    margin-block-start: calc(-1 * calc(clamp(12px, 0.8vw, 20px) / 2)) !important;
+    margin-inline-start: calc(-1 * calc(clamp(12px, 0.8vw, 20px) / 2)) !important;
 }
 
 :deep(.sliderContainer__sliderHandle::before) {
     content: none !important;
+}
+
+:deep(.sliderContainer__sliderHandle:focus-visible) {
+    outline-offset: 0;
+    outline: v-bind(color) solid;
+}
+
+:deep(.sliderContainer__sliderRange) {
+    background: v-bind(color);
 }
 </style>

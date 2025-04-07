@@ -64,7 +64,7 @@ export default defineComponent({
 
             if (response.Success)
             {
-                ctx.emit('onSuccess', firstName.value, lastName.value, email.value);
+                ctx.emit('onSuccess', firstName.value, lastName.value, email.value, response.PendingUserToken);
             }
             else
             {

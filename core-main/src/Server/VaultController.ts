@@ -70,9 +70,9 @@ export function createVaultController(axiosHelper: AxiosHelper)
         return axiosHelper.api.post("Vault/GetVaultDataBreaches", getVaultDataBreachesData);
     }
 
-    function checkPasswordForBreach(checkPasswordForBreachData: string): Promise<GetVaultDataBreachesResponse>
+    function checkPasswordsForBreach(checkPasswordForBreachData: string): Promise<GetVaultDataBreachesResponse>
     {
-        return axiosHelper.api.post("Vault/CheckPasswordForBreach", checkPasswordForBreachData);
+        return axiosHelper.api.post("Vault/CheckPasswordsForBreach", checkPasswordForBreachData);
     }
 
     function dismissVaultDataBreach(userOrganizaitonID: number, vaultID: number, vaultDataBreachID: number): Promise<BaseResponse>
@@ -105,7 +105,7 @@ export function createVaultController(axiosHelper: AxiosHelper)
         getMembers,
         updateVault,
         getVaultDataBreaches,
-        checkPasswordForBreach,
+        checkPasswordsForBreach,
         dismissVaultDataBreach,
         clearDataBreaches,
         syncVaults

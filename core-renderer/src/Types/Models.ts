@@ -16,7 +16,7 @@ export interface ComponentSizeModel
     maxWidth?: string;
 }
 
-export interface TableColumnModel 
+export class TableColumnModel
 {
     header: string;
     field: string;
@@ -25,59 +25,72 @@ export interface TableColumnModel
     component?: string;
     isGroupIconCell?: boolean;
     data?: { [key: string]: any };
+    sortable?: boolean;
+    onClick?: (obj: any) => void;
+
+    constructor(columnHeader: string, columnField: string)
+    {
+        this.header = columnHeader;
+        this.field = columnField;
+    }
+
+    setIsFielded(isFielded: boolean)
+    {
+        this.isFielded = isFielded;
+        return this;
+    }
+
+    setStartingWidth(width: string)
+    {
+        this.startingWidth = width;
+        return this;
+    }
+
+    setComponent(component: string)
+    {
+        this.component = component;
+        return this;
+    }
+
+    setIsGroupIconCell(isGroupIconCell: boolean)
+    {
+        this.isGroupIconCell = isGroupIconCell;
+        return this;
+    }
+
+    setData(data: { [key: string]: any })
+    {
+        this.data = data;
+        return this;
+    }
+
+    setSortable(sortable: boolean)
+    {
+        this.sortable = sortable;
+        return this;
+    }
+
+    setOnClick(onClick: (obj: any) => void)
+    {
+        this.onClick = onClick;
+        return this;
+    }
 }
 
-export class TableRowModel<T extends { [key: string]: any }>
+export class TableRowModel
 {
-    id: string;
+    id: string | number;
     isPinned?: boolean;
     atRiskModel?: AtRiskModel;
-    backingObject?: T;
     state?: any;
-    backingObjectIdentifier: (obj: T) => any;
-    backingObjectPropertyAccessor: (obj: T, prop: string) => any;
 
-    constructor(id: string, backingObjectIdentifier: (obj: T) => any, backingObjectPropertyAccessor?: (obj: T, prop: string) => any,
-        isPinned?: boolean, atRiskModel?: AtRiskModel, backingObject?: T, state?: any) 
+    constructor(id: string | number, isPinned?: boolean, atRiskModel?: AtRiskModel, state?: any) 
     {
         this.id = id;
-        this.backingObjectIdentifier = backingObjectIdentifier;
-        this.backingObjectPropertyAccessor = backingObjectPropertyAccessor ?? ((obj: T, prop: string) => obj[prop]);
         this.isPinned = isPinned;
         this.atRiskModel = atRiskModel;
-        this.backingObject = backingObject;
         this.state = state;
     }
-
-    getBackingObjectIdentifier(): any
-    {
-        if (this.backingObject)
-        {
-            return this.backingObjectIdentifier(this.backingObject);
-        }
-    }
-
-    getBackingObjectProperty(prop: string): any
-    {
-        if (this.backingObject)
-        {
-            return this.backingObjectPropertyAccessor(this.backingObject, prop);
-        }
-    }
-}
-
-export class FieldedTableRowModel<T extends Field<IIdentifiable & { [key: string]: any }>> extends TableRowModel<T>
-{
-    constructor(id: string, isPinned?: boolean, atRiskModel?: AtRiskModel, backingObject?: T, state?: any)
-    {
-        super(id, (obj: T) => obj?.value.id.value, (obj: T, prop: string) => obj?.value[prop].value, isPinned,
-            atRiskModel, backingObject, state);
-    }
-}
-
-export interface SelectableBackingObject extends IIdentifiable
-{
-    isActive: Field<boolean>;
 }
 
 export interface TableDataSouce 
@@ -107,6 +120,7 @@ export interface ObjectSelectOptionModel
     icon?: string;
     color?: string;
     label: string;
+    id: string;
     backingObject?: any;
 }
 
@@ -139,7 +153,7 @@ export interface AtRiskModel
 
 export interface SelectorButtonModel
 {
-    isActive: Ref<boolean>;
+    isActive: Ref<boolean> | ComputedRef<boolean>;
     color: Ref<string>;
     onClick: () => void;
 }
@@ -163,7 +177,8 @@ export interface GridDefinition
 
 export interface GroupIconModel
 {
-    icon: string;
+    icon?: string;
+    text?: string;
     toolTipText: string;
     color: string;
 }
@@ -193,6 +208,7 @@ export enum AccountSetupView
     NotSet,
     SignIn,
     CreateAccount,
+    VerifyEmail,
     SetupPayment,
     UpdatePayment,
     ReActivate,
@@ -260,4 +276,5 @@ export interface Account
     lastName: string;
     email: string;
     masterKey: string;
+    pendingUserToken?: string;
 }

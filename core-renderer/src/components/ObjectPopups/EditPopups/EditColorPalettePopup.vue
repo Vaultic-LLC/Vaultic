@@ -6,10 +6,9 @@
         <div class="cloneFromHeader">Clone From</div>
         <div class="existingColorPalettes">
             <div class="colorPalette" :class="{ hovering: hoveringColorPalette == index }"
-                v-for="(cp, index) in currentColorPalettes" :key="cp.id" @click="cloneColorPalette(cp.value)"
+                v-for="(cp, index) in currentColorPalettes" :key="cp.id" @click="cloneColorPalette(cp)"
                 @mouseenter="hoveringColorPalette = index" @mouseleave="hoveringColorPalette = -1">
-                <ColorPalettePill :leftColor="cp.value.passwordsColor.value.primaryColor.value" 
-                :rightColor="cp.value.valuesColor.value.primaryColor.value"
+                <ColorPalettePill :leftColor="cp.p.p" :rightColor="cp.v.p"
                     :hovering="hoveringColorPalette == index" />
             </div>
         </div>
@@ -24,9 +23,9 @@ import { defineComponent, ComputedRef, computed, ref, Ref } from 'vue';
 import ColorPaletteView from '../../../components/ObjectViews/ColorPaletteView.vue';
 import ColorPalettePill from "../../ColorPalette/ColorPalettePill.vue"
 
-import { ColorPalette } from '../../../Types/Colors';
 import app from "../../../Objects/Stores/AppStore";
 import { Field } from '@vaultic/shared/Types/Fields';
+import { ColorPalette } from '@vaultic/shared/Types/Color';
 
 export default defineComponent({
     name: "EditColorPalettePopup",
@@ -40,12 +39,12 @@ export default defineComponent({
     {
         const hoveringColorPalette: Ref<number> = ref(-1);
         // copy the object so that we don't edit the original one. Also needed for change tracking
-        const colorPaletteModel: Ref<ColorPalette> = ref(JSON.vaulticParse(JSON.vaulticStringify(props.model)));
-        const currentColorPalettes: ComputedRef<Field<ColorPalette>[]> = computed(() => app.colorPalettes.filter(cp => cp.value.isCreated.value));
+        const colorPaletteModel: Ref<ColorPalette> = ref(JSON.parse(JSON.stringify(props.model)));
+        const currentColorPalettes: ComputedRef<ColorPalette[]> = computed(() => app.colorPalettes.filter(cp => cp.i));
 
         function cloneColorPalette(colorPalette: ColorPalette)
         {
-            colorPaletteModel.value = JSON.vaulticParse(JSON.vaulticStringify(colorPalette));
+            colorPaletteModel.value = JSON.parse(JSON.stringify(colorPalette));
             colorPaletteModel.value.id = props.model.id;
         }
 
@@ -80,7 +79,6 @@ export default defineComponent({
 .cloneFromColorPalettesContainer {
     position: absolute;
     right: 15%;
-    width: max(12vw, 150px);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -103,9 +101,9 @@ export default defineComponent({
 }
 
 .cloneFromColorPalettesContainer .existingColorPalettes {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-rows: repeat(2, auto);
+    grid-template-columns: repeat(3, auto);
+    padding: 5px;
 }
 </style>

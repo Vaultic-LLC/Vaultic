@@ -4,17 +4,24 @@ import { stringify } from 'csv-stringify/browser/esm';
 import cryptHelper from "./cryptHelper";
 import { api } from "../API";
 import { CSVHeaderPropertyMapperModel } from "../Types/Models";
-import { generateUniqueIDForMap } from "./generatorHelper";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
-import { IPrimaryDataObject, DataType, defaultGroup, Password, SecurityQuestion, defaultPassword, NameValuePair, defaultValue, nameValuePairTypesValues, NameValuePairType } from "../Types/DataTypes";
+import { IPrimaryDataObject, DataType, defaultGroup, Password, SecurityQuestion, defaultPassword, NameValuePair, defaultValue, nameValuePairTypesValues, NameValuePairType, Group } from "../Types/DataTypes";
 import { ImportableDisplayField } from "../Types/Fields";
-import { Field } from "@vaultic/shared/Types/Fields";
+import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
+import { GroupStoreState } from "../Objects/Stores/GroupStore";
+import { FilterStoreState, FilterStoreStateKeys } from "../Objects/Stores/FilterStore";
+import { PasswordStoreState, PasswordStoreStateKeys } from "../Objects/Stores/PasswordStore";
+import { ValueStoreState } from "../Objects/Stores/ValueStore";
+import StoreUpdateTransaction from "../Objects/StoreUpdateTransaction";
+import { PendingStoreState } from "@vaultic/shared/Types/Stores";
+import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
+import { PrimarydataTypeStoreStateKeys, SecondarydataTypeStoreStateKeys } from "../Objects/Stores/Base";
 
 export async function exportLogs(color: string)
 {
     app.popups.showLoadingIndicator(color, "Exporting Logs");
 
-    const data = JSON.vaulticParse(await api.repositories.logs.getExportableLogData());
+    const data = JSON.parse(await api.repositories.logs.getExportableLogData());
     const formattedData = await exportData(data);
 
     const success = await api.helpers.vaultic.writeCSV("Vaultic-Logs", formattedData);
@@ -69,7 +76,7 @@ export async function importPasswords(color: string)
     const records: string[][] = parse(content, { bom: true });
     const importer = new PasswordCSVImporter();
     app.popups.showImportPopup(color, records[0], importablePasswordProperties,
-        (masterKey: string, columnToProperty: Dictionary<ImportableDisplayField[]>) => importer.import(color, masterKey, records, columnToProperty));
+        (masterKey: string, columnToProperty: Dictionary<ImportableDisplayField[]>) => app.runAsAsyncProcess(() => importer.import(color, masterKey, records, columnToProperty)));
 }
 
 export async function importValues(color: string)
@@ -90,7 +97,7 @@ export async function importValues(color: string)
 
     const importer = new ValueCSVImporter();
     app.popups.showImportPopup(color, records[0], importableValueProperties,
-        (masterKey: string, columnToProperty: Dictionary<ImportableDisplayField[]>) => importer.import(color, masterKey, records, columnToProperty));
+        (masterKey: string, columnToProperty: Dictionary<ImportableDisplayField[]>) => app.runAsAsyncProcess(() => importer.import(color, masterKey, records, columnToProperty)));
 }
 
 export async function getExportablePasswords(color: string, masterKey: string): Promise<string>
@@ -102,12 +109,12 @@ export async function getExportablePasswords(color: string, masterKey: string): 
     for (let i = 0; i < app.currentVault.passwordStore.passwords.length; i++)
     {
         let password = app.currentVault.passwordStore.passwords[i];
-        if (password.value.isVaultic.value)
+        if (password.v)
         {
             continue;
         }
 
-        let decryptedPasswordResponse = await cryptHelper.decrypt(masterKey, password.value.password.value);
+        let decryptedPasswordResponse = await cryptHelper.decrypt(masterKey, password.p);
         if (!decryptedPasswordResponse.success)
         {
             showExportError();
@@ -117,16 +124,16 @@ export async function getExportablePasswords(color: string, masterKey: string): 
         let securityQuestionQuestions: string[] = [];
         let securityQuestionAnswers: string[] = [];
 
-        for (const [key, value] of password.value.securityQuestions.value.entries())
+        for (const sq of Object.values(password.q))
         {
-            const decryptedSecurityQuestionQuestion = await cryptHelper.decrypt(masterKey, value.value.question.value);
+            const decryptedSecurityQuestionQuestion = await cryptHelper.decrypt(masterKey, sq.q);
             if (!decryptedSecurityQuestionQuestion.success)
             {
                 showExportError();
                 return "";
             }
 
-            const decryptedSecurityQuestionAnswer = await cryptHelper.decrypt(masterKey, value.value.answer.value);
+            const decryptedSecurityQuestionAnswer = await cryptHelper.decrypt(masterKey, sq.a);
             if (!decryptedSecurityQuestionAnswer.success)
             {
                 showExportError();
@@ -138,12 +145,12 @@ export async function getExportablePasswords(color: string, masterKey: string): 
         }
 
         let groups: string[] = [];
-        password.value.groups.value.forEach((v, k, map) => 
+        OH.forEachKey(password.g, (k) => 
         {
-            const group = app.currentVault.groupStore.getState().passwordGroupsByID.value.get(k);
+            const group = app.currentVault.groupStore.getState().p[k];
             if (group)
             {
-                groups.push(group.value.name.value);
+                groups.push(group.n);
             }
             else 
             {
@@ -151,8 +158,8 @@ export async function getExportablePasswords(color: string, masterKey: string): 
             }
         });
 
-        data.push([password.value.login.value, password.value.domain.value, password.value.email.value, password.value.passwordFor.value, decryptedPasswordResponse.value!,
-        securityQuestionQuestions.join(';'), securityQuestionAnswers.join(';'), password.value.additionalInformation.value, groups.join(';')]);
+        data.push([password.l, password.d, password.e, password.f, decryptedPasswordResponse.value!,
+        securityQuestionQuestions.join(';'), securityQuestionAnswers.join(';'), password.a, groups.join(';')]);
     }
 
     return await exportData(data);
@@ -167,7 +174,7 @@ export async function getExportableValues(color: string, masterKey: string): Pro
     {
         let nameValuePair = app.currentVault.valueStore.nameValuePairs[i];
 
-        let decryptedValueResponse = await cryptHelper.decrypt(masterKey, nameValuePair.value.value.value);
+        let decryptedValueResponse = await cryptHelper.decrypt(masterKey, nameValuePair.v);
         if (!decryptedValueResponse.success)
         {
             showExportError();
@@ -175,12 +182,12 @@ export async function getExportableValues(color: string, masterKey: string): Pro
         }
 
         let groups: string[] = [];
-        nameValuePair.value.groups.value.forEach((v, k, map) => 
+        OH.forEachKey(nameValuePair.g, (k) => 
         {
-            const group = app.currentVault.groupStore.getState().valueGroupsByID.value.get(k);
+            const group = app.currentVault.groupStore.getState().v[k];
             if (group)
             {
-                groups.push(group.value.name.value);
+                groups.push(group.n);
             }
             else 
             {
@@ -188,8 +195,8 @@ export async function getExportableValues(color: string, masterKey: string): Pro
             }
         });
 
-        data.push([nameValuePair.value.name.value, decryptedValueResponse.value!, nameValuePair.value.valueType?.value ?? "",
-        nameValuePair.value.additionalInformation.value, groups.join(';')]);
+        data.push([nameValuePair.n, decryptedValueResponse.value!, nameValuePair.y ?? "",
+        nameValuePair.a, groups.join(';')]);
     }
 
     return await exportData(data);
@@ -246,9 +253,26 @@ class CSVImporter<T extends IPrimaryDataObject>
 {
     dataType: DataType;
 
+    pendingGroupStoreState: PendingStoreState<GroupStoreState, SecondarydataTypeStoreStateKeys>;
+    pendingFilterStoreState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>;
+
+    didFailToSave: boolean;
+
     constructor(dataType: DataType)
     {
         this.dataType = dataType;
+        this.didFailToSave = false;
+    }
+
+    protected getTypeName()
+    {
+        return "";
+    }
+
+    protected preImport()
+    {
+        this.pendingGroupStoreState = app.currentVault.groupStore.getPendingState()!;
+        this.pendingFilterStoreState = app.currentVault.filterStore.getPendingState()!;
     }
 
     protected createValue(): T
@@ -256,13 +280,20 @@ class CSVImporter<T extends IPrimaryDataObject>
         return {} as T;
     }
 
-    protected async saveValue(masterKey: string, value: T, backup: boolean)
+    protected async saveValue(masterKey: string, value: T, commit: boolean)
     {
+    }
+
+    protected async saveGroup(group: Group): Promise<void>
+    {
+
     }
 
     public async import(color: string, masterKey: string, records: string[][], columnToProperty: Dictionary<ImportableDisplayField[]>)
     {
         app.popups.showLoadingIndicator(color, "Importing");
+
+        this.preImport();
 
         let groupsAdded: Dictionary<string> = {};
         const headers: string[] = records[0];
@@ -295,7 +326,7 @@ class CSVImporter<T extends IPrimaryDataObject>
                     if (!(await this.customSetProperty(value, properties[k], cellValue)))
                     {
                         // then check groups
-                        if (properties[k].backingProperty == "groups")
+                        if (properties[k].backingProperty == "g")
                         {
                             // split groups up if the user has specified a delimiter for them, otherwise just use the entire value as the group name
                             const groups: string[] = cellValue ? properties[k].delimiter ? cellValue.split(properties[k].delimiter!) : [cellValue] : [];
@@ -313,12 +344,12 @@ class CSVImporter<T extends IPrimaryDataObject>
                                     if (!groupsAdded[groups[l]])
                                     {
                                         const group = defaultGroup(this.dataType);
-                                        group.name.value = groups[l];
+                                        group.n = groups[l];
 
-                                        await app.currentVault.groupStore.addGroup(masterKey, group, false);
+                                        await this.saveGroup(group);
 
-                                        groupId = group.id.value;
-                                        groupsAdded[group.name.value] = group.id.value;
+                                        groupId = group.id;
+                                        groupsAdded[group.n] = group.id;
                                     }
                                     else 
                                     {
@@ -327,7 +358,7 @@ class CSVImporter<T extends IPrimaryDataObject>
 
                                     if (groupId)
                                     {
-                                        value.groups.value.set(groupId, new Field(groupId));
+                                        value.groups.set(groupId, groupId);
                                     }
                                 }
                             }
@@ -335,7 +366,8 @@ class CSVImporter<T extends IPrimaryDataObject>
                         else 
                         {
                             // default set, can just set to the value in the csv cell
-                            value[properties[k].backingProperty].value = cellValue;
+                            // @ts-ignore
+                            value[properties[k].backingProperty] = cellValue;
                         }
                     }
                 }
@@ -346,23 +378,51 @@ class CSVImporter<T extends IPrimaryDataObject>
         }
 
         app.popups.hideLoadingIndicator();
-        app.popups.showToast("Import Complete", true);
+
+        if (this.didFailToSave)
+        {
+            this.failedToSave()
+        }
+        else
+        {
+            app.popups.showToast("Import Complete", true);
+        }
     }
 
     protected async customSetProperty(value: T, property: ImportableDisplayField, cellValue: string)
     {
         return false;
     }
+
+    protected failedToSave()
+    {
+        app.popups.showAlert("Unable to Import", `An error occured when trying to import your ${this.getTypeName()}s, please try again. If the issue persists`, true);
+    }
 }
 
 export class PasswordCSVImporter extends CSVImporter<Password>
 {
-    temporarySecurityQuestions: Map<string, Field<SecurityQuestion>>;
+    pendingPasswordStoreState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>;
+    temporarySecurityQuestions: Map<string, SecurityQuestion>;
+    addedPasswords: Password[];
 
     constructor()
     {
         super(DataType.Passwords);
-        this.temporarySecurityQuestions = new Map<string, Field<SecurityQuestion>>();
+
+        this.temporarySecurityQuestions = new Map<string, SecurityQuestion>();
+        this.addedPasswords = [];
+    }
+
+    protected getTypeName(): string
+    {
+        return "password";
+    }
+
+    protected preImport(): void
+    {
+        super.preImport();
+        this.pendingPasswordStoreState = app.currentVault.passwordStore.getPendingState()!;
     }
 
     protected createValue(): Password 
@@ -370,9 +430,28 @@ export class PasswordCSVImporter extends CSVImporter<Password>
         return defaultPassword();
     }
 
-    protected async saveValue(masterKey: string, value: Password, backup: boolean): Promise<void> 
+    protected async saveGroup(group: Group): Promise<void>
     {
-        await app.currentVault.passwordStore.addPassword(masterKey, value, backup);
+        await app.currentVault.groupStore.addGroupToStores(group, this.pendingGroupStoreState, this.pendingFilterStoreState, this.pendingPasswordStoreState);
+    }
+
+    protected async saveValue(masterKey: string, value: Password, commit: boolean): Promise<void> 
+    {
+        this.addedPasswords.push(value);
+
+        await app.currentVault.passwordStore.addPasswordToStores(masterKey, value, this.temporarySecurityQuestions.valueArray(), this.pendingPasswordStoreState,
+            this.pendingFilterStoreState, this.pendingGroupStoreState);
+
+        this.temporarySecurityQuestions = new Map();
+
+        if (commit)
+        {
+            if (!await app.currentVault.passwordStore.commitPasswordEdits(masterKey, this.addedPasswords, this.pendingPasswordStoreState, this.pendingFilterStoreState,
+                this.pendingGroupStoreState))
+            {
+                this.didFailToSave = true;
+            }
+        }
     }
 
     protected async customSetProperty(value: Password, property: ImportableDisplayField, cellValue: string): Promise<boolean> 
@@ -386,14 +465,12 @@ export class PasswordCSVImporter extends CSVImporter<Password>
             {
                 for (let i = 0; i < questions.length; i++)
                 {
-                    const id = await generateUniqueIDForMap(this.temporarySecurityQuestions);
-                    this.temporarySecurityQuestions.set(id, new Field({
-                        id: new Field(id),
-                        question: new Field(questions[i]),
-                        questionLength: new Field(questions[i].length),
-                        answer: new Field(''),
-                        answerLength: new Field(0)
-                    }));
+                    const id = uniqueIDGenerator.generate();
+                    this.temporarySecurityQuestions.set(id, {
+                        id: id,
+                        q: questions[i],
+                        a: ''
+                    });
                 }
             }
             // reading in questions after answers
@@ -402,14 +479,9 @@ export class PasswordCSVImporter extends CSVImporter<Password>
                 let count = 0;
                 for (const [key, value] of this.temporarySecurityQuestions.entries())
                 {
-                    value.value.question.value = questions[count];
-                    value.value.questionLength.value = questions[count].length;
-
+                    value.q = questions[count];
                     count += 1;
                 }
-
-                value.securityQuestions.value = this.temporarySecurityQuestions;
-                this.temporarySecurityQuestions = new Map<string, Field<SecurityQuestion>>();
             }
 
             return true;
@@ -423,14 +495,12 @@ export class PasswordCSVImporter extends CSVImporter<Password>
             {
                 for (let i = 0; i < answers.length; i++)
                 {
-                    const id = await generateUniqueIDForMap(this.temporarySecurityQuestions);
-                    this.temporarySecurityQuestions.set(id, new Field({
-                        id: new Field(id),
-                        question: new Field(''),
-                        questionLength: new Field(0),
-                        answer: new Field(answers[i]),
-                        answerLength: new Field(answers[i].length)
-                    }));
+                    const id = uniqueIDGenerator.generate();
+                    this.temporarySecurityQuestions.set(id, {
+                        id: id,
+                        q: '',
+                        a: answers[i],
+                    });
                 }
             }
             // reading in answers after questions
@@ -439,14 +509,9 @@ export class PasswordCSVImporter extends CSVImporter<Password>
                 let count = 0;
                 for (const [key, value] of this.temporarySecurityQuestions.entries())
                 {
-                    value.value.answer.value = answers[count];
-                    value.value.answerLength.value = answers[count].length;
-
+                    value.a = answers[count];
                     count += 1;
                 }
-
-                value.securityQuestions.value = this.temporarySecurityQuestions;
-                this.temporarySecurityQuestions = new Map<string, Field<SecurityQuestion>>();
             }
 
             return true;
@@ -458,9 +523,22 @@ export class PasswordCSVImporter extends CSVImporter<Password>
 
 export class ValueCSVImporter extends CSVImporter<NameValuePair>
 {
+    pendingValueStoreState: PendingStoreState<ValueStoreState, PrimarydataTypeStoreStateKeys>;
+
     constructor()
     {
         super(DataType.NameValuePairs);
+    }
+
+    protected getTypeName(): string
+    {
+        return "value";
+    }
+
+    protected preImport(): void
+    {
+        super.preImport();
+        this.pendingValueStoreState = app.currentVault.valueStore.getPendingState()!;
     }
 
     protected createValue(): NameValuePair 
@@ -468,17 +546,38 @@ export class ValueCSVImporter extends CSVImporter<NameValuePair>
         return defaultValue();
     }
 
-    protected async saveValue(masterKey: string, value: NameValuePair, backup: boolean): Promise<void> 
+    protected async saveValue(masterKey: string, value: NameValuePair, commit: boolean): Promise<void> 
     {
-        await app.currentVault.valueStore.addNameValuePair(masterKey, value, backup);
+        await app.currentVault.valueStore.addNameValuePairToStores(masterKey, value, this.pendingValueStoreState, this.pendingFilterStoreState,
+            this.pendingGroupStoreState);
+
+        if (commit)
+        {
+            const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
+
+            transaction.updateVaultStore(app.currentVault.valueStore, this.pendingValueStoreState);
+            transaction.updateVaultStore(app.currentVault.groupStore, this.pendingGroupStoreState);
+            transaction.updateVaultStore(app.currentVault.filterStore, this.pendingFilterStoreState);
+
+            if (!await transaction.commit(masterKey))
+            {
+                this.didFailToSave = true;
+            }
+        }
+    }
+
+    protected async saveGroup(group: Group): Promise<void>
+    {
+        await app.currentVault.groupStore.addGroupToStores(group, this.pendingGroupStoreState, this.pendingFilterStoreState, undefined,
+            this.pendingValueStoreState);
     }
 
     protected async customSetProperty(value: NameValuePair, property: ImportableDisplayField, cellValue: string): Promise<boolean> 
     {
-        if (property.backingProperty == "valueType")
+        if (property.backingProperty == "y")
         {
             // @ts-ignore
-            value.valueType.value = nameValuePairTypesValues.includes(cellValue) ? cellValue : NameValuePairType.Other;
+            value.y = nameValuePairTypesValues.includes(cellValue) ? cellValue : NameValuePairType.Other;
             return true;
         }
 
@@ -488,32 +587,32 @@ export class ValueCSVImporter extends CSVImporter<NameValuePair>
 
 export const importablePasswordProperties: ImportableDisplayField[] = [
     {
-        backingProperty: "login",
+        backingProperty: "l",
         displayName: "Username",
         required: true,
     },
     {
-        backingProperty: "password",
+        backingProperty: "p",
         displayName: "Password",
         required: true,
     },
     {
-        backingProperty: "passwordFor",
+        backingProperty: "f",
         displayName: "Password For",
         required: false,
     },
     {
-        backingProperty: "domain",
+        backingProperty: "d",
         displayName: "Domain",
         required: false,
     },
     {
-        backingProperty: "email",
+        backingProperty: "e",
         displayName: "Email",
         required: false,
     },
     {
-        backingProperty: "additionalInformation",
+        backingProperty: "a",
         displayName: "Additional Info",
         required: false,
     },
@@ -530,7 +629,7 @@ export const importablePasswordProperties: ImportableDisplayField[] = [
         requiresDelimiter: true
     },
     {
-        backingProperty: "groups",
+        backingProperty: "g",
         displayName: "Groups",
         required: false,
         requiresDelimiter: true
@@ -539,27 +638,27 @@ export const importablePasswordProperties: ImportableDisplayField[] = [
 
 export const importableValueProperties: ImportableDisplayField[] = [
     {
-        backingProperty: "name",
+        backingProperty: "n",
         displayName: "Name",
         required: true
     },
     {
-        backingProperty: "value",
+        backingProperty: "v",
         displayName: "Value",
         required: true
     },
     {
-        backingProperty: "valueType",
+        backingProperty: "y",
         displayName: "Type",
         required: false
     },
     {
-        backingProperty: "additionalInformation",
+        backingProperty: "a",
         displayName: "Additional Info",
         required: false
     },
     {
-        backingProperty: "groups",
+        backingProperty: "g",
         displayName: "Groups",
         required: false,
         requiresDelimiter: true

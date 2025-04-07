@@ -18,9 +18,7 @@
                 <WidgetSubscriptionMessage />
             </div>
             <div class="breachedPasswordsContainer__items" v-else-if="!failedToLoad">
-                <!-- // TODO: replace with list of vault + number of breaches in vault -->
                 <div class="breachedPasswordsContainer__map">
-                    <!-- <WorldMap :scan="scanning" /> -->
                     <VaulticTable id="breachPasswordsByVault" :color="color" :columns="tableColumns" 
                         :dataSources="tableDataSources" :emptyMessage="'No Data Breaches for any Vaults'" :loading="scanning"
                         :allowSearching="false" :hidePaginator="true" :allowPinning="false" :smallRows="true" />
@@ -46,9 +44,8 @@ import WidgetSubscriptionMessage from '../Widgets/WidgetSubscriptionMessage.vue'
 
 import { SmallMetricGaugeModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
 import app from "../../Objects/Stores/AppStore";
-import { AtRiskType, DataType, VaultAndBreachCount } from '../../Types/DataTypes';
+import { AtRiskType, DataType, Password, VaultAndBreachCount } from '../../Types/DataTypes';
 import { ReactivePassword } from '../../Objects/Stores/ReactivePassword';
-import { Field } from '@vaultic/shared/Types/Fields';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 
 export default defineComponent({
@@ -63,10 +60,11 @@ export default defineComponent({
     setup()
     {
         const canLoadWidget: ComputedRef<boolean> = computed(() => app.canShowSubscriptionWidgets.value);
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.p.p);
         const scanning: Ref<boolean> = ref(false);
         const failedToLoad: ComputedRef<boolean> = computed(() => app.vaultDataBreaches.failedToLoadDataBreaches);
-        const vaultsAndBreachCount: SortedCollection = new SortedCollection([]);
+        let backingVaultsAndBreachCount: Map<string, VaultAndBreachCount> = new Map();
+        const vaultAndBreachCountCollection: SortedCollection = new SortedCollection([], () => backingVaultsAndBreachCount, "vault");
 
         const tableDataSources: Reactive<TableDataSources> = reactive(
         {
@@ -75,7 +73,7 @@ export default defineComponent({
             [
                 {
                     friendlyDataTypeName: "Data Breaches",
-                    collection: vaultsAndBreachCount                
+                    collection: vaultAndBreachCountCollection                
                 },
             ]
         });
@@ -83,8 +81,8 @@ export default defineComponent({
         const tableColumns: ComputedRef<TableColumnModel[]> = computed(() => 
         {
             const models: TableColumnModel[] = []
-            models.push({ header: "Vault", field: "vault", isFielded: false });
-            models.push({ header: "Breaches", field: "breachCount", isFielded: false });
+            models.push(new TableColumnModel("Vault", "vault").setIsFielded(false));
+            models.push(new TableColumnModel("Breaches", "breachCount").setIsFielded(false));
 
             return models;
         });
@@ -158,7 +156,7 @@ export default defineComponent({
             }
         }
 
-        async function checkPasswordForBreach(password: Field<ReactivePassword>)
+        async function checkPasswordForBreach(password: ReactivePassword)
         {
             if (!canLoadWidget.value)
             {
@@ -166,13 +164,27 @@ export default defineComponent({
             }
 
             scanning.value = true;
-            await app.vaultDataBreaches.checkPasswordForBreach(password);
+            await app.runAsAsyncProcess(() => app.vaultDataBreaches.checkPasswordForBreach(password));
+            scanning.value = false;          
+        }
+
+        async function checkPasswordsForBreach(passwords: Password[])
+        {
+            if (!canLoadWidget.value)
+            {
+                return;
+            }
+
+            scanning.value = true;
+            await app.runAsAsyncProcess(() => app.vaultDataBreaches.checkPasswordsForBreach(passwords));
             scanning.value = false;          
         }
 
         function setRows()
         {
-            const rows: TableRowModel<VaultAndBreachCount>[] = [];               
+            backingVaultsAndBreachCount = new Map();
+            const rows: TableRowModel[] = [];           
+
             app.vaultDataBreaches.vaultDataBreachCountByVaultID.forEach((v, k, map) => 
             {
                 const vault = app.userVaultsByVaultID.get(k);
@@ -185,11 +197,12 @@ export default defineComponent({
                         breachCount: v
                     }
 
-                    rows.push(new TableRowModel(k.toString(), (obj: VaultAndBreachCount) => obj.vaultID, undefined, false, undefined, vaultAndBreachCount));
+                    backingVaultsAndBreachCount.set(k.toString(), vaultAndBreachCount);
+                    rows.push(new TableRowModel(k.toString(), undefined, undefined, vaultAndBreachCount));
                 }
             });
 
-            vaultsAndBreachCount.updateValues(rows);
+            vaultAndBreachCountCollection.updateValues(rows);
         }
 
         function clearBreaches()
@@ -216,14 +229,18 @@ export default defineComponent({
         {
             app.vaultDataBreaches.addEvent("onBreachesUpdated", setRows);
             app.vaultDataBreaches.addEvent("onBreachDismissed", setRows);
+
             app.currentVault.passwordStore.addEvent("onCheckPasswordBreach", checkPasswordForBreach);
+            app.currentVault.passwordStore.addEvent("onCheckPasswordsForBreach", checkPasswordsForBreach);
         });
 
         onUnmounted(() =>
         {
             app.vaultDataBreaches.removeEvent("onBreachesUpdated", setRows);
             app.vaultDataBreaches.removeEvent("onBreachDismissed", setRows);
+
             app.currentVault.passwordStore.removeEvent("onCheckPasswordBreach", checkPasswordForBreach);
+            app.currentVault.passwordStore.addEvent("onCheckPasswordsForBreach", checkPasswordsForBreach);
         });
 
         return {
@@ -232,7 +249,6 @@ export default defineComponent({
             scanning,
             metricModel,
             failedToLoad,
-            vaultsAndBreachCount,
             tableDataSources,
             tableColumns,
             startScan,

@@ -1,7 +1,9 @@
-import { EntityState } from "@vaultic/shared/Types/Entities";
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, Index, PrimaryGeneratedColumn } from "typeorm";
 import { VaulticEntity } from "./VaulticEntity";
 import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
+import Transaction from "../Transaction";
+import { environment } from "../../Environment";
+import { ClientChangeTrackingType } from "@vaultic/shared/Types/ClientServerTypes";
 
 @Entity({ name: "changeTrackings" })
 export class ChangeTracking extends VaulticEntity
@@ -9,17 +11,24 @@ export class ChangeTracking extends VaulticEntity
     @PrimaryGeneratedColumn("increment")
     changeTrackingID: number;
 
+    @Index()
     @Column("integer")
     userID: number;
 
+    @Column("integer")
+    userVaultID?: number;
+
+    @Column("integer")
+    vaultID?: number;
+
+    @Column('integer')
+    clientTrackingType: ClientChangeTrackingType;
+
     @Column("text")
-    objectID: string;
+    changes: string;
 
-    @Column("integer")
-    objectState: EntityState;
-
-    @Column("integer")
-    lastModifiedTime: number;
+    @Column('integer')
+    changeTime: number;
 
     identifier(): number 
     {
@@ -39,51 +48,38 @@ export class ChangeTracking extends VaulticEntity
     protected internalGetSignableProperties(): string[]
     {
         return [
-            nameof<ChangeTracking>("objectID"),
-            nameof<ChangeTracking>("objectState"),
-            nameof<ChangeTracking>("userID")
+            nameof<ChangeTracking>("userID"),
+            nameof<ChangeTracking>("userVaultID"),
+            nameof<ChangeTracking>("vaultID"),
+            nameof<ChangeTracking>("clientTrackingType"),
+            nameof<ChangeTracking>('changeTime')
+        ];
+    }
+
+    public getCompressableProperties(): string[]
+    {
+        return [
+            nameof<ChangeTracking>("changes"),
         ];
     }
 
     public getEncryptableProperties(): string[]
     {
         return [
-            nameof<ChangeTracking>("objectID"),
-            nameof<ChangeTracking>("objectState"),
-            nameof<ChangeTracking>("userID")
+            nameof<ChangeTracking>("changes"),
         ];
     }
 
-    public static inserted(userID: number, id: string, lastModifiedTime: number): ChangeTracking
+    public static creteAndInsert(key: string, clientTrackingType: ClientChangeTrackingType, changes: string, transaction: Transaction, userID: number, userVaultID?: number, vaultID?: number)
     {
-        const tracking = new ChangeTracking();
-        tracking.userID = userID;
-        tracking.objectID = id;
-        tracking.objectState = EntityState.Inserted;
-        tracking.lastModifiedTime = lastModifiedTime;
+        const changeTracking = new ChangeTracking().makeReactive();
+        changeTracking.clientTrackingType = clientTrackingType;
+        changeTracking.changes = changes;
+        changeTracking.userID = userID;
+        changeTracking.userVaultID = userVaultID ?? -1;
+        changeTracking.vaultID = vaultID ?? -1;
+        changeTracking.changeTime = Date.now();
 
-        return tracking;
-    }
-
-    public static updated(userID: number, id: string, lastModifiedTime: number): ChangeTracking
-    {
-        const tracking = new ChangeTracking();
-        tracking.userID = userID;
-        tracking.objectID = id;
-        tracking.objectState = EntityState.Updated;
-        tracking.lastModifiedTime = lastModifiedTime;
-
-        return tracking;
-    }
-
-    public static deleted(userID: number, id: string, lastModifiedTime: number): ChangeTracking
-    {
-        const tracking = new ChangeTracking();
-        tracking.userID = userID;
-        tracking.objectID = id;
-        tracking.objectState = EntityState.Deleted;
-        tracking.lastModifiedTime = lastModifiedTime;
-
-        return tracking;
+        transaction.insertEntity(changeTracking, key, () => environment.repositories.changeTrackings);
     }
 }

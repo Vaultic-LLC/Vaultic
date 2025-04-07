@@ -1,4 +1,4 @@
-import { Store, StoreState } from "./Base";
+import { Store } from "./Base";
 import { ComputedRef, Ref, computed, ref } from "vue";
 import { api } from "../../API";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
@@ -6,9 +6,10 @@ import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { UserVaultIDAndVaultID } from "@vaultic/shared/Types/Entities";
 import { CreateOrganizationData, UpdateOrganizationData } from "@vaultic/shared/Types/Controllers";
 import app from "./AppStore";
-import { Field } from "@vaultic/shared/Types/Fields";
+import { StateKeys, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
-export class OrganizationStore extends Store<StoreState>
+export class OrganizationStore extends Store<StoreState, StateKeys>
 {
     private internalFailedToRetrieveOrganizations: Ref<boolean>;
     private internalOrganizationsByID: Ref<Map<number, Organization>>;
@@ -25,14 +26,14 @@ export class OrganizationStore extends Store<StoreState>
 
     constructor()
     {
-        super('organizationStore');
+        super(StoreType.Organization);
 
         this.internalFailedToRetrieveOrganizations = ref(false);
         this.internalOrganizationsByID = ref(new Map());
         this.internalOrganizationIDsByVaultIDs = ref(new Map());
 
         this.internalOrganizations = computed(() => this.internalOrganizationsByID.value.valueArray());
-        this.internalPinnedOrganizations = computed(() => this.internalOrganizations.value.filter(o => app.userPreferences.pinnedOrganizations.value.has(o.organizationID)));
+        this.internalPinnedOrganizations = computed(() => this.internalOrganizations.value.filter(o => OH.has(app.userPreferences.pinnedOrganizations, o.organizationID.toString())));
     }
 
     public resetToDefault(): void
@@ -45,7 +46,7 @@ export class OrganizationStore extends Store<StoreState>
     protected defaultState()
     {
         return {
-            version: new Field(0)
+            version: 0
         }
     }
 
@@ -125,7 +126,7 @@ export class OrganizationStore extends Store<StoreState>
             addedMembers
         };
 
-        const response = await api.server.organization.createOrganization(masterKey, JSON.vaulticStringify(data));
+        const response = await api.server.organization.createOrganization(masterKey, JSON.stringify(data));
         if (!response.success || !response.value?.Success)
         {
             defaultHandleFailedResponse(response);
@@ -140,6 +141,10 @@ export class OrganizationStore extends Store<StoreState>
         }
 
         organization.organizationID = response.value.OrganizationID!;
+
+        // needs to be set before calling updateOrgsForVault
+        this.organizationsByID.set(organization.organizationID, organization);
+
         addedMembers.forEach(m =>
         {
             if (!organization.membersByUserID.has(m.userID))
@@ -149,8 +154,6 @@ export class OrganizationStore extends Store<StoreState>
         });
 
         addedVaults.forEach(v => this.updateOrgsForVault(v.vaultID, [organization], []));
-        this.organizationsByID.set(organization.organizationID, organization);
-
         return true;
     }
 
@@ -175,7 +178,7 @@ export class OrganizationStore extends Store<StoreState>
             removedMembers
         };
 
-        const response = await api.server.organization.updateOrganization(masterKey, JSON.vaulticStringify(updateOrganizationData));
+        const response = await api.server.organization.updateOrganization(masterKey, JSON.stringify(updateOrganizationData));
         if (!response.success || !response.value?.Success)
         {
             defaultHandleFailedResponse(response);

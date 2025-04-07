@@ -1,11 +1,13 @@
-import { Store, StoreState } from "./Base";
+import { Store } from "./Base";
 import { ClientDevice, Device, DeviceInfo } from "@vaultic/shared/Types/Device";
 import { api } from "../../API";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { ComputedRef, Ref, computed, ref } from "vue";
 import app from "./AppStore";
+import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
+import { StateKeys, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 
-export class DeviceStore extends Store<StoreState>
+export class DeviceStore extends Store<StoreState, StateKeys>
 {
     private internalCurrentDeviceInfo: Ref<DeviceInfo | undefined>;
     private internalRegisteredCurrentDevice: Ref<ClientDevice | undefined>;
@@ -15,6 +17,7 @@ export class DeviceStore extends Store<StoreState>
 
     private internalHasRegisteredCurrentDevice: ComputedRef<boolean>;
 
+    get devicesByID() { return this.internalDevicesByID.value; }
     get currentDeviceInfo() { return this.internalCurrentDeviceInfo.value; }
     get devices() { return this.internalDevices.value; }
     get failedToGetDevices() { return this.internalFailedToGetDevices.value; }
@@ -22,7 +25,7 @@ export class DeviceStore extends Store<StoreState>
 
     constructor()
     {
-        super('deviceStore');
+        super(StoreType.Device);
 
         this.internalCurrentDeviceInfo = ref(undefined);
         this.internalRegisteredCurrentDevice = ref(undefined);
@@ -77,7 +80,7 @@ export class DeviceStore extends Store<StoreState>
 
         for (let i = 0; i < devices.length; i++)
         {
-            const deviceId = await api.utilities.generator.uniqueId();
+            const deviceId = uniqueIDGenerator.generate();
             const clientDevice: ClientDevice =
             {
                 ...devices[i],
@@ -111,7 +114,7 @@ export class DeviceStore extends Store<StoreState>
         device.UserDesktopDeviceID = result.UserDesktopDeviceID;
         device.UserMobileDeviceID = result.UserMobileDeviceID;
 
-        const deviceId = await api.utilities.generator.uniqueId();
+        const deviceId = uniqueIDGenerator.generate();
         device.id = deviceId;
 
         this.internalDevicesByID.value.set(deviceId, device);

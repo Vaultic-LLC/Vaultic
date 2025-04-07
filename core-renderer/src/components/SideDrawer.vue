@@ -43,7 +43,7 @@ import { ToggleRadioButtonModel, TreeNodeButton } from "../Types/Models";
 import { Dictionary } from '@vaultic/shared/Types/DataStructures';
 import { DisplayVault, IUser, VaultType } from '@vaultic/shared/Types/Entities';
 import { AppView } from '../Types/App';
-import { useConfirm } from 'primevue/useconfirm';
+import { useConfirm } from 'primevue-vaultic/useconfirm';
 
 export default defineComponent({
     name: "SideDrawer",
@@ -167,10 +167,10 @@ export default defineComponent({
 
         async function onUnarchiveVault(data: Dictionary<any>)
         {
-            app.popups.showRequestAuthentication(primaryColor.value, onKeySuccess, () => { });
+            app.popups.showRequestAuthentication(primaryColor.value, onKeySuccess, () => { }, true);
             async function onKeySuccess(key: string)
             {
-                if (!(await app.updateArchiveStatus(key, data['userVaultID'], false)))
+                if (!(await app.runAsAsyncProcess(() => app.updateArchiveStatus(key, data['userVaultID'], false))))
                 {
                     app.popups.showToast('Failed to unarchive vault', false);
                 }
@@ -203,19 +203,19 @@ export default defineComponent({
                 },
                 accept: () => 
                 {
-                    app.popups.showRequestAuthentication(primaryColor.value, onKeySuccess, () => { });
+                    app.popups.showRequestAuthentication(primaryColor.value, onKeySuccess, () => { }, true);
                     async function onKeySuccess(key: string)
                     {
                         if (archive)
                         {
-                            if (!(await app.updateArchiveStatus(key, data['userVaultID'], true)))
+                            if (!(await app.runAsAsyncProcess(() => app.updateArchiveStatus(key, data['userVaultID'], true))))
                             {
                                 app.popups.showToast('Failed to archived vault', false);
                             }
                         }
                         else
                         {
-                            if (!(await app.permanentlyDeleteVault(key, data['userVaultID'])))
+                            if (!(await app.runAsAsyncProcess(() => app.permanentlyDeleteVault(key, data['userVaultID']))))
                             {
                                 app.popups.showToast('Failed to delete vault', false);
                             }
@@ -252,8 +252,14 @@ export default defineComponent({
 
             addedVault.forEach(v => 
             {
-                manager.addLeaf(parentNodeId, v.name, v.userVaultID == app.currentVault.userVaultID,
+                const selected = v.userVaultID == app.currentVault.userVaultID;
+                manager.addLeaf(parentNodeId, v.name, selected,
                     true, buttons, undefined, { userVaultID: v.userVaultID, type: type });
+
+                if (selected)
+                {
+                    manager.show(parentNodeId);
+                }
             });
 
             removedVault.forEach(v => 
@@ -297,7 +303,7 @@ export default defineComponent({
             app.popups.showRequestAuthentication(primaryColor.value, async (masterKey: string) => 
             {
                 app.popups.showLoadingIndicator(primaryColor.value, "Syncing Vaults");
-                const success = await app.syncVaults(masterKey);
+                const success = await app.syncVaults(masterKey, app.userInfo!.email!);
                 if (success)
                 {
                     app.popups.showToast("Sync Succeeded", true);

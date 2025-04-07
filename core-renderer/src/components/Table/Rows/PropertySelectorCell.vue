@@ -1,6 +1,6 @@
 <template>
     <div class="propertySelectorCellContainer">
-        <PropertySelectorInputField v-model="modelField.value" :label="label" :color="color" :displayFieldOptions="displayFieldOptions" 
+        <PropertySelectorInputField v-model="modelField" :defaultType="inputType" :label="label" :color="color" :displayFieldOptions="displayFieldOptions" 
             :width="''" :minWidth="''" @propertyTypeChanged="onPropertyTypeChanged"  />
     </div>
 </template>
@@ -9,7 +9,6 @@
 import { computed, ComputedRef, defineComponent, Ref, ref, watch } from 'vue';
 
 import PropertySelectorInputField from '../../InputFields/PropertySelectorInputField.vue';
-import { Field } from '@vaultic/shared/Types/Fields';
 import { DisplayField, PropertyType } from '../../../Types/Fields';
 import { EqualFilterConditionType, FilterConditionType } from '../../../Types/DataTypes';
 
@@ -22,11 +21,12 @@ export default defineComponent({
 	props: ["model", "field", "data", "state"],
 	setup(props)
 	{
-        const modelField: Ref<Field<any>> = ref(props.model.value[props.field]);
+        const modelField: Ref<any> = ref(props.model[props.field]);
         const displayFieldOptions: Ref<DisplayField[]> = computed(() => props.data["properties"]);
         const color: ComputedRef<string> = computed(() => props.data["color"]);
         const state: ComputedRef<any> = computed(() => props.state);
         const label: ComputedRef<string> = computed(() => props.data["label"]);
+        const inputType: ComputedRef<PropertyType> = computed(() => state.value.inputType);
 
         function onPropertyTypeChanged(type: PropertyType, typeEnum?: { [key: string]: string | number })
         {
@@ -51,9 +51,9 @@ export default defineComponent({
             }
         }
 
-        watch(() => modelField.value, () => 
+        watch(() => modelField.value, (newValue) =>
         {
-            
+            props.model[props.field] = newValue;
         });
 
 		return {
@@ -61,11 +61,14 @@ export default defineComponent({
             modelField,
             displayFieldOptions,
             label,
+            inputType,
             onPropertyTypeChanged
 		};
 	},
 })
 </script>
 <style scoped>
-
+.propertySelectorCellContainer {
+    width: 100%;
+}
 </style>

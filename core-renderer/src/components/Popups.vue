@@ -10,7 +10,7 @@
             <Transition name="fade" mode="out-in">
                 <AlertPopup v-if="popupStore.alertIsShowing" :showContactSupport="popupStore.showContactSupport"
                     :title="popupStore.alertTitle" :message="popupStore.alertMessage"
-                    :statusCode="popupStore.statusCode" :logID="popupStore.logID" :axiosCode="popupStore.axiosCode"
+                    :statusCode="popupStore.statusCode" :axiosCode="popupStore.axiosCode"
                     :leftButton="popupStore.alertLeftButton" :rightButton="popupStore.alertRightButton"
                     @onOk="popupStore.hideAlert()" />
             </Transition>
@@ -73,7 +73,7 @@
         <Teleport to="#body">
 			<Transition name="fade">
 				<ObjectPopup v-if="popupStore.emergencyDeactivationIsShowing" :minWidth="'600px'" :minHeight="'480px'" :width="'40%'"
-					:height="'60%'" :popupInfoOverride="popupInfo.emergencyDeactivation" :closePopup="popupStore.hideEmergencyDeactivationPopup">
+					:height="'60%'" :popupInfoOverride="PopupNames.EmergencyDeactivaion" :closePopup="popupStore.hideEmergencyDeactivationPopup">
 					<EmergencyDeactivationView />
 				</ObjectPopup>
 			</Transition>
@@ -102,6 +102,11 @@
 				</ObjectPopup>
 			</Transition>
 		</Teleport>
+        <Teleport to="#body">
+			<Transition name="fade">
+                <SyncingPopup v-if="popupStore.syncingPopupIsShowing" :finish="popupStore.syncingPopupIsFinished" />
+			</Transition>
+		</Teleport>
     </div>
 </template>
 
@@ -123,10 +128,11 @@ import EmergencyDeactivationView from './Account/EmergencyDeactivationView.vue';
 import ClearBreachesView from './BreachedPasswords/ClearBreachesView.vue';
 import ShowMFAKeyView from './Account/ShowMFAKeyView.vue';
 import DeviceView from './ObjectViews/DeviceView.vue';
+import SyncingPopup from './Loading/SyncingPopup.vue';
 
 import app from "../Objects/Stores/AppStore";
 import { DataType } from '../Types/DataTypes';
-import { Popups, popups } from '../Objects/Stores/PopupStore';
+import { PopupNames } from '../Objects/Stores/PopupStore';
 
 export default defineComponent({
     name: 'Popups',
@@ -146,14 +152,14 @@ export default defineComponent({
         EmergencyDeactivationView,
         ClearBreachesView,
         ShowMFAKeyView,
-        DeviceView
+        DeviceView,
+        SyncingPopup
     },
     setup()
     {
-        const popupInfo: Popups = JSON.vaulticParse(JSON.vaulticStringify(popups));
         return {
             popupStore: app.popups,
-            popupInfo,
+            PopupNames,
             DataType,
         }
     }

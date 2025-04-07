@@ -3,7 +3,7 @@ import { BreachRequestVault, Member } from "./DataTypes";
 import { RequireMFAOn, RequiresMFA } from "./Device";
 import { UserVaultIDAndVaultID } from "./Entities";
 import { TypedMethodResponse } from "./MethodResponse";
-import { BaseResponse, CreateCheckoutResponse, CreateOrganizationResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetMFAKeyResponse, GetOrganizationsResponse, GetSettings, GetUserInfoResponse, GetVaultDataBreachesResponse, GetVaultMembersResponse, LogResponse, RegisterDeviceResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse } from "./Responses";
+import { BaseResponse, CreateCheckoutResponse, CreateOrganizationResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetMFAKeyResponse, GetOrganizationsResponse, GetSettings, GetUserInfoResponse, GetVaultDataBreachesResponse, GetVaultMembersResponse, LogResponse, RegisterDeviceResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse, VerifyEmailResponse } from "./Responses";
 
 export interface AppController
 {
@@ -19,6 +19,7 @@ export interface SessionController
 export interface ClientUserController
 {
     validateEmail(email: string): Promise<ValidateEmailResponse>;
+    verifyEmail: (pendingUserToken: string, emailVerificationCode: string) => Promise<VerifyEmailResponse>;
     getDevices: () => Promise<GetDevicesResponse>;
     registerDevice: (name: string, requiresMFA: RequiresMFA) => Promise<RegisterDeviceResponse>;
     updateDevice: (name: string, requiresMFA: RequiresMFA, desktopDeviceID?: number, mobileDeviceID?: number) => Promise<BaseResponse>;
@@ -38,7 +39,7 @@ export interface ClientVaultController
 {
     getMembers: (userOrganizationID: number, userVaultID: number) => Promise<GetVaultMembersResponse>;
     getVaultDataBreaches: (getVaultDataBreachData: string) => Promise<GetVaultDataBreachesResponse>;
-    checkPasswordForBreach: (checkPasswordForBreachData: string) => Promise<GetVaultDataBreachesResponse>;
+    checkPasswordsForBreach: (checkPasswordForBreachData: string) => Promise<GetVaultDataBreachesResponse>;
     dismissVaultDataBreach: (userOrganizaitonID: number, vaultID: number, vaultDataBreachID: number) => Promise<BaseResponse>;
     clearDataBreaches: (vaults: BreachRequestVault[]) => Promise<BaseResponse>;
 }

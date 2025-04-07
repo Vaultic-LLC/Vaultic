@@ -52,19 +52,19 @@ export default defineComponent({
         const refreshKey: Ref<string> = ref('');
 
         const orgState: Ref<Organization> = ref(props.model ? JSON.vaulticParse(JSON.vaulticStringify(props.model)) : defaultOrganization());
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.v.p);
         
         const emptyMessage: Ref<string> = ref(`You currently don't have any Members in this Organization. Click '+' to add one`);
 
         const allVaults: Ref<ObjectSelectOptionModel[]> = ref([]);
-        const selectedVaults: Ref<ObjectSelectOptionModel[]> = ref([]);
+        const selectedVaults: Ref<ObjectSelectOptionModel[]> = ref(getSelectedVaults());
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
 
         function onSave()
         {
-            app.popups.showRequestAuthentication(color.value, doSave, onAuthCancelled);
+            app.popups.showRequestAuthentication(color.value, doSave, onAuthCancelled, true);
             return new Promise((resolve, reject) =>
             {
                 saveSucceeded = resolve;
@@ -121,19 +121,20 @@ export default defineComponent({
             const memberChanges = memberTable.value?.getChanges()!;
             if (props.creating)
             {
-                handleSaveResponse((await app.organizations.createOrganization(key, orgState.value, 
-                addedVaults, memberChanges.addedMembers.valueArray())));
+                app.runAsAsyncProcess(async () => handleSaveResponse((await app.organizations.createOrganization(key, orgState.value, 
+                addedVaults, memberChanges.addedMembers.valueArray()))));
             }
             else
             {
-                handleSaveResponse((await app.organizations.updateOrganization(key, orgState.value, unchangedVaults,
+                app.runAsAsyncProcess(async () => handleSaveResponse((await app.organizations.updateOrganization(key, orgState.value, unchangedVaults,
                     addedVaults, removedVaults, orgState.value.membersByUserID.valueArray(), memberChanges.addedMembers.valueArray(), 
-                    memberChanges.updatedMembers.valueArray(), memberChanges.removedMembers.valueArray())));
+                    memberChanges.updatedMembers.valueArray(), memberChanges.removedMembers.valueArray()))));
             }
 
             if (props.creating)
             {
                 refreshKey.value = Date.now().toString();
+                orgState.value = defaultOrganization();
             }
         }
 
@@ -161,6 +162,32 @@ export default defineComponent({
             saveFailed(false);
         }
 
+        function getSelectedVaults()
+        {
+            const selected: ObjectSelectOptionModel[] = [];
+            orgState.value.vaultIDsByVaultID.forEach((v, k, map) =>
+            {
+                const vault = app.userVaults.value.find(v => v.vaultID == k);
+                if (vault)
+                {
+                    const currentVaultModel: ObjectSelectOptionModel = 
+                    {
+                        id: vault.vaultID.toString(),
+                        label: vault.name,
+                        backingObject: 
+                        {
+                            userVaultID: vault.userVaultID,
+                            vaultID: vault.vaultID
+                        }
+                    };
+                    
+                    selected.push(currentVaultModel)
+                }
+            });
+
+            return selected;
+        }
+
         onMounted(() =>
         {
             allVaults.value = app.userVaults.value.filter(v => v.shared).map(v => 
@@ -173,30 +200,12 @@ export default defineComponent({
 
                 const model: ObjectSelectOptionModel =
                 {
+                    id: v.vaultID.toString(),
                     label: v.name,
                     backingObject: ids
                 };
 
                 return model;
-            });
-
-            orgState.value.vaultIDsByVaultID.forEach((v, k, map) =>
-            {
-                const vault = app.userVaults.value.find(v => v.vaultID == k);
-                if (vault)
-                {
-                    const currentVaultModel: ObjectSelectOptionModel = 
-                    {
-                        label: vault.name,
-                        backingObject: 
-                        {
-                            userVaultID: vault.userVaultID,
-                            vaultID: vault.vaultID
-                        }
-                    };
-                    
-                    selectedVaults.value.push(currentVaultModel)
-                }
             });
         });
 
@@ -234,7 +243,6 @@ export default defineComponent({
 }
 
 #organizationView__memberTable {
-    position: relative;
     height: 90%;
     width: 85%;
 }

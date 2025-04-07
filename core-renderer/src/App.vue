@@ -59,16 +59,14 @@ import Popups from './components/Popups.vue';
 import MenuWidget from "./components/Widgets/IconCards/MenuWidget.vue"
 import SideDrawer from "./components/SideDrawer.vue"
 import OrganizationDeviceTable from './components/Table/OrganizationDeviceTable.vue';
-import ConfirmDialog from "primevue/confirmdialog";
+import ConfirmDialog from "primevue-vaultic/confirmdialog";
 import AccountInfoWidget from './components/Widgets/AccountInfoWidget.vue';
 
 import { AccountSetupView } from './Types/Models';
-import { ColorPalette } from './Types/Colors';
 import { getLinearGradientFromColor } from './Helpers/ColorHelper';
 import app from "./Objects/Stores/AppStore";
-import * as PolyFills from "@vaultic/shared/Types/PolyFills";
 import { AppView } from './Types/App';
-PolyFills.a;
+import { ColorPalette } from '@vaultic/shared/Types/Color';
 
 export default defineComponent({
     name: 'App',
@@ -101,7 +99,6 @@ export default defineComponent({
         const finishedMounting: Ref<boolean> = ref(false);
 
         const currentColorPalette: ComputedRef<ColorPalette> = computed(() => app.userPreferences.currentColorPalette);
-        let backgroundColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.backgroundColor.value);
         //let backgroundClr: Ref<string> = ref('#0f111d');
 
         const gradient: ComputedRef<string> = computed(() => getLinearGradientFromColor(app.userPreferences.currentPrimaryColor.value));
@@ -142,7 +139,6 @@ export default defineComponent({
         return {
             isVaultView,
             AppView,
-            backgroundColor,
             currentColorPalette,
             clr,
             gradient,

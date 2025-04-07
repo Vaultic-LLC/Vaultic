@@ -29,6 +29,7 @@ export class TypedMethodResponse<T>
     addToErrorMessage(message: string)
     {
         this.errorMessage += `\n${message}`;
+        return this;
     }
 
     static success<T>(value?: T)

@@ -1,26 +1,16 @@
 <template>
     <div class="enterMFACodePopup">
         <ObjectPopup :minWidth="'500px'" :minHeight="'200px'" :width="'31%'" :height="'24%'"
-            :closePopup="() => $.emit('onClose')">
+            :closePopup="() => $.emit('onClose')" :popupInfoOverride="PopupNames.EnterMFACode">
             <div class="enterMFACodePopup__container">
                 <div class="mfaView__header">
                     <h2>Enter Multifactor Authentication Code</h2>
                 </div>
                 <div class="mfaView__content">
                     <ObjectView :color="color" :creating="false" :buttonText="'Confirm'" :defaultSave="onConfirm" :skipOnSaveFunctionality="true"
-                        :minButtonHeight="'30px'">
+                        :minButtonHeight="'30px'" :popupInfoOverride="PopupNames.EnterMFACode">
                         <div class="flex flex-col gap-1">
-                            <InputOtp ref="otp" name="mfaCode" v-model="mfaCode" integerOnly mask :length="6"
-                                :pt="{
-                                    pcInputText: 
-                                    {
-                                        root: 'mfaView__OTPInputs'
-                                    }
-                                }" />
-                            <Message v-if="!isValid" severity="error" size="small" variant="simple"
-                                :pt="{
-                                    root: 'mfaView__message'
-                                }">{{ invalidMessage }}</Message>
+                            <VaulticOTP ref="otp" v-model="mfaCode" :color="color" />
                         </div>
                     </ObjectView>
                 </div>
@@ -30,16 +20,18 @@
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, onMounted, onUnmounted, Ref, ref } from 'vue';
+import { computed, ComputedRef, defineComponent, Ref, ref } from 'vue';
 
 import ObjectView from '../ObjectViews/ObjectView.vue';
 import ObjectPopup from '../ObjectPopups/ObjectPopup.vue';
-import InputOtp from "primevue/inputotp";
-import Message from 'primevue/message';
+import InputOtp from "primevue-vaultic/inputotp";
+import Message from 'primevue-vaultic/message';
+import VaulticOTP from './VaulticOTP.vue';
 
 import app from '../../Objects/Stores/AppStore';
 import { popups } from '../../Objects/Stores/PopupStore';
 import { widgetBackgroundHexString } from '../../Constants/Colors';
+import { PopupNames } from '../../Objects/Stores/PopupStore';
 
 export default defineComponent({
     name: "EnterMFACodePopup",
@@ -48,66 +40,50 @@ export default defineComponent({
         ObjectView,
         ObjectPopup,
         InputOtp,
-        Message
+        Message,
+        VaulticOTP
     },
     emits: ['onConfirm', 'onClose'],
     setup(_, ctx)
     {
-        const otp: Ref<any> = ref(null);
-        const currentErrorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor.value);
+        const otp: Ref<any> = ref();
+        const currentErrorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.r);
         const currentPrimaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const popupInfo = popups.enterMFACode;
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.p.p);
         const mfaCode: Ref<string> = ref('');
-
-        const isValid: Ref<boolean> = ref(false);
-        const invalidMessage: Ref<string> = ref('');
 
         const background: Ref<string> = ref(widgetBackgroundHexString());
 
         async function onConfirm()
         {
-            otp;
-            isValid.value = true;
-            if (!mfaCode.value || mfaCode.value.length != 6)
-            {
-                invalidate('Please enter a valid code');
-                return;
-            }
-
             ctx.emit('onConfirm', mfaCode.value);
         }
 
         function invalidate(message: string)
         {
-            mfaCode.value = '';
-            isValid.value = false;
-            invalidMessage.value = message;
-
-            otp.value.$el.children[0].focus();
+            otp.value.invalidate(message);
         }
 
-        onMounted(() =>
-        {
-            otp.value.$el.children[0].focus();
-            app.popups.addOnEnterHandler(popupInfo.enterOrder!, onConfirm);
-        });
+        // onMounted(() =>
+        // {
+        //     app.popups.addOnEnterHandler(popupInfo.enterOrder!, onConfirm);
+        // });
 
-        onUnmounted(() =>
-        {
-            app.popups.removeOnEnterHandler(popupInfo.enterOrder!);
-        });
+        // onUnmounted(() =>
+        // {
+        //     app.popups.removeOnEnterHandler(popupInfo.enterOrder!);
+        // });
 
         return {
+            otp,
             color,
             mfaCode,
-            isValid,
-            invalidMessage,
             zIndex: popupInfo.zIndex,
             background,
             currentPrimaryColor,
             currentErrorColor,
-            otp,
+            PopupNames,
             onConfirm,
             invalidate
         }

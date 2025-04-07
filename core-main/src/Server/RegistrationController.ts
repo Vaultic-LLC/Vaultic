@@ -3,17 +3,17 @@ import { AxiosHelper } from "./AxiosHelper";
 
 export interface RegistrationController
 {
-    start: (startClientRegistrationRequest: string, email: string) => Promise<StartRegistrationResponse>;
+    start: (startClientRegistrationRequest: string, pendingUserToken: string) => Promise<StartRegistrationResponse>;
     finish: (token: string, finishClientRegistrationRecord: string, firstName: string, lastName: string) => Promise<FinishRegistrationResponse>;
 }
 
 export function createRegistrationController(axiosHelper: AxiosHelper)
 {
-    function start(startClientRegistrationRequest: string, email: string): Promise<StartRegistrationResponse>
+    function start(startClientRegistrationRequest: string, pendingUserToken: string): Promise<StartRegistrationResponse>
     {
         return axiosHelper.sts.post('Register/Start', {
             StartClientRegistrationRequest: startClientRegistrationRequest,
-            Email: email
+            Token: pendingUserToken
         });
     }
 

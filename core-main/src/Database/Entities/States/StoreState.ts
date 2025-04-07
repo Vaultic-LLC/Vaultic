@@ -2,6 +2,8 @@ import { VaulticEntity } from "../VaulticEntity";
 import { Column } from "typeorm";
 import { IStoreState } from "@vaultic/shared/Types/Entities";
 import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
+import { environment } from "../../../Environment";
+import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 
 export class StoreState extends VaulticEntity implements IStoreState
 {
@@ -18,9 +20,11 @@ export class StoreState extends VaulticEntity implements IStoreState
 
     protected internalGetSignableProperties(): string[] 
     {
-        return [
-            nameof<StoreState>("state")
-        ];
+        // don't include state since its already encrypted
+        return [];
+        // return [
+        //     nameof<StoreState>("state")
+        // ];
     }
 
     protected neededBackupProperties(): string[]
@@ -37,6 +41,11 @@ export class StoreState extends VaulticEntity implements IStoreState
         properties.push(nameof<StoreState>("previousSignature"));
 
         return properties;
+    }
+
+    public getCompressableProperties(): string[]
+    {
+        return [nameof<StoreState>("state")];
     }
 
     getEncryptableProperties(): string[]
@@ -75,5 +84,31 @@ export class StoreState extends VaulticEntity implements IStoreState
     public preInsert(): void
     {
         this.previousSignature = this.currentSignature;
+    }
+
+    public static async getUsableState(key: string, state: string, decrypt: boolean = true): Promise<TypedMethodResponse<string>>
+    {
+        let value = state;
+
+        if (decrypt && key)
+        {
+            const result = await environment.utilities.crypt.symmetricDecrypt(key, state);
+            if (!result.success)
+            {
+                throw result;
+            }
+
+            value = result.value;
+        }
+
+        console.time('uncompress');
+        const decompressed = await environment.utilities.data.uncompress(value!);
+        console.timeEnd('uncompress');
+        if (!decompressed)
+        {
+            return TypedMethodResponse.fail();
+        }
+
+        return TypedMethodResponse.success(decompressed);
     }
 }

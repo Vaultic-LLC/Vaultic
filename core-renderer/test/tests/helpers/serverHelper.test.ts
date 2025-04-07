@@ -1,24 +1,22 @@
-import app from "../../src/core/Objects/Stores/AppStore";
+import app, { AppSettings } from "../../src/core/Objects/Stores/AppStore";
 import { api } from "../../src/core/API";
 import { createTestSuite, TestContext } from "../test";
 import { AutoLockTime } from "../../src/core/Types/Settings";
 import StoreUpdateTransaction from "../../src/core/Objects/StoreUpdateTransaction";
+import { logUserIn, testUser } from "../utilities";
 
 let serverHelperTestSuite = createTestSuite("Server Helper");
-
-const masterKey = "test";
-const email = "test@gmail.com"
-
-let publicKey = "";
-let privateKey = "";
 
 serverHelperTestSuite.tests.push({
     name: "Register User Works", func: async (ctx: TestContext) =>
     {
-        const response = await api.helpers.server.registerUser(masterKey, email, "Test", "Test");
-        publicKey = response.PublicKey!;
-        privateKey = response.PrivateKey!;
+        const validateEmailResponse = await api.server.user.validateEmail(testUser.email);
+        ctx.assertTruthy("Validate Email Response Succeeded", validateEmailResponse.Success);
 
+        const verifyEmailResponse = await api.server.user.verifyEmail(validateEmailResponse.PendingUserToken!, validateEmailResponse.Code!);
+        ctx.assertTruthy("Verify Email Response Succeeded", verifyEmailResponse.Success);
+
+        const response = await api.helpers.server.registerUser(testUser.plainMasterKey, validateEmailResponse.PendingUserToken!, "Test", "Test");
         ctx.assertTruthy("Register user works", response.Success);
     }
 });
@@ -26,31 +24,44 @@ serverHelperTestSuite.tests.push({
 serverHelperTestSuite.tests.push({
     name: "First Log In Works", func: async (ctx: TestContext) =>
     {
-        const response = await api.helpers.server.logUserIn(masterKey, email, true, false);
-        ctx.assertTruthy("Log user in works", response.success);
+        const response = await api.helpers.server.logUserIn(testUser.plainMasterKey, testUser.email, true, false);
+        ctx.assertTruthy("Log user in works", response.success && response.value!.Success);
 
-        await api.repositories.users.createUser(masterKey, email, publicKey, privateKey);
+        const createUserResponse = await api.repositories.users.createUser(testUser.plainMasterKey, testUser.email, "Test", "Test");
 
         app.isOnline = true;
-        await app.loadUserData(masterKey, response.value!.UserDataPayload);
+        const loadDataResponse = await app.loadUserData(createUserResponse.value!);
+        ctx.assertTruthy("Load Data works after first login", loadDataResponse);
 
         const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
 
-        const state = app.cloneState();
-        state.settings.value.autoLockTime.value = AutoLockTime.ThirtyMinutes;
+        const state = app.getPendingState()!;
+        const reactiveAppSettings: AppSettings = state.createCustomRef("settings", JSON.parse(JSON.stringify(app.settings)));
+        reactiveAppSettings.a = AutoLockTime.ThirtyMinutes;
+
+        state.commitProxyObject("settings", reactiveAppSettings);
 
         transaction.updateUserStore(app, state);
-        await transaction.commit(masterKey);
+        await transaction.commit(testUser.masterKey);
 
         await app.lock();
     }
 });
 
 serverHelperTestSuite.tests.push({
-    name: "Re Log In Works", func: async (ctx: TestContext) =>
+    name: "Log In Works", func: async (ctx: TestContext) =>
     {
-        const response = await api.helpers.server.logUserIn(masterKey, email, false, false);
-        ctx.assertTruthy("Log user in works", response.success);
+        await logUserIn(ctx);
+    }
+});
+
+serverHelperTestSuite.tests.push({
+    name: "Log In With No Current Data Works", func: async (ctx: TestContext) =>
+    {
+        const recreateDatabase = await api.environment.recreateDatabase();
+        ctx.assertTruthy("Recreate Database worked", recreateDatabase);
+
+        await logUserIn(ctx);
     }
 });
 

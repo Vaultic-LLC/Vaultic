@@ -5,8 +5,9 @@ import { VaulticCache } from "./Cache";
 import { DeviceInfo } from "@vaultic/shared/Types/Device";
 import { GeneratorUtility } from "./Types/Utilities";
 import * as PolyFills from "@vaultic/shared/Types/PolyFills";
-import { CryptUtility } from "./Utilities/CoreCryptUtility";
-import { ICoreHashUtility } from "./Utilities/CoreHashUtility";
+import { CoreCryptUtility } from "./Utilities/CoreCryptUtility";
+import { CoreHashUtility } from "./Utilities/CoreHashUtility";
+import { CoreDataUtility } from "./Utilities/CoreDataUtility";
 PolyFills.a;
 
 export interface SessionHandler
@@ -21,9 +22,10 @@ export interface InternalEnvironment
     sessionHandler: SessionHandler;
     utilities:
     {
-        crypt: CryptUtility;
-        hash: ICoreHashUtility;
+        crypt: CoreCryptUtility;
+        hash: CoreHashUtility;
         generator: GeneratorUtility;
+        data: CoreDataUtility;
     };
     database:
     {

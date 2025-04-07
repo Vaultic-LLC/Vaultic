@@ -1,16 +1,14 @@
 import { x25519 } from '@noble/curves/ed25519';
-import { bytesToHex, hexToBytes } from '@noble/curves/abstract/utils';
 import coreGenerator from './CoreGeneratorUtility';
 import { environment } from '../Environment';
 import { ECEncryptionResult, TypedMethodResponse } from '@vaultic/shared/Types/MethodResponse';
-import { randomBytes } from '@noble/post-quantum/utils';
 import { ml_kem1024 } from '@noble/post-quantum/ml-kem';
 import { ml_dsa87 } from '@noble/post-quantum/ml-dsa';
 import { PublicPrivateKey, Algorithm, VaulticKey, MLKEM1024KeyResult, SignedVaultKey, AsymmetricVaulticKey } from '@vaultic/shared/Types/Keys';
-import { xchacha20poly1305 } from '@noble/ciphers/chacha';
 import { ClientCryptUtility } from '@vaultic/shared/Types/Utilities';
+import errorCodes from '@vaultic/shared/Types/ErrorCodes';
 
-export class CryptUtility implements ClientCryptUtility
+export class CoreCryptUtility implements ClientCryptUtility
 {
     constructor() { }
 
@@ -27,7 +25,7 @@ export class CryptUtility implements ClientCryptUtility
         {
             randomPassword = "";
 
-            let randomValues: Uint8Array = randomBytes(length);
+            let randomValues: Uint8Array = this.randomBytes(length);
             randomValues.forEach(v => randomPassword += possibleCharacters[v % possibleCharactersLength]);
             validRandomPassword = validPasswordTest.test(randomPassword);
         }
@@ -40,37 +38,37 @@ export class CryptUtility implements ClientCryptUtility
         switch (alg)
         {
             case Algorithm.ML_KEM_1024:
-                const encSeed = randomBytes(64);
+                const encSeed = this.randomBytes(64);
                 const encKeys = ml_kem1024.keygen(encSeed);
 
                 return {
-                    public: JSON.vaulticStringify(
+                    public: JSON.stringify(
                         {
                             algorithm: Algorithm.ML_KEM_1024,
                             symmetricAlgorithm: Algorithm.XCHACHA20_POLY1305,
-                            key: bytesToHex(encKeys.publicKey)
+                            key: this.bytesToHex(encKeys.publicKey)
                         }),
-                    private: JSON.vaulticStringify(
+                    private: JSON.stringify(
                         {
                             algorithm: Algorithm.ML_KEM_1024,
                             symmetricAlgorithm: Algorithm.XCHACHA20_POLY1305,
-                            key: bytesToHex(encKeys.secretKey)
+                            key: this.bytesToHex(encKeys.secretKey)
                         })
                 };
             case Algorithm.ML_DSA_87:
-                const sigSeed = randomBytes(32);
+                const sigSeed = this.randomBytes(32);
                 const sigKeys = ml_dsa87.keygen(sigSeed);
 
                 return {
-                    public: JSON.vaulticStringify(
+                    public: JSON.stringify(
                         {
                             algorithm: Algorithm.ML_DSA_87,
-                            key: bytesToHex(sigKeys.publicKey)
+                            key: this.bytesToHex(sigKeys.publicKey)
                         }),
-                    private: JSON.vaulticStringify(
+                    private: JSON.stringify(
                         {
                             algorithm: Algorithm.ML_DSA_87,
-                            key: bytesToHex(sigKeys.secretKey)
+                            key: this.bytesToHex(sigKeys.secretKey)
                         })
                 };
         }
@@ -90,7 +88,7 @@ export class CryptUtility implements ClientCryptUtility
         const tempKeys = await coreGenerator.ECKeys();
         const sharedKey = x25519.getSharedSecret(tempKeys.private, recipientPublicKey);
 
-        const response = await this.symmetricEncrypt(bytesToHex(sharedKey), value);
+        const response = await this.symmetricEncrypt(this.bytesToHex(sharedKey), value);
         if (!response)
         {
             return TypedMethodResponse.propagateFail(response);
@@ -102,14 +100,14 @@ export class CryptUtility implements ClientCryptUtility
     public async ECDecrypt(tempPublicKey: string, usersPrivateKey: string, value: string): Promise<TypedMethodResponse<string>>
     {
         const sharedKey = x25519.getSharedSecret(usersPrivateKey, tempPublicKey);
-        return await this.symmetricDecrypt(bytesToHex(sharedKey), value);
+        return await this.symmetricDecrypt(this.bytesToHex(sharedKey), value);
     }
 
     public async symmetricEncrypt(key: string, value: string): Promise<TypedMethodResponse<string | undefined>>
     {
         try
         {
-            const vaulticKey: VaulticKey = JSON.vaulticParse(key);
+            const vaulticKey: VaulticKey = JSON.parse(key);
             switch (vaulticKey.algorithm)
             {
                 case Algorithm.XCHACHA20_POLY1305:
@@ -119,9 +117,7 @@ export class CryptUtility implements ClientCryptUtility
                         return TypedMethodResponse.fail();
                     }
 
-                    const nonce = randomBytes(24);
-                    const cipher = xchacha20poly1305(hexToBytes(keyHash.value), nonce).encrypt(new TextEncoder().encode(value));
-                    return TypedMethodResponse.success(bytesToHex(new Uint8Array([...nonce, ...cipher])));
+                    return TypedMethodResponse.success(this.xChaChaPoly1305IETFEncrypt(keyHash.value, value));
             }
         }
         catch (e: any)
@@ -136,7 +132,7 @@ export class CryptUtility implements ClientCryptUtility
     {
         try
         {
-            const vaulticKey: VaulticKey = JSON.vaulticParse(key);
+            const vaulticKey: VaulticKey = JSON.parse(key);
             switch (vaulticKey.algorithm)
             {
                 case Algorithm.XCHACHA20_POLY1305:
@@ -146,9 +142,7 @@ export class CryptUtility implements ClientCryptUtility
                         return TypedMethodResponse.fail();
                     }
 
-                    const cipherBytes = hexToBytes(value);
-                    const chacha = xchacha20poly1305(hexToBytes(keyHash.value), cipherBytes.slice(0, 24));
-                    return TypedMethodResponse.success(new TextDecoder().decode(chacha.decrypt(cipherBytes.slice(24))));
+                    return TypedMethodResponse.success(this.xChaChaPoly1305IETFDecrypt(keyHash.value, value));
             }
         }
         catch (e: any)
@@ -156,31 +150,34 @@ export class CryptUtility implements ClientCryptUtility
             await environment.repositories.logs.log(undefined, e.toString());
         }
 
-        return TypedMethodResponse.fail();
+        // Failed to decrypt. Most of the time this should never happen unless the cipher was tampered with.
+        // In that case we want to re fresh all data. The only time we don't want to do that is when checking if the 
+        // master key is valid, but we catch this error to prevent refreshing all data
+        throw TypedMethodResponse.fail(errorCodes.DECRYPTION_FAILED);
     }
 
     public async asymmeticEncrypt(recipientsPublicEncryptingKey: string, value: string): Promise<TypedMethodResponse<MLKEM1024KeyResult | string | undefined>>
     {
         try
         {
-            const vaulticKey: AsymmetricVaulticKey = JSON.vaulticParse(recipientsPublicEncryptingKey);
+            const vaulticKey: AsymmetricVaulticKey = JSON.parse(recipientsPublicEncryptingKey);
             switch (vaulticKey.algorithm)
             {
                 case Algorithm.ML_KEM_1024:
-                    const { cipherText, sharedSecret } = ml_kem1024.encapsulate(hexToBytes(vaulticKey.key));
+                    const { cipherText, sharedSecret } = ml_kem1024.encapsulate(this.hexToBytes(vaulticKey.key));
                     const symmetricVaulticKey: VaulticKey =
                     {
-                        key: bytesToHex(sharedSecret),
+                        key: this.bytesToHex(sharedSecret),
                         algorithm: vaulticKey.symmetricAlgorithm
                     };
 
-                    const encryptedVaultKey = await this.symmetricEncrypt(JSON.vaulticStringify(symmetricVaulticKey), value);
+                    const encryptedVaultKey = await this.symmetricEncrypt(JSON.stringify(symmetricVaulticKey), value);
                     if (!encryptedVaultKey.success)
                     {
                         return encryptedVaultKey;
                     }
 
-                    return TypedMethodResponse.success({ cipherText: bytesToHex(cipherText), value: encryptedVaultKey.value });
+                    return TypedMethodResponse.success({ cipherText: this.bytesToHex(cipherText), value: encryptedVaultKey.value });
             }
         }
         catch (e)
@@ -194,36 +191,36 @@ export class CryptUtility implements ClientCryptUtility
     {
         try
         {
-            const vaulticKey: AsymmetricVaulticKey = JSON.vaulticParse(recipientsPrivateEncryptingKey);
+            const vaulticKey: AsymmetricVaulticKey = JSON.parse(recipientsPrivateEncryptingKey);
             switch (vaulticKey.algorithm)
             {
                 case Algorithm.ML_KEM_1024:
-                    const sharedSecret = ml_kem1024.decapsulate(hexToBytes(cipherText), hexToBytes(vaulticKey.key));
+                    const sharedSecret = ml_kem1024.decapsulate(this.hexToBytes(cipherText), this.hexToBytes(vaulticKey.key));
                     const symmetricVaulticKey: VaulticKey =
                     {
                         algorithm: vaulticKey.symmetricAlgorithm,
-                        key: bytesToHex(sharedSecret)
+                        key: this.bytesToHex(sharedSecret)
                     };
 
-                    return environment.utilities.crypt.symmetricDecrypt(JSON.vaulticStringify(symmetricVaulticKey), value);
+                    return environment.utilities.crypt.symmetricDecrypt(JSON.stringify(symmetricVaulticKey), value);
             }
         }
         catch (e)
         {
         }
 
-        return TypedMethodResponse.fail();
+        return TypedMethodResponse.fail(errorCodes.DECRYPTION_FAILED);
     }
 
     public async sign(sendersPrivateSigningKey: string, message: string): Promise<TypedMethodResponse<string | undefined>>
     {
         try
         {
-            const vaulticKey: VaulticKey = JSON.vaulticParse(sendersPrivateSigningKey);
+            const vaulticKey: VaulticKey = JSON.parse(sendersPrivateSigningKey);
             switch (vaulticKey.algorithm)
             {
                 case Algorithm.ML_DSA_87:
-                    return TypedMethodResponse.success(bytesToHex(ml_dsa87.sign(hexToBytes(vaulticKey.key), new TextEncoder().encode(message))));
+                    return TypedMethodResponse.success(this.bytesToHex(ml_dsa87.sign(this.hexToBytes(vaulticKey.key), new TextEncoder().encode(message))));
             }
         }
         catch (e)
@@ -238,12 +235,12 @@ export class CryptUtility implements ClientCryptUtility
     {
         try
         {
-            const vaulticKey: VaulticKey = JSON.vaulticParse(sendersPublicSigningKey);
+            const vaulticKey: VaulticKey = JSON.parse(sendersPublicSigningKey);
             switch (vaulticKey.algorithm)
             {
                 case Algorithm.ML_DSA_87:
-                    return new TypedMethodResponse(ml_dsa87.verify(hexToBytes(vaulticKey.key), new TextEncoder().encode(JSON.vaulticStringify(signedVaultKey.message)),
-                        hexToBytes(signedVaultKey.signature)));
+                    return new TypedMethodResponse(ml_dsa87.verify(this.hexToBytes(vaulticKey.key), new TextEncoder().encode(JSON.stringify(signedVaultKey.message)),
+                        this.hexToBytes(signedVaultKey.signature)));
             }
         }
         catch (e)
@@ -252,7 +249,29 @@ export class CryptUtility implements ClientCryptUtility
 
         return TypedMethodResponse.fail();
     }
-}
 
-const cryptUtility = new CryptUtility();
-export default cryptUtility;
+    public randomBytes(length: number): Uint8Array
+    {
+        throw "Not Implemented";
+    }
+
+    public bytesToHex(bytes: Uint8Array): string
+    {
+        throw "Not Implemented";
+    }
+
+    public hexToBytes(hex: string): Uint8Array
+    {
+        throw "Not Implemented";
+    }
+
+    protected xChaChaPoly1305IETFEncrypt(key: string, value: string): string
+    {
+        throw "Not Implemented";
+    }
+
+    protected xChaChaPoly1305IETFDecrypt(key: string, value: string): string
+    {
+        throw "Not Implemented";
+    }
+}

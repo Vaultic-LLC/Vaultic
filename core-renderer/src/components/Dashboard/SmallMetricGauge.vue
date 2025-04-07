@@ -15,7 +15,6 @@ import { ComputedRef, Ref, computed, defineComponent, onMounted, ref, watch } fr
 import { Doughnut } from 'vue-chartjs'
 
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
-import { mixHexes } from '../../Helpers/ColorHelper';
 import animationHelper from '../../Helpers/animationHelper';
 import app from "../../Objects/Stores/AppStore";
 
@@ -44,7 +43,7 @@ export default defineComponent({
                 return false;
             }
 
-            return props.model.pulse === true || (props.model.filledAmount / props.model.totalAmount * 100 >= app.settings.value.percentMetricForPulse.value);
+            return props.model.pulse === true || (props.model.filledAmount / props.model.totalAmount * 100 >= app.settings.p);
         });
 
         const totalAmount: ComputedRef<number> = computed(() => props.model.totalAmount == 0 ? 1 : props.model.totalAmount);
@@ -54,7 +53,11 @@ export default defineComponent({
         const textWidth: ComputedRef<string> = computed(() =>
         {
             const digits = props.model.filledAmount.toString().length + props.model.totalAmount.toString().length;
-            if (digits > 5)
+            if (digits > 6)
+            {
+                return "0.9vw";
+            }
+            else if (digits > 5)
             {
                 return "1vw";
             }
@@ -93,41 +96,7 @@ export default defineComponent({
                 datasets: [
                     {
                         data: [props.model.filledAmount, totalAmount.value - props.model.filledAmount],
-                        //backgroundColor: [primaryColor.value, '#191919'],
-                        backgroundColor: function (context: any)
-                        {
-                            const chart = context.chart;
-                            const { ctx, chartArea } = chart;
-
-                            if (!chartArea)
-                            {
-                                // This case happens on initial chart load
-                                return;
-                            }
-
-                            // let gradient = ctx.createLinearGradient(0, 0, 0, chartArea.bottom);
-                            const x = chartArea.width / 2;
-                            let gradient = ctx.createRadialGradient(x, x, 0, x, x, x);
-                            gradient.addColorStop(0, mixHexes(primaryColor.value, '#867E7E'));
-                            //gradient.addColorStop(fillAmount.value / 100 / 2, primaryColor.value);
-                            //gradient.addColorStop(fillAmount.value / 100, mixHexes(primaryColor.value, '#363131'));
-                            gradient.addColorStop(1, primaryColor.value);
-                            // hex value already has opacity
-                            // if (primaryColor.value.length > 7)
-                            // {
-                            // 	gradient.addColorStop(0, primaryColor.value);
-                            // 	gradient.addColorStop(0.35, primaryColor.value);
-                            // 	gradient.addColorStop(1, primaryColor.value);
-                            // }
-                            // else
-                            // {
-                            // 	gradient.addColorStop(0, primaryColor.value + "88");
-                            // 	gradient.addColorStop(0.35, primaryColor.value + "44");
-                            // 	gradient.addColorStop(1, primaryColor.value + "00");
-                            // }
-
-                            return [gradient, '#191919'];
-                        },
+                        backgroundColor: [primaryColor.value, '#191919'],
                         borderColor: 'transparent',
                     }
                 ]
@@ -141,7 +110,7 @@ export default defineComponent({
                 return;
             }
 
-            doughnutChart.value.chart.data.datasets[0].data = [props.model.filledAmount, props.model.totalAmount - props.model.filledAmount];
+            doughnutChart.value.chart.data.datasets[0].data = [props.model.filledAmount, totalAmount.value - props.model.filledAmount];
             doughnutChart.value.chart.data.datasets[0].backgroundColor = [primaryColor.value, '#191919'];
             doughnutChart.value.chart.data.datasets[0].borderColor = 'transparent';
 
@@ -207,7 +176,7 @@ export default defineComponent({
             onClick
         }
     }
-})
+}) as any
 </script>
 
 <style scoped>

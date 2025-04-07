@@ -21,7 +21,7 @@ import ObjectMultiSelect from '../InputFields/ObjectMultiSelect.vue';
 import app from '../../Objects/Stores/AppStore';
 import { ObjectSelectOptionModel } from '../../Types/Models';
 import { UserVaultIDAndVaultID } from '@vaultic/shared/Types/Entities';
-import { useConfirm } from 'primevue/useconfirm';
+import { useConfirm } from 'primevue-vaultic/useconfirm';
 
 export default defineComponent({
     name: "ClearBreachesView",
@@ -42,7 +42,7 @@ export default defineComponent({
             app.popups.showLoadingIndicator(color.value, "Clearing Data Breaches");
 
             const vaultIDs: number[] = selectedVaults.value.map(v => v.backingObject.vaultID);
-            const success = await app.vaultDataBreaches.clearDataBreaches(vaultIDs);
+            const success = await app.runAsAsyncProcess(() => app.vaultDataBreaches.clearDataBreaches(vaultIDs));
 
             if (success)
             {
@@ -93,6 +93,7 @@ export default defineComponent({
 
                 const model: ObjectSelectOptionModel =
                 {
+                    id: v.vaultID.toString(),
                     label: v.name,
                     backingObject: ids
                 };

@@ -67,7 +67,7 @@ class LogRepository
             data.push([logs[i].time.toString(), logs[i].currentUserEmail, logs[i].errorCode.toString(), logs[i].message, logs[i].callStack]);
         }
 
-        return JSON.vaulticStringify(data);;
+        return JSON.stringify(data);;
     }
 
     async clearOldLogs(email: string): Promise<boolean>
@@ -88,7 +88,7 @@ class LogRepository
         }
         catch (e) 
         {
-            console.log(`Failed to clear logs: ${e}`);
+            await this.log(undefined, "Failed to clear logs");
         }
 
         return false;

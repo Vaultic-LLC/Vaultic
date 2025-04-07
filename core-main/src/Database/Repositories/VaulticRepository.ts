@@ -4,6 +4,7 @@ import { StoreState } from "../Entities/States/StoreState";
 import { EntityState } from "@vaultic/shared/Types/Entities";
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import logRepository from "./LogRepository";
+import { environment } from "../../Environment";
 
 export class VaulticRepository<T extends VaulticEntity>
 {
@@ -67,6 +68,24 @@ export class VaulticRepository<T extends VaulticEntity>
         return saveableEntity;
     }
 
+    private async prepDataForSave(key: string, entity: T): Promise<boolean>
+    {
+        const properties = entity.getCompressableProperties();
+        for (let i = 0; i < properties.length; i++)
+        {
+            if (entity.updatedProperties.findIndex(p => p === properties[i]) == -1)
+            {
+                continue;
+            }
+
+            console.time('compress');
+            entity[properties[i]] = await environment.utilities.data.compress(entity[properties[i]]);
+            console.timeEnd('compress');
+        }
+
+        return this.encryptUpdatedProperties(key, entity);
+    }
+
     private encryptUpdatedProperties(key: string, entity: T): Promise<boolean>
     {
         const encryptableProperties = entity.getEncryptableProperties()
@@ -77,7 +96,7 @@ export class VaulticRepository<T extends VaulticEntity>
 
     public async signAndInsert(manager: EntityManager, key: string, entity: T): Promise<boolean>
     {
-        if (!(await this.encryptUpdatedProperties(key, entity)))
+        if (!(await this.prepDataForSave(key, entity)))
         {
             return false;
         }
@@ -97,7 +116,7 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to insert entity: ${JSON.vaulticStringify(entity)}`)
+            console.log(`Filed to insert entity: ${JSON.stringify(entity)}`)
             console.log(e);
             await logRepository.log(undefined, `Failed to insert entity\n ${e}`);
             return false;
@@ -118,7 +137,7 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to insert existing entity: ${JSON.vaulticStringify(entity)}`)
+            console.log(`Filed to insert existing entity: ${JSON.stringify(entity)}`)
             console.log(e);
             await logRepository.log(undefined, `Failed to insert existing entity\n ${e}`);
             return false;
@@ -134,15 +153,19 @@ export class VaulticRepository<T extends VaulticEntity>
             return true;
         }
 
-        if (!(await this.encryptUpdatedProperties(key, entity)))
+        console.time("30");
+        if (!(await this.prepDataForSave(key, entity)))
         {
             return false;
         }
+        console.timeEnd("30");
 
+        console.time("31");
         if (!(await this.checkAndSign(key, entity)))
         {
             return false;
         }
+        console.timeEnd("31");
 
         const repo = manager.withRepository(this.repository);
 
@@ -164,13 +187,12 @@ export class VaulticRepository<T extends VaulticEntity>
 
         try 
         {
-            console.log(`Updating. Old Entity: ${JSON.stringify(entity)}\n New Entity: ${JSON.stringify(mockEntity)}\n`);
             const result = await repo.update(entity.identifier(), mockEntity);
             return result.affected == 1;
         }
         catch (e)
         {
-            console.log(`Filed to update entity: ${JSON.vaulticStringify(entity)}`)
+            console.log(`Filed to update entity: ${JSON.stringify(entity)}`)
             console.log(e);
             await logRepository.log(undefined, `Failed to update entity\n ${e}`);
         }
@@ -187,7 +209,7 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to override entity: ${JSON.vaulticStringify(entity)}`)
+            console.log(`Filed to override entity: ${JSON.stringify(entity)}`)
             console.log(e);
             await logRepository.log(undefined, `Failed to override entity\n ${JSON.stringify(entity)}, \n${e}`);
             return false;
@@ -222,7 +244,7 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to reset tracking entity: ${JSON.vaulticStringify(entity)}`)
+            console.log(`Filed to reset tracking entity: ${JSON.stringify(entity)}`)
             console.log(e);
             await logRepository.log(undefined, `Failed to reset tracking\n ${e}`);
         }
@@ -241,7 +263,7 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to delete entity: ${JSON.vaulticStringify(findBy)}`)
+            console.log(`Filed to delete entity: ${JSON.stringify(findBy)}`)
             console.log(e);
             await logRepository.log(undefined, `Failed to delete entity\n ${e}`);
         }
@@ -264,6 +286,17 @@ export class VaulticRepository<T extends VaulticEntity>
         }
 
         return [true, entity];
+    }
+
+    public async retrieveAndVerifyReactive(key: string, predicate: (repository: Repository<T>) => Promise<T | null>): Promise<T | null>
+    {
+        const response = await this.retrieveAndVerify(key, predicate);
+        if (response[0])
+        {
+            return response[1].makeReactive();
+        }
+
+        return null;
     }
 
     public async retrieveAndVerifyAll(key: string, predicate: (repository: Repository<T>) => Promise<T[]>): Promise<T[] | boolean>

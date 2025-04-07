@@ -7,13 +7,16 @@
     </div>
     <div class="actionControl">
         <Transition name="addObjectFade" mode="out-in">
-            <FilterView v-if="activeContent == 2 && activeTable == 0" :creating="true" :model="passwordFilterModel" />
-            <FilterView v-else-if="activeContent == 2 && activeTable == 1" :creating="true" :model="valueFilterModel" />
-            <GroupView v-else-if="activeContent == 3 && activeTable == 0" :creating="true"
-                :model="passwordGroupModel" />
-            <GroupView v-else-if="activeContent == 3 && activeTable == 1" :creating="true" :model="valueGroupModel" />
-            <PasswordView v-else-if="activeContent < 2 && activeTable == 0" :creating="true" :model="passwordModel" />
-            <ValueView v-else-if="activeContent < 2 && activeTable == 1" :creating="true" :model="valueModel" />
+            <FilterView v-if="activeContent == 2 && currentPasswordValueType == 0" :creating="true" :model="passwordFilterModel" 
+                :currentPrimaryDataType="currentPasswordValueType" />
+            <FilterView v-else-if="activeContent == 2 && currentPasswordValueType == 1" :creating="true" :model="valueFilterModel"
+                :currentPrimaryDataType="currentPasswordValueType" />
+            <GroupView v-else-if="activeContent == 3 && currentPasswordValueType == 0" :creating="true" :model="passwordGroupModel" 
+                :currentPrimaryDataType="currentPasswordValueType" />
+            <GroupView v-else-if="activeContent == 3 && currentPasswordValueType == 1" :creating="true" :model="valueGroupModel"
+                :currentPrimaryDataType="currentPasswordValueType" />
+            <PasswordView v-else-if="activeContent < 2 && currentPasswordValueType == 0" :creating="true" :model="passwordModel" />
+            <ValueView v-else-if="activeContent < 2 && currentPasswordValueType == 1" :creating="true" :model="valueModel" />
         </Transition>
     </div>
 </template>
@@ -26,11 +29,11 @@ import FilterView from "../ObjectViews/FilterView.vue";
 import GroupView from "../ObjectViews/GroupView.vue";
 import TableSelector from '../../components/TableSelector.vue';
 
-import { ColorPalette } from '../../Types/Colors';
 import { DataType, defaultFilter, defaultGroup, defaultPassword, defaultValue, Filter, Group, NameValuePair, Password } from '../../Types/DataTypes';
 import { SingleSelectorItemModel } from '../../Types/Models';
 import { hideAll } from 'tippy.js';
 import app from "../../Objects/Stores/AppStore";
+import { ColorPalette } from '@vaultic/shared/Types/Color';
 
 export default defineComponent({
     name: "AddObjectPopup",
@@ -46,8 +49,6 @@ export default defineComponent({
     setup(props)
     {
         let activeContent: Ref<number> = ref(props.initalActiveContent);
-        const activeTable: ComputedRef<DataType> = computed(() => app.activePasswordValuesTable);
-
         const currentColorPalette: ComputedRef<ColorPalette> = computed(() => app.userPreferences.currentColorPalette);
 
         const passwordModel: Ref<Password> = ref(defaultPassword());
@@ -58,15 +59,16 @@ export default defineComponent({
         const valueFilterModel: Ref<Filter> = ref(defaultFilter(DataType.NameValuePairs));
         const valueGroupModel: Ref<Group> = ref(defaultGroup(DataType.NameValuePairs));
 
+        const currentPasswordValueType: Ref<DataType> = ref(app.activePasswordValuesTable);
         const primaryColor: ComputedRef<string> = computed(() =>
         {
-            switch (app.activePasswordValuesTable)
+            switch (currentPasswordValueType.value)
             {
                 case DataType.NameValuePairs:
-                    return app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value;
+                    return app.userPreferences.currentColorPalette.v.p;
                 case DataType.Passwords:
                 default:
-                    return app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value;
+                    return app.userPreferences.currentColorPalette.p.p;
             }
         });
 
@@ -74,8 +76,8 @@ export default defineComponent({
         {
             return {
                 title: ref("Passwords"),
-                color: ref(currentColorPalette.value.passwordsColor.value.primaryColor.value),
-                isActive: computed(() => app.activePasswordValuesTable == DataType.Passwords),
+                color: ref(currentColorPalette.value.p.p),
+                isActive: computed(() => currentPasswordValueType.value == DataType.Passwords),
                 onClick: () => { updatePasswordsValuesTable(DataType.Passwords); }
             }
         });
@@ -84,8 +86,8 @@ export default defineComponent({
         {
             return {
                 title: ref("Values"),
-                color: ref(currentColorPalette.value.valuesColor.value.primaryColor.value),
-                isActive: computed(() => app.activePasswordValuesTable == DataType.NameValuePairs),
+                color: ref(currentColorPalette.value.v.p),
+                isActive: computed(() => currentPasswordValueType.value == DataType.NameValuePairs),
                 onClick: () => { updatePasswordsValuesTable(DataType.NameValuePairs); }
             }
         });
@@ -94,7 +96,7 @@ export default defineComponent({
         {
             return {
                 title: ref("Add Filter"),
-                color: ref(currentColorPalette.value.filtersColor.value),
+                color: ref(currentColorPalette.value.f),
                 isActive: computed(() => activeContent.value == DataType.Filters),
                 onClick: () => { filtersGroupsClicked(DataType.Filters); }
             }
@@ -104,7 +106,7 @@ export default defineComponent({
         {
             return {
                 title: ref("Add Group"),
-                color: ref(currentColorPalette.value.groupsColor.value),
+                color: ref(currentColorPalette.value.g),
                 isActive: computed(() => activeContent.value == DataType.Groups),
                 onClick: () => { filtersGroupsClicked(DataType.Groups); }
             }
@@ -113,10 +115,10 @@ export default defineComponent({
         const addTableControl: ComputedRef<SingleSelectorItemModel> = computed(() =>
         {
             return {
-                title: computed(() => app.activePasswordValuesTable == DataType.Passwords ? "Add Password" : "Add Value"),
+                title: computed(() => currentPasswordValueType.value == DataType.Passwords ? "Add Password" : "Add Value"),
                 color: primaryColor,
                 isActive: computed(() => activeContent.value <= 1),
-                onClick: () => { activeContent.value = app.activePasswordValuesTable; }
+                onClick: () => { activeContent.value = currentPasswordValueType.value; }
             }
         });
 
@@ -129,14 +131,13 @@ export default defineComponent({
                 activeContent.value = tableItem;
             }
 
-            app.activePasswordValuesTable = tableItem;
+            currentPasswordValueType.value = tableItem;
         }
 
         function filtersGroupsClicked(tableItem: number)
         {
             hideAll();
             activeContent.value = tableItem;
-            app.activeFilterGroupsTable = tableItem;
         }
 
         watch(() => props.initalActiveContent, (newValue) =>
@@ -146,7 +147,7 @@ export default defineComponent({
 
         return {
             activeContent,
-            activeTable,
+            currentPasswordValueType,
             passwordTableControl,
             valuesTableControl,
             filtersTableControl,

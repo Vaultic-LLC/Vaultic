@@ -104,7 +104,10 @@ export default defineComponent({
     min-width: 25%;
     text-align: center;
     position: relative;
-    z-index: 2
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .tableHeaderTab.regular {

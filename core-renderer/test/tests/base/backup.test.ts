@@ -7,6 +7,13 @@
 //          - like the merging code should not be ran during 99% of tests since all values are being added on the same device.
 //            If it is being attempted, somethign is wrong
 
+// Additional Tests
+// [ ] User Has changes and an out of date signature when logging in and when backing up
+// [ ] 2 different scenarios, both need to be tested
+// [ ] User updates an item on their device but someone else has deleted the item on another device before them
+// [ ] the change tracking that the user has for updating should be removed and not pushed to the server
+// [ ] test to make sure environment cache gets cleared if exception occurs when syncing after logging out
+
 
 import { defaultPassword } from "../../src/core/Types/DataTypes";
 import { api } from "../../src/core/API";

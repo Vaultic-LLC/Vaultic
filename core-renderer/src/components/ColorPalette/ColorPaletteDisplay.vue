@@ -10,7 +10,8 @@
         <div class="colorPaletteContainer" @click.stop="onPaletteSelected" @mouseenter="hoveringDisplay = true"
             @mouseleave="hoveringDisplay = false"
             :class="{ notCreated: !created, hover: hoveringDisplay || hoveringIcon }">
-            <SelectorButton v-if="created" :selectorButtonModel="selectorButtonModel" class="selectorButton" />
+            <SelectorButton v-if="created" :selectorButtonModel="selectorButtonModel" class="selectorButton" 
+                :width="'clamp(14px, 1.4vw, 30px)'" />
             <div v-else class="addColorIconContainer">
                 <IonIcon :name="'add-outline'" />
             </div>
@@ -38,7 +39,6 @@ import SelectorButton from "../InputFields/SelectorButton.vue";
 import IonIcon from "../Icons/IonIcon.vue";
 import EditColorPalettePopup from "../ObjectPopups/EditPopups/EditColorPalettePopup.vue";
 
-import { ColorPalette } from "../../Types/Colors";
 import { SelectorButtonModel } from "../../Types/Models";
 import ObjectPopup from "../ObjectPopups/ObjectPopup.vue";
 import { getLinearGradientFromColor } from "../../Helpers/ColorHelper";
@@ -46,6 +46,7 @@ import * as TWEEN from '@tweenjs/tween.js';
 import { RGBColor } from '../../Types/Colors';
 import { hexToRgb } from '../../Helpers/ColorHelper';
 import app from "../../Objects/Stores/AppStore";
+import { ColorPalette } from "@vaultic/shared/Types/Color";
 
 export default defineComponent({
     name: "ColorPaletteDisplay",
@@ -60,16 +61,16 @@ export default defineComponent({
     setup(props)
     {
         const editButton: Ref<HTMLElement | null> = ref(null);
-        const colorPalette: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[props.index].value);
+        const colorPalette: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[props.index]);
 
-        const primaryColor: ComputedRef<string> = computed(() => colorPalette.value.passwordsColor.value.primaryColor.value);
-        const valuesColor: ComputedRef<string> = computed(() => colorPalette.value.valuesColor.value.primaryColor.value);
+        const primaryColor: ComputedRef<string> = computed(() => colorPalette.value.p.p);
+        const valuesColor: ComputedRef<string> = computed(() => colorPalette.value.v.p);
 
         const editIconBackgroundColor: ComputedRef<string> = computed(() => getLinearGradientFromColor(primaryColor.value));
         const valueBackgroundColor: ComputedRef<string> = computed(() => getLinearGradientFromColor(valuesColor.value));
 
-        const created: ComputedRef<boolean> = computed(() => colorPalette.value.isCreated.value);
-        const editable: ComputedRef<boolean> = computed(() => colorPalette.value.editable.value);
+        const created: ComputedRef<boolean> = computed(() => colorPalette.value.i);
+        const editable: ComputedRef<boolean> = computed(() => colorPalette.value.e);
 
         const addColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const addColorGradient: Ref<string> = ref(getLinearGradientFromColor(app.userPreferences.currentPrimaryColor.value));
@@ -82,8 +83,8 @@ export default defineComponent({
         const selectorButtonModel: ComputedRef<SelectorButtonModel> = computed(() =>
         {
             return {
-                isActive: computed(() => colorPalette.value.id.value == app.userPreferences.currentColorPalette.id.value),
-                color: computed(() => colorPalette.value.passwordsColor.value.primaryColor.value),
+                isActive: computed(() => colorPalette.value.id == app.userPreferences.currentColorPalette.id),
+                color: computed(() => colorPalette.value.p.p),
                 onClick: onPaletteSelected
             }
         });
@@ -96,7 +97,7 @@ export default defineComponent({
                 return;
             }
 
-            colorPalette.value.active.value = true;
+            colorPalette.value.a = true;
             app.userPreferences.updateAndCommitCurrentColorPalette(colorPalette.value);
         }
 
@@ -188,7 +189,7 @@ export default defineComponent({
     height: 100%;
     width: 100%;
     min-width: 91.2px;
-    min-height: 30.2px;
+    min-height: 25px;
     margin: 10px;
 }
 
@@ -251,7 +252,7 @@ export default defineComponent({
 
 .colorPaletteContainer .passwordColor {
     background: v-bind(editIconBackgroundColor);
-    width: clamp(12px, 1.2vw, 30px);
+    width: clamp(12px, 1.4vw, 30px);
     aspect-ratio: 1/ 1;
     border-top-left-radius: 20px;
     border-bottom-left-radius: 20px;
@@ -259,7 +260,7 @@ export default defineComponent({
 
 .colorPaletteContainer .valuesColor {
     background: v-bind(valueBackgroundColor);
-    width: clamp(12px, 1.2vw, 30px);
+    width: clamp(12px, 1.4vw, 30px);
     aspect-ratio: 1/ 1;
     border-top-right-radius: 20px;
     border-bottom-right-radius: 20px;

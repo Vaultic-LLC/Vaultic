@@ -1,5 +1,5 @@
 <template>
-    <VaulticTable :id="id" :color="color" :columns="tableColumns" :loading="externalLoading"
+    <VaulticTable :id="id" :color="color" :columns="tableColumns" :loading="externalLoading" :searchBarSizeModel="searchBarSizeModel"
         :headerTabs="userHeaderTab" :dataSources="tableDataSources" :emptyMessage="emptyMessage" :allowPinning="false" :allowSearching="isOnline"
         :onEdit="hideEdit === true || disable === true ? undefined : onEditMember" :onDelete="disable === true ? undefined : onDeleteMember">
         <template #tableControls>
@@ -9,7 +9,7 @@
     <Popover ref="popover">
         <div class="memberTable__addMemberPopupContainer">
             <VaulticFieldset :centered="true">
-                <ObjectSingleSelect :label="'Member'" :color="color" :loading="loading" v-model="selectedUserDemographics"
+                <ObjectSingleSelect ref="memberSelector" :label="'Username'" :color="color" :loading="loading" v-model="selectedUserDemographics"
                     :options="allSearchedUserDemographics" :disabled="disableMemberSearch" :width="'100%'" :maxWidth="''"
                     :emptyMessage="'Start typing to search for Users'" :noResultsMessage="'No Users found with this Username'"
                     @onSearch="onUserSearch" @update:model-value="onUserSelected"/>
@@ -31,13 +31,12 @@ import TextInputField from '../InputFields/TextInputField.vue';
 import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
 import VaulticTable from '../Table/VaulticTable.vue';
 import AddButton from '../Table/Controls/AddButton.vue';
-import Popover from 'primevue/popover';
+import Popover from 'primevue-vaultic/popover';
 import ObjectSingleSelect from '../InputFields/ObjectSingleSelect.vue';
 import EnumInputField from '../InputFields/EnumInputField.vue';
 import PopupButton from '../InputFields/PopupButton.vue';
-import ObjectMultiSelect from '../InputFields/ObjectMultiSelect.vue';
 
-import { HeaderTabModel, ObjectSelectOptionModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
+import { ComponentSizeModel, HeaderTabModel, ObjectSelectOptionModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { api } from '../../API';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
@@ -58,12 +57,12 @@ export default defineComponent({
         ObjectSingleSelect,
         EnumInputField,
         PopupButton,
-        ObjectMultiSelect
     },
     props: ['tabOverride', 'currentMembers', 'emptyMessage', 'color', 'externalLoading', 'id', 'hidePermissions', 'hideEdit', 'disable'],
     setup(props)
     {
         const popover: Ref<any> = ref();
+        const memberSelector: Ref<any> = ref();
         const refreshKey: Ref<string> = ref("");
         const color: ComputedRef<string> = computed(() => props.color);
         const doHidePermissions: ComputedRef<boolean> = computed(() => props.hidePermissions === true);
@@ -72,7 +71,7 @@ export default defineComponent({
         const currentMemberIDs: Ref<string> = ref('[]');
         
         const searchText: ComputedRef<Ref<string>> = computed(() => ref(''));
-        const memberCollection: SortedCollection = new SortedCollection([]);
+        const memberCollection: SortedCollection = new SortedCollection([], () => members.value, "username");
 
         const disableMemberSearch: Ref<boolean> = ref(false);
         const selectedUserDemographics: Ref<ObjectSelectOptionModel | undefined> = ref();
@@ -100,11 +99,11 @@ export default defineComponent({
         const tableColumns: ComputedRef<TableColumnModel[]> = computed(() => 
         {
             const models: TableColumnModel[] = []
-            models.push({ header: "Username", field: "username", isFielded: false});
+            models.push(new TableColumnModel("Username", "username").setIsFielded(false));
 
             if (!doHidePermissions.value)
             {
-                models.push({ header: "Permissions", field: "permission", isFielded: false, component: 'PermissionsCell' });
+                models.push(new TableColumnModel("Permission", "permission").setIsFielded(false).setComponent("PermissionsCell"));
             }
 
             return models;
@@ -122,12 +121,19 @@ export default defineComponent({
             ]
         });
 
+        const searchBarSizeModel: Ref<ComponentSizeModel> = ref({
+            width: '8vw',
+            maxWidth: '250px',
+            minWidth: '85px',
+            minHeight: '25px'
+        });
+
         function setTableRows()
         {
-            const rows: TableRowModel<Member>[] = [];
-            members.value.forEach(v =>
+            const rows: TableRowModel[] = [];
+            members.value.forEach((v, k, map) =>
             {
-                rows.push(new TableRowModel(v.userID.toString(), (obj: Member) => obj.userID, undefined, undefined, undefined, v));
+                rows.push(new TableRowModel(k));
             });
 
             memberCollection.updateValues(rows);
@@ -175,6 +181,7 @@ export default defineComponent({
                 {
                     const model: ObjectSelectOptionModel = 
                     {
+                        id: u.UserID.toString(),
                         label: u.Username,
                         backingObject: u
                     }
@@ -208,6 +215,7 @@ export default defineComponent({
                 editingPermission.value = serverPermissionToViewableServerPermission(editingMember.value!.permission);
                 selectedUserDemographics.value = 
                 {
+                    id: editingMember.value!.userID.toString(),
                     label: editingMember.value!.username,
                     backingObject: editingMember.value
                 };
@@ -221,6 +229,22 @@ export default defineComponent({
 
         function onUserSelected(model: ObjectSelectOptionModel)
         {
+            if (!model || !model.backingObject)
+            {
+                editingMember.value =
+                {
+                    userID: -1,
+                    firstName: '',
+                    lastName: '',
+                    username: '',
+                    permission: ServerPermissions.View,
+                    icon: undefined,
+                    publicEncryptingKey: undefined
+                };
+
+                return;
+            }
+
             const userDemographics: UserDemographics = model.backingObject;
             editingMember.value!.userID = userDemographics.UserID;
             editingMember.value!.firstName = userDemographics.FirstName;
@@ -237,6 +261,12 @@ export default defineComponent({
 
         function onSaveMember()
         {
+            if (!editingMember.value?.userID || editingMember.value.userID < 0)
+            {
+                memberSelector.value.invalidate("Please select a User");
+                return;
+            }
+
             editingMember.value!.permission = viewableServerPermissionsToServerPermissions(editingPermission.value);
             if (members.value.has(editingMember.value!.userID) && !addedMembers.has(editingMember.value!.userID))
             {
@@ -250,6 +280,7 @@ export default defineComponent({
             members.value.set(editingMember.value!.userID, editingMember.value!);
             selectedUserDemographics.value = 
             {
+                id: "",
                 label: "",
                 backingObject: {}
             };
@@ -310,6 +341,7 @@ export default defineComponent({
 
         return {
             popover,
+            memberSelector,
             color,
             refreshKey,
             searchText,
@@ -325,6 +357,7 @@ export default defineComponent({
             disableMemberSearch,
             doHidePermissions,
             isOnline,
+            searchBarSizeModel,
             onOpenPopover,
             onDeleteMember,
             onSaveMember,
@@ -341,7 +374,7 @@ export default defineComponent({
 .memberTable__addMemberPopupContainer {
     display: flex;
     flex-direction: column;
-    row-gap: 10px;
+    row-gap: 21px;
     width: 15vw;
     justify-content: center;
     align-items: center;

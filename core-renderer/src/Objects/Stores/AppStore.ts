@@ -1,54 +1,85 @@
+// App store is the first main thing that loads
+import * as PolyFills from "@vaultic/shared/Types/PolyFills";
+PolyFills.a;
+
 import { Ref, ref, ComputedRef, computed, watch } from "vue";
 import { hideAll } from 'tippy.js';
-import { Store, StoreEvents, StoreState } from "./Base";
+import { Store, StoreEvents } from "./Base";
 import { AccountSetupView } from "../../Types/Models";
 import { api } from "../../API"
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
-import { ColorPalette, defaultColorPalettes, emptyUserColorPalettes } from "../../Types/Colors";
-import { AppView, AutoLockTime } from "../../Types/App";
+import { AppView } from "../../Types/App";
 import { ReactiveVaultStore } from "./VaultStore";
 import { UserPreferencesStore } from "./UserPreferencesStore";
 import { VaultDataBreachStore } from "./VaultDataBreachStore";
 import { createPopupStore, PopupStore } from "./PopupStore";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { DisplayVault, IUser, UserData, VaultType, getVaultType } from "@vaultic/shared/Types/Entities";
-import { FilterStatus, DataType } from "../../Types/DataTypes";
-import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
+import { DataType } from "../../Types/DataTypes";
 import { DeviceStore } from "./DeviceStore";
 import { OrganizationStore } from "./OrganizationStore";
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
 import { PasswordStoreState } from "./PasswordStore";
 import { LicenseStatus } from "@vaultic/shared/Types/ClientServerTypes";
+import { AutoLockTime, defaultAppStoreState, FilterStatus, PendingStoreState, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import { ColorPalette, defaultColorPalettes } from "@vaultic/shared/Types/Color";
 
-export interface AppSettings extends IFieldedObject
+export interface AppSettings
 {
-    userColorPalettes: Field<Map<string, Field<ColorPalette>>>;
-    autoLockTime: Field<AutoLockTime>;
-    multipleFilterBehavior: Field<FilterStatus>;
-    oldPasswordDays: Field<number>;
-    percentMetricForPulse: Field<number>;
-    randomValueLength: Field<number>;
-    randomPhraseLength: Field<number>;
-    includeNumbersInRandomPassword: Field<boolean>;
-    includeNumbersInRandomPassphrase: Field<boolean>;
-    includeSpecialCharactersInRandomPassword: Field<boolean>;
-    includeSpecialCharactersInRandomPassphrase: Field<boolean>;
-    includeAmbiguousCharactersInRandomPassword: Field<boolean>;
-    passphraseSeperator: Field<string>;
-    temporarilyStoreMasterKey: Field<boolean>;
+    /** User Color Palettes */
+    c: { [key: string]: ColorPalette };
+    /** Auto Lock Time */
+    a: AutoLockTime;
+    /** Multiple Filter Behavior */
+    f: FilterStatus;
+    /** Old Password Days */
+    o: number;
+    /** Percent Metric For Pulse */
+    p: number;
+    /** Random Value Length */
+    v: number;
+    /** Random Phrase Lengh */
+    r: number;
+    /** Include Numbers In Random Password */
+    n: boolean;
+    /** Include Special Characters In random Password */
+    s: boolean;
+    /** Include Ambiguous Charactesr in Random Password */
+    m: boolean;
+    /** Passphrase Seperator */
+    e: string;
+    /** Require master key to view or update sensitive information */
+    q: boolean;
 }
 
 export interface IAppStoreState extends StoreState
 {
-    settings: Field<AppSettings>;
+    /** Settings */
+    s: AppSettings;
 }
 
-export type AppStoreState = KnownMappedFields<IAppStoreState>;
+export interface AppStoreStateKeys extends StateKeys
+{
+    "settings": "";
+    "colorPalettes.palette": "";
+    "colorPalette.passwordColors": "";
+    "colorPalette.valueColors": "";
+}
+
+const AppStorePathRetriever: StorePathRetriever<AppStoreStateKeys> =
+{
+    'settings': (...ids: string[]) => `s`,
+    'colorPalettes.palette': (...ids: string[]) => `s.c.${ids[0]}`,
+    'colorPalette.passwordColors': (...ids: string[]) => `s.c.${ids[0]}.p`,
+    'colorPalette.valueColors': (...ids: string[]) => `s.c.${ids[0]}.v`
+};
+
+export type AppStoreState = IAppStoreState;
 
 export type AppStoreEvents = StoreEvents | "onVaultUpdated" | "onVaultActive";
 
-export class AppStore extends Store<AppStoreState, AppStoreEvents>
+export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEvents>
 {
     private internaLoadedUser: Ref<boolean>;
     private autoLockTimeoutID: NodeJS.Timeout | undefined;
@@ -64,7 +95,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
     private internalIsOnline: Ref<boolean>;
 
-    private internalColorPalettes: ComputedRef<Field<ColorPalette>[]>;
+    private internalColorPalettes: ComputedRef<ColorPalette[]>;
 
     private internalUserVaults: Ref<DisplayVault[]>;
     private internalUserVaultsByVaultID: ComputedRef<Map<number, DisplayVault>>;
@@ -88,9 +119,15 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     private internalUserLicense: Ref<LicenseStatus>;
 
     private lastSessionExtendTime: number;
+    private internalActiveDataType: ComputedRef<DataType>;
+
+    private internalIsSyncing: Ref<boolean>;
+    private internalForceReadOnly: Ref<boolean>;
+
+    private internalProcessIsRunning: boolean;
 
     get loadedUser() { return this.internaLoadedUser; }
-    get settings() { return this.state.settings; }
+    get settings() { return this.state.s; }
     get isOnline() { return this.internalIsOnline.value; }
     set isOnline(value: boolean) { this.internalIsOnline.value = value; }
     get activeAppView() { return this.internalActiveAppView.value; }
@@ -119,10 +156,15 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
     get userInfo() { return this.internalUserInfo.value; }
     get canShowSubscriptionWidgets() { return this.internalCanShowSubscriptionWidgets; }
     get userLicense() { return this.internalUserLicense.value; }
+    get activeDataType() { return this.internalActiveDataType.value; }
+    get isSyncing() { return this.internalIsSyncing; }
+    set isSyncingVal(val: boolean) { this.internalIsSyncing.value = val; }
+    get forceReadOnly() { return this.internalForceReadOnly; }
+    set forceReadOnlyVal(val: boolean) { this.internalForceReadOnly.value = val; }
 
     constructor()
     {
-        super("appStoreState");
+        super(StoreType.App, AppStorePathRetriever);
 
         this.internaLoadedUser = ref(false);
         this.internalVaultDataBreachStore = new VaultDataBreachStore();
@@ -130,7 +172,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalOrganizationStore = new OrganizationStore();
         this.internalPopupStore = createPopupStore();
 
-        this.internalColorPalettes = computed(() => [...defaultColorPalettes.valueArray(), ...this.state.settings.value.userColorPalettes.value.valueArray()])
+        this.internalColorPalettes = computed(() => defaultColorPalettes.valueArray().concat(Object.values(this.state.s.c)));
 
         this.internalUserVaults = ref([]);
         this.internalUserVaultsByVaultID = computed(() => this.internalUserVaults.value.reduce((map: Map<number, DisplayVault>, dv: DisplayVault) =>
@@ -165,7 +207,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalCanShowSubscriptionWidgets = computed(() => this.isOnline && this.internalUserLicense.value == LicenseStatus.Active);
         this.internalUserLicense = ref(LicenseStatus.Unknown);
 
-        this.internalAutoLockNumberTime = computed(() => this.calcAutolockTime(this.state.settings.value.autoLockTime.value));
+        this.internalAutoLockNumberTime = computed(() => this.calcAutolockTime(this.state.s.a));
 
         watch(() => this.internalAutoLockNumberTime.value, (newValue) => 
         {
@@ -173,31 +215,17 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         });
 
         this.lastSessionExtendTime = Date.now();
+        this.internalActiveDataType = computed(() => app.isVaultView ? app.activePasswordValuesTable : app.activeDeviceOrganizationsTable);
+
+        this.internalIsSyncing = ref(false);
+        this.internalForceReadOnly = ref(false);
+
+        this.internalProcessIsRunning = false;
     }
 
     protected defaultState()
     {
-        return {
-            id: new Field(""),
-            version: new Field(0),
-            settings: new Field({
-                id: new Field(""),
-                userColorPalettes: new Field(emptyUserColorPalettes),
-                autoLockTime: new Field(AutoLockTime.OneMinute),
-                multipleFilterBehavior: new Field(FilterStatus.Or),
-                oldPasswordDays: new Field(365),
-                percentMetricForPulse: new Field(1),
-                randomValueLength: new Field(25),
-                randomPhraseLength: new Field(7),
-                includeNumbersInRandomPassword: new Field(true),
-                includeNumbersInRandomPassphrase: new Field(true),
-                includeSpecialCharactersInRandomPassword: new Field(true),
-                includeSpecialCharactersInRandomPassphrase: new Field(true),
-                includeAmbiguousCharactersInRandomPassword: new Field(true),
-                passphraseSeperator: new Field('-'),
-                temporarilyStoreMasterKey: new Field(true)
-            })
-        };
+        return defaultAppStoreState();
     }
 
     private calcAutolockTime(time: AutoLockTime): number
@@ -221,7 +249,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         super.resetToDefault();
     }
 
-    public async lock(redirect: boolean = true, expireSession: boolean = true)
+    public async lock(redirect: boolean = true, expireSession: boolean = true, syncData: boolean = true)
     {
         hideAll();
 
@@ -230,16 +258,6 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             this.internalPopupStore.showAccountSetup(AccountSetupView.SignIn, undefined, undefined, false);
         }
 
-        if (expireSession && this.isOnline === true)
-        {
-            await api.server.session.expire();
-        }
-
-        await this.clearAllData();
-    }
-
-    async clearAllData()
-    {
         this.currentVault.passwordStore.resetToDefault();
         this.currentVault.valueStore.resetToDefault();
         this.currentVault.filterStore.resetToDefault();
@@ -252,7 +270,19 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         this.internalUserVaults.value = [];
         this.internalCurrentVault.resetToDefault();
 
-        await api.cache.clear();
+        if (syncData && this.isOnline)
+        {
+            await api.helpers.repositories.handleUserLogOut();
+        }
+        else
+        {
+            await api.cache.clear();
+        }
+
+        if (expireSession && this.isOnline === true)
+        {
+            await api.server.session.expire();
+        }
 
         this.popups.closeAllPopupsOnLock();
         this.isOnline = false;
@@ -267,6 +297,11 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         clearTimeout(this.autoLockTimeoutID);
         this.autoLockTimeoutID = setTimeout(() =>
         {
+            if (this.internalProcessIsRunning)
+            {
+                this.autoLockTimeoutID = undefined;
+            }
+
             this.lock();
         }, this.internalAutoLockNumberTime.value);
 
@@ -285,34 +320,13 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
-        const success = await this.internalLoadUserData(masterKey);
+        const success = await this.internalLoadUserData(masterKey, false);
         if (!success)
         {
             return false;
         }
 
-        this.lastSessionExtendTime = Date.now();
-        this.internaLoadedUser.value = true;
-        this.internalActiveAppView.value = AppView.Vault;
-
-        if (this.isOnline)
-        {
-            // don't bother waiting for these, just trigger them so they are there if we need them
-            app.devices.getDevices();
-            app.organizations.getOrganizations();
-            this.getUserInfo();
-        }
-
-        if (this.state.settings.value.temporarilyStoreMasterKey.value)
-        {
-            const setMasterKeyResponse = await api.cache.setMasterKey(masterKey);
-            if (!setMasterKeyResponse.success)
-            {
-                defaultHandleFailedResponse(setMasterKeyResponse);
-            }
-        }
-
-        return true;
+        return this.internalFinishLoadUserData(masterKey);
     }
 
     async createNewVault(masterKey: string, name: string, shared: boolean, setAsActive: boolean,
@@ -332,7 +346,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             addedMembers
         };
 
-        const result = await api.repositories.vaults.createNewVaultForUser(masterKey, JSON.vaulticStringify(updateVaultData));
+        const result = await api.repositories.vaults.createNewVaultForUser(masterKey, JSON.stringify(updateVaultData));
         if (!result.success)
         {
             defaultHandleFailedResponse(result);
@@ -344,12 +358,12 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
         if (setAsActive)
         {
-            await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, vaultData);
+            await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, vaultData, false);
             this.internalActiveAppView.value = AppView.Vault;
         }
 
         // force trigger reactivity
-        const temp = [...this.internalUserVaults.value];
+        const temp = Array.from(this.internalUserVaults.value);
         temp.push({
             userOrganizationID: vaultData.userOrganizationID,
             userVaultID: vaultData.userVaultID,
@@ -361,7 +375,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             isReadOnly: vaultData.isReadOnly,
             lastUsed: setAsActive,
             type: getVaultType(vaultData),
-            passwordsByDomain: (JSON.vaulticParse(vaultData.passwordStoreState) as PasswordStoreState).passwordsByDomain
+            passwordsByDomain: (JSON.parse(vaultData.passwordStoreState) as PasswordStoreState).o
         });
 
         this.internalUserVaults.value = temp;
@@ -389,7 +403,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             removedMembers: removedMembers,
         };
 
-        const success = await api.repositories.vaults.updateVault(masterKey, JSON.vaulticStringify(updateVaultData));
+        const success = await api.repositories.vaults.updateVault(masterKey, JSON.stringify(updateVaultData));
         if (!success)
         {
             return false;
@@ -428,7 +442,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             isArchived: isArchived
         };
 
-        const response = await api.repositories.vaults.updateVault(masterKey, JSON.vaulticStringify(updateVaultData));
+        const response = await api.repositories.vaults.updateVault(masterKey, JSON.stringify(updateVaultData));
         if (!response.success)
         {
             defaultHandleFailedResponse(response);
@@ -443,6 +457,11 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
         this.userVaults.value[index].isArchived = isArchived;
         this.userVaults.value[index].type = getVaultType(this.userVaults.value[index]);
+
+        if (this.currentVault.userVaultID == this.userVaults.value[index].userVaultID)
+        {
+            this.currentVault.isArchived = isArchived;
+        }
 
         return true;
     }
@@ -466,7 +485,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
-        const tempArchivedVaults = [...this.internalUserVaults.value];
+        const tempArchivedVaults = Array.from(this.internalUserVaults.value);
         tempArchivedVaults.splice(index, 1);
 
         this.internalUserVaults.value = tempArchivedVaults;
@@ -495,56 +514,124 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
-        await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, response.value!);
+        await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, response.value!, false);
         this.internalActiveAppView.value = AppView.Vault;
 
         return true;
     }
 
-    async syncVaults(masterKey: string): Promise<boolean>
+    /** Only called when signing into and online. This is to handle when there 
+     * isn't any local data
+     */
+    async syncAndLoadUserData(masterKey: string, email: string, reloadAllData: boolean = false): Promise<boolean>
+    {
+        if (!this.isOnline || this.internaLoadedUser.value)
+        {
+            return false;
+        }
+
+        this.internalIsSyncing.value = true;
+
+        this.popups.showSyncingPopup();
+        const result = await api.repositories.vaults.syncVaults(email, masterKey, reloadAllData);
+        if (!result.success)
+        {
+            this.popups.hideSyncingPopup();
+            this.popups.showToast("Failed to Sync Data", false);
+            this.lock();
+            this.internalIsSyncing.value = false;
+
+            return false;
+        }
+
+        const loadResult = await this.internalLoadUserData(result.value!, false);
+        if (!loadResult)
+        {
+            this.popups.hideSyncingPopup();
+            this.popups.showToast("Failed to Load Data", false);
+            this.lock();
+            this.internalIsSyncing.value = false;
+
+            return false;
+        }
+
+        const finishLoadingResponse = await this.internalFinishLoadUserData(result.value!);
+        if (!finishLoadingResponse)
+        {
+            this.popups.hideSyncingPopup();
+            this.popups.showToast("Failed to Load Data", false);
+            this.lock();
+            this.internalIsSyncing.value = false;
+
+            return false;
+        }
+
+        this.internalIsSyncing.value = false;
+        this.popups.finishSyncingPopup();
+        return true;
+    }
+
+    /**
+     * 
+     * @param masterKey 
+     * @param email 
+     * @param secondLoad Indicates that this is the second time loading the data. Only applicatable when signing since we've alredy loaded the data
+     * @returns 
+     */
+    async syncVaults(masterKey: string, email: string, secondLoad: boolean = false, reloadAllData: boolean = false): Promise<boolean>
     {
         if (!this.isOnline)
         {
             return false;
         }
 
-        const result = await api.repositories.vaults.syncVaults(masterKey);
+        this.internalIsSyncing.value = true;
+        this.popups.showSyncingPopup();
+
+        const result = await api.repositories.vaults.syncVaults(email);
         if (!result.success)
         {
+            this.popups.hideSyncingPopup();
+            this.popups.showToast("Failed to Sync Data", false);
+            this.internalIsSyncing.value = false;
+
             return false;
         }
 
-        return await this.internalLoadUserData(masterKey);
+        const loadResult = await this.internalLoadUserData(masterKey, secondLoad);
+        this.popups.finishSyncingPopup();
+        this.internalIsSyncing.value = false;
+
+        return loadResult;
     }
 
-    // TODO: post release
-    public shareToVault<T>(value: T, toVault: number)
-    {
-
-    }
-
-    public async updateColorPalette(masterKey: string, colorPalette: ColorPalette): Promise<void>
+    public async updateColorPalette(
+        masterKey: string,
+        colorPalette: ColorPalette,
+        pendingStorState: PendingStoreState<AppStoreState, AppStoreStateKeys>
+    ): Promise<void>
     {
         const transaction = new StoreUpdateTransaction();
-        const pendingState = this.cloneState();
-
-        const oldColorPalette: Field<ColorPalette> | undefined = pendingState.settings.value.userColorPalettes.value.get(colorPalette.id.value);
+        let oldColorPalette: ColorPalette | undefined = pendingStorState.state.s.c[colorPalette.id];
         if (!oldColorPalette)
         {
-            return Promise.resolve();
+            return;
         }
 
-        oldColorPalette.value = colorPalette;
-        if (this.internalUsersPreferencesStore.currentColorPalette.id.value == oldColorPalette.value.id.value)
+        pendingStorState.commitProxyObject("colorPalettes.palette", colorPalette, colorPalette.id);
+        pendingStorState.commitProxyObject("colorPalette.passwordColors", colorPalette.p, colorPalette.id);
+        pendingStorState.commitProxyObject("colorPalette.valueColors", colorPalette.v, colorPalette.id);
+
+        if (this.internalUsersPreferencesStore.currentColorPalette.id == oldColorPalette.id)
         {
-            this.internalUsersPreferencesStore.updateCurrentColorPalette(transaction, oldColorPalette.value);
+            this.internalUsersPreferencesStore.updateCurrentColorPalette(transaction, oldColorPalette);
         }
 
-        transaction.updateUserStore(this, pendingState);
+        transaction.updateUserStore(this, pendingStorState);
         await transaction.commit(masterKey);
     }
 
-    private async internalLoadUserData(masterKey: string): Promise<boolean>
+    private async internalLoadUserData(masterKey: string, secondLoad: boolean): Promise<boolean>
     {
         const userData = await api.repositories.users.getCurrentUserData(masterKey);
         if (!userData.success)
@@ -553,7 +640,7 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
             return false;
         }
 
-        const parsedUserData: UserData = JSON.vaulticParse(userData.value!);
+        const parsedUserData: UserData = JSON.parse(userData.value!);
 
         this.internalUserInfo.value = parsedUserData.userInfo;
         await this.initalizeNewStateFromJSON(parsedUserData.appStoreState);
@@ -561,7 +648,31 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
 
         this.internalUserVaults.value = parsedUserData.displayVaults!;
 
-        await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, parsedUserData.currentVault!);
+        await this.internalCurrentVault.setReactiveVaultStoreData(masterKey, parsedUserData.currentVault!, secondLoad);
+        return true;
+    }
+
+    private async internalFinishLoadUserData(masterKey: string): Promise<boolean>
+    {
+        this.lastSessionExtendTime = Date.now();
+        this.internaLoadedUser.value = true;
+        this.internalActiveAppView.value = AppView.Vault;
+
+        if (this.isOnline)
+        {
+            // don't bother waiting for these, just trigger them so they are there if we need them
+            app.devices.getDevices();
+            app.organizations.getOrganizations();
+            this.getUserInfo();
+        }
+
+        const setMasterKeyResponse = await api.cache.setMasterKey(masterKey);
+        if (!setMasterKeyResponse.success)
+        {
+            defaultHandleFailedResponse(setMasterKeyResponse);
+            return false;
+        }
+
         return true;
     }
 
@@ -579,6 +690,87 @@ export class AppStore extends Store<AppStoreState, AppStoreEvents>
         }
 
         this.internalUserLicense.value = response.LicenseStatus!;
+    }
+
+    public async copyToClipboard(value: string)
+    {
+        // writing to the clipboard will fail if the dom isn't focused
+        try
+        {
+            await navigator.clipboard.writeText(value);
+            app.popups.showToast("Copied", true);
+            setTimeout(function () 
+            {
+                // You can't write to cilpboard if the document doesn't have focus, i.e. the user is on another app
+                // This is a workaround in order to clear the clipboard
+                try 
+                {
+                    const tempElement = document.createElement("input");
+                    tempElement.style.cssText = "width:0!important;padding:0!important;border:0!important;margin:0!important;outline:none!important;boxShadow:none!important;";
+                    document.body.appendChild(tempElement);
+                    tempElement.value = ' ' // Empty string won't work!
+                    tempElement.select();
+                    document.execCommand("copy");
+                    document.body.removeChild(tempElement)
+                }
+                catch (e)  
+                {
+                    console.log(e);
+                }
+            }, 15000);
+        }
+        catch { }
+    }
+
+    /**
+     * Prevents the app from locking while func is running
+     * @param func the funciton to run
+     * @returns 
+     */
+    public async runAsProcess(func: () => void)
+    {
+        await this.runAsAsyncProcess(async () => func());
+    }
+
+    /**
+     * Prevents the app from locking while func is running
+     * @param func the async funciton to run
+     * @returns 
+     */
+    public async runAsAsyncProcess<T>(func: () => Promise<T>): Promise<T | undefined>
+    {
+        this.internalProcessIsRunning = true;
+        let result: T | undefined;
+        try
+        {
+            result = await func();
+        }
+        catch (e: any)
+        {
+            if (e?.error instanceof Error)
+            {
+                const error: Error = e.error as Error
+
+                try
+                {
+                    if (!app.isOnline)
+                    {
+                        return;
+                    }
+
+                    await api.server.app.log(error.message, error.stack ?? "ErrorHandler");
+                }
+                catch { }
+            }
+        }
+
+        this.internalProcessIsRunning = false;
+        if (!this.autoLockTimeoutID)
+        {
+            await this.lock();
+        }
+
+        return result;
     }
 }
 

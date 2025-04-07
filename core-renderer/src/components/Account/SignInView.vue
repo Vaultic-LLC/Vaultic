@@ -9,7 +9,7 @@
                             <TextInputField ref="emailField" :color="color" :label="'Email'" v-model="email"
                                 :width="'70%'" :maxWidth="'300px'" :isEmailField="true" />
                             <EncryptedInputField ref="masterKeyField" :colorModel="colorModel" :label="'Master Key'"
-                                v-model="masterKey" :initialLength="0" :isInitiallyEncrypted="false" :showRandom="false"
+                                v-model="masterKey" :isInitiallyEncrypted="false" :showRandom="false"
                                 :showUnlock="true" :required="true" :showCopy="false" :width="'70%'" :maxWidth="'300px'" />
                         </div>
                         <div class="signInContainer__offlineMode">
@@ -59,14 +59,14 @@
                         <div class="signInViewContainer__helpPopoverSectionTitle">Deactivate Subscription</div>
                         <PopupButton :color="color" :text="'Deactivate'"
                             :width="'5vw'" :minWidth="'70px'" :maxWidth="'130px'" :height="'3vh'" :minHeight="'30px'"
-                            :maxHeight="'45px'" :fontSize="'clamp(12px, 0.8vw, 18px)'" @onClick="openDeactivationPopup" />
+                            :maxHeight="'45px'" :fontSize="'clamp(12px, 0.8vw, 18px)'" :fallbackClickHandler="openDeactivationPopup" />
                     </div>
                     <div class="signInViewContainer__helpPopoverSectionSeperator"></div>
                     <div class="signInViewContainer__helpPopoverSection">
                         <div class="signInViewContainer__helpPopoverSectionTitle">Export Logs</div>
                         <PopupButton :color="color" :text="'Export'"
                             :width="'5vw'" :minWidth="'70px'" :maxWidth="'130px'" :height="'3vh'" :minHeight="'30px'"
-                            :maxHeight="'45px'" :fontSize="'clamp(12px, 0.8vw, 18px)'" @onClick="doExportLogs" />
+                            :maxHeight="'45px'" :fontSize="'clamp(12px, 0.8vw, 18px)'" :fallbackClickHandler="doExportLogs"/>
                     </div>
                 </div>
             </Popover>
@@ -84,7 +84,7 @@ import ButtonLink from '../InputFields/ButtonLink.vue';
 import ToolTip from "../ToolTip.vue";
 import EnterMFACodePopup from './EnterMFACodePopup.vue';
 import UserProfilePic from './UserProfilePic.vue';
-import Popover from 'primevue/popover';
+import Popover from 'primevue-vaultic/popover';
 import PopupButton from '../InputFields/PopupButton.vue';
 
 import { InputColorModel, defaultInputColorModel } from '../../Types/Models';
@@ -151,16 +151,41 @@ export default defineComponent({
 
             if (onlineMode.value)
             {          
+                console.time('loggingIn');
                 const response = await api.helpers.server.logUserIn(masterKey.value, email.value, false, reloadAllData.value, mfaCode);
                 if (response.success && response.value!.Success)
                 {
                     mfaIsShowing.value = false;
                     app.isOnline = true;
-                    
-                    if (await app.loadUserData(response.value?.masterKey!))
+
+                    // used to hide the editing UI components so its not as glitchy when logging in
+                    app.forceReadOnlyVal = true;
+
+                    if (response.value?.masterKey)
                     {
-                        ctx.emit('onKeySuccess');
+                        if (await app.loadUserData(response.value?.masterKey!))
+                        {
+                            app.popups.hideLoadingIndicator();
+                            app.syncVaults(response.value?.masterKey!, email.value, true, reloadAllData.value);
+    
+                            console.timeEnd('loggingIn');
+                            ctx.emit('onKeySuccess');
+                        }
                     }
+                    else
+                    {
+                        if (await app.syncAndLoadUserData(masterKey.value, email.value, reloadAllData.value))
+                        {
+                            console.timeEnd('loggingIn');
+                            ctx.emit('onKeySuccess');
+                        }   
+                    } 
+                    
+                    app.forceReadOnlyVal = false;
+                }
+                else if (response.value?.isSyncing)
+                {
+                    app.popups.showAlert("Unable to Login", "Syncing is in progress. To prevent data corruption, you will not be able to log in until completed. Please try again in a few seconds. If this persists", true);
                 }
                 else if (response.value?.FailedMFA)
                 {
@@ -184,7 +209,7 @@ export default defineComponent({
                         key: masterKey.value
                     };
 
-                    const vaulticMasterKey = JSON.vaulticStringify(vaulticKey);
+                    const vaulticMasterKey = JSON.stringify(vaulticKey);
                     // check if key is correct
                     if (response.value)
                     {
@@ -347,7 +372,7 @@ export default defineComponent({
             // request failed and we navivated back to the sign in page
             if (props.clearAllDataOnLoad !== false)
             {
-                await app.clearAllData();
+                await app.lock(false, true, false);
             }
             else
             {

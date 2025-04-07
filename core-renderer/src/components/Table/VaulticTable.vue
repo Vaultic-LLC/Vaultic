@@ -1,8 +1,8 @@
 <template>
     <div class="vaulticTableContainer">
-        <DataTable scrollable removableSort lazy :first="firstRow" :rows="rowsToDisplay" :value="rowValues" 
-            :totalRecords="totalRecords" :paginator="!hidePaginator" :rowsPerPageOptions="[5, 15, 30, 50]" :loading="loading"
-            resizableColumns columnResizeMode="fit" :reorderableColumns="true" class="vaulticTableContainer__dataTable"
+        <DataTable scrollable lazy :first="firstRow" :rows="rowsToDisplay" :value="rowValues" :sortField="defaultSortField"
+            :sortOrder="defaultSortOrder" :totalRecords="totalRecords" :paginator="!hidePaginator" :rowsPerPageOptions="[5, 15, 30, 50]" 
+            :loading="loading" resizableColumns columnResizeMode="fit" class="vaulticTableContainer__dataTable"
             @update:sortOrder="onSortOrder" @update:sortField="onSortField" @value-change="calcScrollbarColor" @page="onPage"
             :pt="{
                 thead: 'vaulticTableContainer__thead',
@@ -17,7 +17,7 @@
                 columnResizeIndicator: 'vaulticTableContainer__columnResizeIndicator',
                 tableContainer: () =>
                 {
-                    const height = hidePaginator ? '100%' : 'calc(100% - 50px)';
+                    const height = hidePaginator ? '100%' : 'calc(100% - clamp(40px, 5vh, 60px))';
                     return {
                         id: tableContainerID,
                         class: 'vaulticTableContainer__dataTableTableContainer',
@@ -88,7 +88,7 @@
             <template #empty>
                 {{ emptyMessage }}
             </template>
-            <Column v-for="(column) in columns" :key="column.field" :field="column.field" :header="column.header" :columnKey="getColumnID()" sortable 
+            <Column v-for="(column) in columns" :key="column.field" :field="column.field" :header="column.header" :columnKey="getColumnID()" :sortable="column.sortable !== false" 
                 class="vaulticTableContainer__column" :headerStyle="{'width': `${column.startingWidth ?? 'auto'} !important`}"
                 :pt="{
                     headerCell:['vaulticTableContainer__headerCell', 'vaulticTableContainer__headerCell--reOrderable']
@@ -98,24 +98,33 @@
                     <i v-else class="pi pi-arrow-up vaulticTableContainer__sortIcon" :class="{'vaulticTableContainer__column--sort-rotate' : sortOrder === -1}" />
                 </template>
                 <template #body="slotProps">
-                    <!-- TODO Tooltip no longer works on group icons -->
-                    <div v-if="column.isGroupIconCell" class="vaulticTableContainer__groupIconCell">
-                        <div v-for="model in (slotProps.data as TableRowModel<any>).state['groupModels']" class="vaulticTableContainer__groupIconContainer" 
-                            :style="{ background: `color-mix(in srgb, ${model.color}, transparent 84%)`}">
-                            <span class="vaulticTableContainer__groupIconSpan">
-                                <i v-if="model.icon" :class='`pi ${model.icon} vaulticTableContainer__groupIcon`' :style="{color: model.color}"></i>
-                                <template v-else class="vaulticTableContainer__groupIcon" :style="{color: model.color}">{{ model.toolTipText[0] }}</template>
-                            </span>
+                    <!-- Click handler needs its own div since cellWrapper has padding, which isn't clickable -->
+                    <div class="vaulticTableContainer__cellWrapper" :class="{'vaulticTableContainer__cellWrapper--clickable': !!column.onClick}"
+                            @click="() => column.onClick?.(getBackingObject((slotProps.data as TableRowModel).id))"
+                            @click.right.stop="!column.isGroupIconCell && !column.component ? 
+                                onTextClick(column, (slotProps.data as TableRowModel).id) : undefined">
+                        <div class="vaulticTableContainer__cell">
+                            <!-- TODO this doesn't show tooltip anymroe -->
+                            <div v-if="column.isGroupIconCell" class="vaulticTableContainer__groupIconCell">
+                                <div v-for="model in (slotProps.data as TableRowModel).state['groupModels']" class="vaulticTableContainer__groupIconContainer" 
+                                    :style="{ background: `color-mix(in srgb, ${model.color}, transparent 84%)`}" @mouseenter="(e) => showGroupTooltip(e, model)"
+                                        @mouseleave="hideGroupTooltip">
+                                    <span class="vaulticTableContainer__groupIconSpan">
+                                        <i v-if="model.icon" :class='`pi ${model.icon} vaulticTableContainer__groupIcon`' :style="{color: model.color}"></i>
+                                        <template v-else class="vaulticTableContainer__groupIcon" :style="{color: model.color}">{{ model.text }}</template>
+                                    </span>
+                                </div>
+                            </div>
+                            <component v-else-if="column.component != undefined" :is="column.component" :model="getBackingObject((slotProps.data as TableRowModel).id)" 
+                                :field="column.field" :data="column.data" :state="(slotProps.data as TableRowModel).state" :isFielded="column.isFielded" />
+                            <template v-else-if="column.isFielded === false">
+                                {{ getBackingObject((slotProps.data as TableRowModel).id)?.[column.field] }}
+                            </template>
+                            <template v-else>
+                                {{ getBackingObject((slotProps.data as TableRowModel).id)?.[column.field] }}
+                            </template>
                         </div>
                     </div>
-                    <component v-else-if="column.component != undefined" :is="column.component" :model="(slotProps.data as TableRowModel<any>).backingObject" 
-                        :field="column.field" :data="column.data" :state="(slotProps.data as TableRowModel<any>).state" :isFielded="column.isFielded" />
-                    <template v-else-if="column.isFielded === false">
-                        {{ (slotProps.data as TableRowModel<any>).backingObject?.[column.field] }}
-                    </template>
-                    <template v-else>
-                        {{ (slotProps.data as TableRowModel<any>).backingObject?.value[column.field]?.value }}
-                    </template>
                 </template>
             </Column>
             <Column :columnKey="'tableControls'" class="w-24 !text-end vaulticTableContainer__column" :reorderableColumn="false"
@@ -131,18 +140,18 @@
                 </template>
                 <template #body="{ data }">
                     <div class="vaulticTableContainer__rowIconButtonsContainer">
-                        <div v-if="(data as TableRowModel<any>).atRiskModel" class="vaulticTableContainer__rowIconButton" @click="(data as TableRowModel<any>).atRiskModel?.onClick">
+                        <div v-if="(data as TableRowModel).atRiskModel" class="vaulticTableContainer__rowIconButton" @click="(data as TableRowModel).atRiskModel?.onClick">
                             <div class="tableRow__rowIconContainer">
-                                <AtRiskIndicator :color="color" :message="(data as TableRowModel<any>).atRiskModel?.message" />
+                                <AtRiskIndicator :color="color" :message="(data as TableRowModel).atRiskModel?.message" />
                             </div>
                         </div>
-                        <div v-if="allowPinning !== false" class="vaulticTableContainer__rowIconButton" @click="internalOnPin((data as TableRowModel<any>).isPinned === true, data)">
-                            <IonIcon class="rowIcon magnet" :class="{ isPinned: (data as TableRowModel<any>).isPinned === true}" :name="'magnet-outline'" />
+                        <div v-if="allowPinning !== false" class="vaulticTableContainer__rowIconButton" @click="internalOnPin((data as TableRowModel).isPinned === true, data)">
+                            <IonIcon class="rowIcon magnet" :class="{ isPinned: (data as TableRowModel).isPinned === true}" :name="'magnet-outline'" />
                         </div>
-                        <div v-if="onEdit" class="vaulticTableContainer__rowIconButton" @click="(e) => onEdit((data as TableRowModel<any>).backingObject, e)">
+                        <div v-if="onEdit" class="vaulticTableContainer__rowIconButton" @click="(e) => onEdit(getBackingObject((data as TableRowModel).id), e)">
                             <IonIcon class="rowIcon edit" :name="'create-outline'" />
                         </div>
-                        <div v-if="onDelete" class="vaulticTableContainer__rowIconButton" @click="deleteConfirm((data as TableRowModel<any>).backingObject)">
+                        <div v-if="onDelete" class="vaulticTableContainer__rowIconButton" @click="deleteConfirm(getBackingObject((data as TableRowModel).id))">
                             <IonIcon class="rowIcon delete" :name="'trash-outline'" />
                         </div>
                     </div>
@@ -156,9 +165,9 @@
 import { computed, ComputedRef, defineComponent, onMounted, onUnmounted, Ref, ref, useId, watch } from 'vue';
 
 import TableHeaderTab from './Header/TableHeaderTab.vue';
-import DataTable, { DataTablePageEvent } from "primevue/datatable";
-import Column from 'primevue/column';
-import Button from 'primevue/button';
+import DataTable, { DataTablePageEvent } from "primevue-vaultic/datatable";
+import Column from 'primevue-vaultic/column';
+import Button from 'primevue-vaultic/button';
 import SearchBar from './Controls/SearchBar.vue';
 
 import AtRiskIndicator from "./AtRiskIndicator.vue";
@@ -172,14 +181,16 @@ import PermissionsCell from './Rows/PermissionsCell.vue';
 import VaultListCell from "./Rows/VaultListCell.vue";
 import IonIcon from '../Icons/IonIcon.vue';
 
-import { TableColumnModel, TableDataSouce, TableDataSources, TableRowModel } from '../../Types/Models';
+import { GroupIconModel, TableColumnModel, TableDataSouce, TableDataSources, TableRowModel } from '../../Types/Models';
 import { widgetBackgroundHexString } from '../../Constants/Colors';
 import { RGBColor } from '../../Types/Colors';
 import { hexToRgb } from '../../Helpers/ColorHelper';
 import { tween } from '../../Helpers/TweenHelper';
 import * as TWEEN from '@tweenjs/tween.js';
-import { useConfirm } from "primevue/useconfirm";
+import { useConfirm } from "primevue-vaultic/useconfirm";
 import { rowChunkAmount } from '../../Constants/Misc';
+import app from '../../Objects/Stores/AppStore';
+import tippy, { Instance, Tippy } from 'tippy.js';
 
 // Base Component for all Tables.
 // --- Scrollbar Color Usage ---
@@ -227,12 +238,16 @@ export default defineComponent({
         const scrollbarClass: ComputedRef<string> = computed(() => props.scrollbarSize == 0 ? "small" : props.scrollbarSize == 1 ? "medium" : "");
 
         const showSearchBar: ComputedRef<boolean> = computed(() => props.allowSearching != undefined ? props.allowSearching : true);
-        const tableDataSources: Ref<TableDataSources> = ref(props.dataSources);    
-        const activeTableDataSource: ComputedRef<TableDataSouce> = computed(() => tableDataSources.value.dataSources[tableDataSources.value.activeIndex()]);
-        const rowValues: Ref<TableRowModel<any>[]> = ref([]);
+        const tableDataSources: TableDataSources = props.dataSources;    
+        let activeTableDataSource: TableDataSouce = tableDataSources.dataSources[tableDataSources.activeIndex()];
 
-        const pinnedRowValues: Ref<TableRowModel<any>[] | undefined> = ref(props.pinnedValues ?? []);
+        const rowValues: Ref<TableRowModel[]> = ref([]);
+
+        const pinnedRowValues: Ref<TableRowModel[] | undefined> = ref(props.pinnedValues ?? []);
         const searchText: Ref<string | undefined > = ref();
+
+        const defaultSortField: Ref<string | undefined> = ref(activeTableDataSource.collection.property);
+        const defaultSortOrder: Ref<number> = ref(activeTableDataSource.collection.descending ? -1 : 1);
 
         let tweenGroup: TWEEN.Group | undefined = undefined;
         let scrollbarColor: Ref<string> = ref(primaryColor.value);
@@ -246,7 +261,7 @@ export default defineComponent({
 
         let currentColumnId = 0;
 
-        const allRows: Ref<TableRowModel<any>[]> = ref([]);
+        const allRows: Ref<TableRowModel[]> = ref([]);
         const totalRecords: Ref<number> = ref(0);
         const firstRow: Ref<number> = ref(0);
         const rowsToDisplay: Ref<number> = ref(15);
@@ -364,48 +379,43 @@ export default defineComponent({
             }
         }
 
-        // watch(() => props.emptyMessage, () =>
-        // {
-        //     key.value = Date.now().toString();
-        // });
-
-        function internalOnPin(isPinned: boolean, model: TableRowModel<any>)
+        function internalOnPin(isPinned: boolean, model: TableRowModel)
         {
             if (isPinned)
             {
                 model.isPinned = false;
-                activeTableDataSource.value.pinnedCollection?.remove(model.getBackingObjectIdentifier());
-                activeTableDataSource.value.collection.push(model);
+                activeTableDataSource.pinnedCollection?.remove(model.id);
+                activeTableDataSource.collection.push(model);
             }
             else
             {
                 model.isPinned = true;
-                activeTableDataSource.value.pinnedCollection?.push(model);
-                activeTableDataSource.value.collection.remove(model.getBackingObjectIdentifier());
+                activeTableDataSource.pinnedCollection?.push(model);
+                activeTableDataSource.collection.remove(model.id);
             }
 
-            props.onPin?.(isPinned, model.backingObject);
+            props.onPin?.(isPinned, getBackingObject(model.id));
         }
 
         function onSortOrder(value: undefined | number)
         {
-            activeTableDataSource.value.collection.updateSort(activeTableDataSource.value.collection.property, value == -1, true);
-            activeTableDataSource.value.pinnedCollection?.updateSort(activeTableDataSource.value.pinnedCollection.property, value == -1, true);
+            activeTableDataSource.collection.updateSort(activeTableDataSource.collection.property, value == -1, true);
+            activeTableDataSource.pinnedCollection?.updateSort(activeTableDataSource.pinnedCollection.property, value == -1, true);
         }
 
         function onSortField(value: string)
         {
             // don't actually do the sort yet since onSortOrder will be called after
-            activeTableDataSource.value.collection.updateSort(value, activeTableDataSource.value.collection.descending, false);
-            activeTableDataSource.value.pinnedCollection?.updateSort(value, activeTableDataSource.value.pinnedCollection.descending, false);
+            activeTableDataSource.collection.updateSort(value, activeTableDataSource.collection.descending, false);
+            activeTableDataSource.pinnedCollection?.updateSort(value, activeTableDataSource.pinnedCollection.descending, false);
         }
 
         const confirm = useConfirm();
         const deleteConfirm = (backingObject: any) => 
         {
             confirm.require({
-                message: `Are you sure you want to delete this ${activeTableDataSource.value.friendlyDataTypeName}?`,
-                header: `Delete ${activeTableDataSource.value.friendlyDataTypeName}`,
+                message: `Are you sure you want to delete this ${activeTableDataSource.friendlyDataTypeName}?`,
+                header: `Delete ${activeTableDataSource.friendlyDataTypeName}`,
                 icon: 'pi pi-info-circle',
                 rejectLabel: 'Cancel',
                 rejectProps: {
@@ -429,16 +439,24 @@ export default defineComponent({
             reSetRowValues();
         }
 
+        let lastSearch = 0;
         function onSearch(value: string | undefined)
         {
-            activeTableDataSource.value.collection.search(value ?? "");
+            const now = Date.now();
+            if (now - lastSearch <= 100)
+            {
+                return;
+            }
+
+            lastSearch = now;
+            activeTableDataSource.collection.search(value ?? "");
         }
 
         function reSetRowValues()
         {
-            totalRecords.value = (activeTableDataSource.value.pinnedCollection?.values.length ?? 0) + activeTableDataSource.value.collection.values.length;
-            allRows.value = activeTableDataSource.value.pinnedCollection?.calculatedValues != undefined ? [...activeTableDataSource.value.pinnedCollection?.calculatedValues] : [];
-            allRows.value.push(...activeTableDataSource.value.collection.calculatedValues);
+            totalRecords.value = (activeTableDataSource.pinnedCollection?.values.length ?? 0) + activeTableDataSource.collection.values.length;
+            allRows.value = activeTableDataSource.pinnedCollection?.calculatedValues != undefined ? Array.from(activeTableDataSource.pinnedCollection?.calculatedValues) : [];
+            allRows.value = allRows.value.concat(activeTableDataSource.collection.calculatedValues);
 
             rowValues.value = allRows.value.slice(0, rowChunkAmount);
             scrollToTop();
@@ -457,13 +475,54 @@ export default defineComponent({
             const rowsToLoad = Math.min(20, rowsToDisplay.value - rowValues.value.length);
             const start = firstRow.value + rowValues.value.length;
 
-            rowValues.value.push(...allRows.value.slice(start, start + rowsToLoad));
+            rowValues.value = rowValues.value.concat(allRows.value.slice(start, start + rowsToLoad));
         }
 
-        watch(() => activeTableDataSource.value, () => 
+        function onTextClick(column: TableColumnModel, id: string | number)
         {
+            const object = getBackingObject(id);
+            if (column.isFielded === false)
+            {
+                app.copyToClipboard(object?.[column.field])
+            }
+            else
+            {
+                app.copyToClipboard(object?.[column.field])
+            }
+        }
+
+        function getBackingObject(id: string | number): any
+        {
+            return activeTableDataSource.collection.getBackingObject(id);
+        }
+
+        let currentTippy: Instance | undefined;
+        function showGroupTooltip(e: MouseEvent, model: GroupIconModel)
+        {
+            // @ts-ignore
+            currentTippy = tippy(e.target, {
+                content: model.toolTipText,
+                inertia: true,
+                animation: 'scale',
+                theme: 'material',
+            });
+
+            currentTippy.show();
+        }
+
+        function hideGroupTooltip()
+        {
+            currentTippy?.destroy();
+        }
+
+        watch(tableDataSources.activeIndex, (newValue) =>
+        {
+            activeTableDataSource = tableDataSources.dataSources[newValue];
+            defaultSortField.value = activeTableDataSource.collection.property;
+            defaultSortOrder.value = activeTableDataSource.collection.descending ? -1 : 1;
+
             reSetRowValues();
-            searchText.value = activeTableDataSource.value.collection.searchText;
+            searchText.value = activeTableDataSource.collection.searchText;
         });
 
         watch(() => props.color, () =>
@@ -473,9 +532,9 @@ export default defineComponent({
     
         onMounted(() =>
         {
-            if (tableDataSources.value)
+            if (tableDataSources)
             {
-                tableDataSources.value.dataSources.forEach(d => 
+                tableDataSources.dataSources.forEach(d => 
                 {
                     d.collection.onUpdate = onTableCollectionUpdate;
                     if (d.pinnedCollection)
@@ -527,7 +586,10 @@ export default defineComponent({
             thumbColor,
             applyBorder,
             backgroundColor,
+            defaultSortField,
+            defaultSortOrder,
             scrollbarClass,
+            onTextClick,
             checkScrollHeight,
             scrollToTop,
             calcScrollbarColor,
@@ -537,7 +599,10 @@ export default defineComponent({
             onSortOrder,
             onSortField,
             onSearch,
-            onPage
+            onPage,
+            getBackingObject,
+            showGroupTooltip,
+            hideGroupTooltip
         }
     },
 })
@@ -555,7 +620,7 @@ export default defineComponent({
 :deep(.vaulticTableContainer__header) {
     background: transparent;
     padding: 0;
-    height: clamp(30px, 5vh, 50px);
+    height: clamp(30px, 2.5vw, 50px);
 
     /* so that there isn't a little bit of border over the scrollbar on the right */
     width: calc(100% - clamp(7px, 0.7vw, 10px));
@@ -588,13 +653,17 @@ export default defineComponent({
     font-size: clamp(11px, 1vw, 16px) !important;
 }
 
+:deep(.vaulticTableContainer__column.vaulticTableContainer__headerCell) {
+    padding: clamp(5px, 0.6vw, 12px) clamp(5px, 0.6vw, 16px) !important;
+}
+
 :deep(.vaulticTableContainer__headerCell:focus-visible){
     outline: 1px solid v-bind(primaryColor) !important;
 }
 
-:deep(.vaulticTableContainer__headerCell--reOrderable) {
+/* :deep(.vaulticTableContainer__headerCell--reOrderable) {
     cursor: move;
-}
+} */
 
 :deep(.vaulticTableContainer__ControlsHeaderCell) {
     width: 10px !important;
@@ -616,16 +685,17 @@ export default defineComponent({
     background: transparent !important;
     transition: 0.3s;
     font-size: clamp(12px, 1vw, 16px);
-    padding: clamp(5px, 0.6vw, 12px) clamp(5px, 0.6vw, 16px) !important;
+    padding: 0 !important;
+    height: inherit;
 }
 
 :deep(.vaulticTableContainer__sortIcon) {
+    transition: 0.3s;
     font-size: clamp(12px, 0.8vw, 16px);
 }
 
 :deep(.vaulticTableContainer__column--no-sort) {
     opacity: 0;
-    transition: 0.3s;
 }
 
 :deep(.vaulticTableContainer__column):hover .vaulticTableContainer__column--no-sort {
@@ -633,8 +703,24 @@ export default defineComponent({
 }
 
 :deep(.vaulticTableContainer__column--sort-rotate) {
-    transition: 0.3s;
     transform: rotate(180deg);
+}
+
+:deep(.vaulticTableContainer__cellWrapper) {
+    width: 100%;
+    height: 100%;
+}
+
+:deep(.vaulticTableContainer__cellWrapper--clickable) {
+    cursor: pointer;
+}
+
+:deep(.vaulticTableContainer__cell) {
+    width: 100%;
+    height: 100%;
+    padding: clamp(5px, 0.6vw, 12px) clamp(5px, 0.6vw, 16px) !important;
+    display: flex;
+    align-items: center;
 }
 
 :deep(.vaulticTableContainer__dataTableRow) {
@@ -667,8 +753,8 @@ export default defineComponent({
 
 :deep(.vaulticTableContainer__emptyMessage) {
     background: transparent !important;
-    opacity: 0;
-    animation: fadeIn 1s linear forwards;
+    /* opacity: 0;
+    animation: fadeIn 1s linear forwards; */
 }
 
 :deep(.vaulticTableContainer__emptyMessageCell) {

@@ -1,12 +1,12 @@
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { environment } from "../Environment";
 import vaulticServer from "../Server/VaulticServer";
-import { AddedOrgInfo, AddedVaultInfo, AddedVaultMembersInfo, ModifiedOrgMember, OrgAndUserKeys, ServerPermissions, UserIDAndKey, VaultIDAndKey } from "@vaultic/shared/Types/ClientServerTypes";
+import { AddedOrgInfo, AddedVaultInfo, AddedVaultMembersInfo, ModifiedOrgMember, OrgAndUserKeys, UserIDAndKey } from "@vaultic/shared/Types/ClientServerTypes";
 import { PublicKeyType } from "@vaultic/shared/Types/Keys";
 import vaultHelper from "./VaultHelper";
 
-export async function vaultAddedOrgsToAddedOrgInfo(senderUserID: number, senderPrivateSigningKey: string,
-    vaultKey: string, addedOrgs: Organization[]): Promise<AddedOrgInfo>
+export async function vaultAddedOrgsToAddedOrgInfo(senderUserID: number, vaultKey: string, addedOrgs:
+    Organization[]): Promise<AddedOrgInfo>
 {
     const users: Set<number> = new Set();
     addedOrgs.forEach(o => 
@@ -34,8 +34,7 @@ export async function vaultAddedOrgsToAddedOrgInfo(senderUserID: number, senderP
                 continue;
             }
 
-            const result = await vaultHelper.prepareVaultKeyForRecipient(senderUserID, senderPrivateSigningKey,
-                recipientPublicKey.PublicEncryptingKey, vaultKey);
+            const result = await vaultHelper.prepareVaultKeyForRecipient(senderUserID, recipientPublicKey.PublicEncryptingKey, vaultKey);
 
             if (!result.success)
             {
@@ -67,7 +66,7 @@ export async function vaultAddedOrgsToAddedOrgInfo(senderUserID: number, senderP
     };
 }
 
-export async function vaultAddedMembersToOrgMembers(senderUserID: number, senderPrivateSigningKey: string,
+export async function vaultAddedMembersToOrgMembers(senderUserID: number,
     vaultKey: string, members: Member[]): Promise<AddedVaultMembersInfo>
 {
     const allUsers: number[] = [];
@@ -75,8 +74,7 @@ export async function vaultAddedMembersToOrgMembers(senderUserID: number, sender
 
     for (let i = 0; i < members.length; i++)
     {
-        const result = await vaultHelper.prepareVaultKeyForRecipient(senderUserID, senderPrivateSigningKey,
-            members[i].publicEncryptingKey, vaultKey);
+        const result = await vaultHelper.prepareVaultKeyForRecipient(senderUserID, members[i].publicEncryptingKey, vaultKey);
 
         if (!result.success)
         {
@@ -117,7 +115,7 @@ export function memberArrayToModifiedOrgMemberWithoutVaultKey(members: Member[])
     });
 }
 
-export async function organizationUpdateAddedMembersToAddedOrgMembers(masterKey: string, senderUserID: number, senderPrivateSigningKey: string,
+export async function organizationUpdateAddedMembersToAddedOrgMembers(masterKey: string, senderUserID: number,
     allUserVaultsInOrgIDs: number[], addedMembers: Member[]): Promise<[number[], ModifiedOrgMember[]]>
 {
     const addedOrgMembers: ModifiedOrgMember[] = addedMembers.map(m => 
@@ -143,7 +141,7 @@ export async function organizationUpdateAddedMembersToAddedOrgMembers(masterKey:
             vaultIDs.add(userVaultsAndKeys[0][i].vaultID);
             for (let j = 0; j < addedMembers.length; j++)
             {
-                const result = await vaultHelper.prepareVaultKeyForRecipient(senderUserID, senderPrivateSigningKey,
+                const result = await vaultHelper.prepareVaultKeyForRecipient(senderUserID,
                     addedMembers[i].publicEncryptingKey, userVaultsAndKeys[1][i]);
 
                 if (!result.success)
@@ -169,7 +167,7 @@ export async function organizationUpdateAddedMembersToAddedOrgMembers(masterKey:
     return [Array.from(vaultIDs), addedOrgMembers ?? []];
 }
 
-export async function organizationUpdateAddedVaultsToAddedOrgMembers(masterKey: string, senderUserID: number, senderPrivateSigningKey: string,
+export async function organizationUpdateAddedVaultsToAddedOrgMembers(masterKey: string, senderUserID: number,
     addedVaults: number[], allMembers: Member[]): Promise<AddedVaultInfo>
 {
     let modifiedOrgMembers: [number[], ModifiedOrgMember[]] = [[], []];
@@ -197,7 +195,7 @@ export async function organizationUpdateAddedVaultsToAddedOrgMembers(masterKey: 
             }
         });
 
-        modifiedOrgMembers = await organizationUpdateAddedMembersToAddedOrgMembers(masterKey, senderUserID, senderPrivateSigningKey, addedVaults, allMembers);
+        modifiedOrgMembers = await organizationUpdateAddedMembersToAddedOrgMembers(masterKey, senderUserID, addedVaults, allMembers);
     }
 
     return {

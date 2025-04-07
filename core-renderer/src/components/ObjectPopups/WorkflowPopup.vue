@@ -95,33 +95,39 @@ export default defineComponent({
 
         async function exportPasswords()
         {
-            app.popups.showRequestAuthentication(primaryColor.value, doExportPasswords, () => { })
+            app.popups.showRequestAuthentication(primaryColor.value, doExportPasswords, () => { }, true)
 
             async function doExportPasswords(masterKey: string)
             {
-                const formattedData = await getExportablePasswords(primaryColor.value, masterKey);
-                if (!formattedData)
+                await app.runAsAsyncProcess(async () =>
                 {
-                    return;
-                }
-
-                await doExport("Vaultic-Passwords", formattedData);
+                    const formattedData = await getExportablePasswords(primaryColor.value, masterKey);
+                    if (!formattedData)
+                    {
+                        return;
+                    }
+    
+                    await doExport("Vaultic-Passwords", formattedData);
+                });
             }
         }
 
         async function exportValues()
         {
-            app.popups.showRequestAuthentication(primaryColor.value, doExportValues, () => { })
+            app.popups.showRequestAuthentication(primaryColor.value, doExportValues, () => { }, true)
 
             async function doExportValues(masterKey: string)
             {
-                const formattedData = await getExportableValues(primaryColor.value, masterKey);
-                if (!formattedData)
+                await app.runAsAsyncProcess(async () => 
                 {
-                    return;
-                }
+                    const formattedData = await getExportableValues(primaryColor.value, masterKey);
+                    if (!formattedData)
+                    {
+                        return;
+                    }
 
-                await doExport("Vaultic-Values", formattedData);
+                    await doExport("Vaultic-Values", formattedData);
+                });
             }
         }
 

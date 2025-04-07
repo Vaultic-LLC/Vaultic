@@ -17,29 +17,38 @@ export default function createReactivePassword(password: Password): ReactivePass
     const isOld: ComputedRef<boolean> = computed(() =>
     {
         const today = new Date().getTime();
-        const lastModifiedTime = Date.parse(passwordState.lastModifiedTime.value);
+        const lastModifiedTime = Date.parse(passwordState.t);
         const differenceInDays = (today - lastModifiedTime) / 1000 / 86400;
 
-        return differenceInDays >= app.settings.value.oldPasswordDays.value;
+        return differenceInDays >= app.settings.o;
     });
 
     return {
         get id() { return passwordState.id; },
-        get login() { return passwordState.login; },
-        get domain() { return passwordState.domain; },
-        get email() { return passwordState.email; },
-        get password() { return passwordState.password; },
-        get passwordFor() { return passwordState.passwordFor; },
-        get securityQuestions() { return passwordState.securityQuestions; },
-        get additionalInformation() { return passwordState.additionalInformation; },
-        get lastModifiedTime() { return passwordState.lastModifiedTime; },
-        get filters() { return passwordState.filters; },
-        get groups() { return passwordState.groups; },
-        get isWeak() { return passwordState.isWeak; },
-        get isWeakMessage() { return passwordState.isWeakMessage; },
-        get containsLogin() { return passwordState.containsLogin; },
-        get passwordLength() { return passwordState.passwordLength; },
-        get isVaultic() { return passwordState.isVaultic; },
+        get l() { return passwordState.l; },
+        set l(value: string) { passwordState.l = value; },
+        get d() { return passwordState.d; },
+        set d(value: string) { passwordState.d = value; },
+        get e() { return passwordState.e; },
+        set e(value: string) { passwordState.e = value; },
+        get p() { return passwordState.p; },
+        set p(value: string) { passwordState.p = value; },
+        get f() { return passwordState.f; },
+        set f(value: string) { passwordState.f = value; },
+        get q() { return passwordState.q; },
+        get a() { return passwordState.a; },
+        set a(value: string) { passwordState.a = value; },
+        get t() { return passwordState.t; },
+        set t(value: string) { passwordState.t = value; },
+        get i() { return passwordState.i; },
+        get g() { return passwordState.g; },
+        get w() { return passwordState.w; },
+        set w(value: boolean) { passwordState.w = value; },
+        get m() { return passwordState.m; },
+        set m(value: number) { passwordState.m = value; },
+        get c() { return passwordState.c; },
+        set c(value: boolean) { passwordState.c = value; },
+        get v() { return passwordState.v; },
         isOld() { return isOld.value },
     }
 }

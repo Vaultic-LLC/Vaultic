@@ -12,10 +12,10 @@
                     </div>
                 </ScrollView>
             </div>
-            <div class="createButtons" :class="{ anchorDown: anchorButtonsDown }">
-                <PopupButton :color="primaryColor" :text="buttonText" :disabled="disabled" :width="'10vw'" :minWidth="'115px'"
+            <div class="createButtons">
+                <PopupButton v-if="hideButtons !== true" :color="primaryColor" :text="buttonText" :disabled="disabled" :width="'10vw'" :minWidth="'115px'"
                     :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="computedMinButtonHeight" :height="'2vw'" @onClick="onSave" />
-                <PopupButton v-if="creating == true" :color="primaryColor" :text="'Create and Close'" :disabled="disabled"
+                <PopupButton v-if="hideButtons != true && creating == true" :color="primaryColor" :text="'Create and Close'" :disabled="disabled"
                     :width="'10vw'" :minWidth="'115px'" :maxWidth="'200px'" :maxHeight="'50px'" :minHeight="computedMinButtonHeight"
                     :height="'2vw'" :isSubmit="true"
                     @onClick="onSaveAndClose" />
@@ -28,10 +28,11 @@ import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmou
 
 import PopupButton from '../InputFields/PopupButton.vue';
 import ScrollView from './ScrollView.vue';
-import Message from 'primevue/message';
+import Message from 'primevue-vaultic/message';
 
 import app from "../../Objects/Stores/AppStore";
 import { ClosePopupFuncctionKey, DecryptFunctionsKey, RequestAuthorizationKey, ValidationFunctionsKey } from '../../Constants/Keys';
+import { PopupNames, popups } from '../../Objects/Stores/PopupStore';
 
 export default defineComponent({
     name: "ObjectView",
@@ -41,10 +42,12 @@ export default defineComponent({
         PopupButton,
         Message
     },
-    props: ['creating', 'title', 'color', 'defaultSave', 'gridDefinition', 'buttonText', 'skipOnSaveFunctionality', 
-        'anchorButtonsDown', 'minButtonHeight'],
+    props: ['creating', 'title', 'color', 'defaultSave', 'buttonText', 'skipOnSaveFunctionality',
+        'minButtonHeight', 'hideButtons', 'popupInfoOverride', 'isSensitive'],
     setup(props)
     {
+        const popupInfo = props.popupInfoOverride ? popups[props.popupInfoOverride as PopupNames] : popups.defaultObjectPopup;
+
         const primaryColor: ComputedRef<string> = computed(() => props.color);
         const buttonText: Ref<string> = ref(props.buttonText ? props.buttonText : props.creating ? "Create" : "Save and Close");
         const closePopupFunction: ComputedRef<(saved: boolean) => void> | undefined = inject(ClosePopupFuncctionKey);
@@ -162,19 +165,19 @@ export default defineComponent({
             }
 
             app.popups.showRequestAuthentication(primaryColor.value,
-                onAuthenticationSuccessful, authenticationCancelled);
+                onAuthenticationSuccessful, authenticationCancelled, props.isSensitive === true);
 
             requestAuthorization.value = false;
         });
 
         onMounted(() =>
         {
-            app.popups.addOnEnterHandler(4, onSave);
+            app.popups.addOnEnterHandler(popupInfo.enterOrder ?? popups.defaultObjectPopup.enterOrder!, onSave);
         });
 
         onUnmounted(() =>
         {
-            app.popups.removeOnEnterHandler(4);
+            app.popups.removeOnEnterHandler(popupInfo.enterOrder ?? popups.defaultObjectPopup.enterOrder!);
         });
 
         return {
@@ -247,11 +250,5 @@ export default defineComponent({
     justify-content: space-between;
     column-gap: 50px;
     flex-grow: 1;
-}
-
-.objectViewContainer .createButtons.anchorDown {
-    margin: 0;
-    flex-grow: 1;
-    align-items: flex-end;
 }
 </style>

@@ -7,25 +7,20 @@
                     <div class="createMasterKeyViewContainer__inputs">
                         <EncryptedInputField ref="encryptedInputField"
                             :label="'Master Key'" :colorModel="colorModel" v-model="key" :required="true"
-                            :width="'70%'" :maxWidth="''"/>
+                            :width="'70%'" :maxWidth="''" :showRandom="true" :randomValueType="RandomValueType.Passphrase" 
+                            :popoverClass="'createMasterKeyViewContainer__keyPopover'" @onInvalid="() => masterKeyInvalid = true" 
+                            @update:model-value="() => masterKeyInvalid = false" />
                         <div class="createMasterKeyViewContainer__keyRequirements">
-                            <CheckboxInputField class="greaterThanTwentyCharacters" :label="'20 Characters'"
+                            <CheckboxInputField class="createMasterKeyViewContainer__isTwentyCharacters" 
+                                :class="{ 'createMasterKeyViewContainer__isTwentyCharacters--shift': masterKeyInvalid}" :label="'20 Characters'"
                                 :color="color" v-model="greaterThanTwentyCharacters" :fadeIn="true" :width="'100%'"
-                                :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" :disabled="true" />
-                            <CheckboxInputField class="containsUpperAndLowerCaseLetters" :label="'Upper and Lower Case'"
-                                :color="color" v-model="containesUpperAndLowerCase" :fadeIn="true" :width="'100%'"
-                                :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" :disabled="true" />
-                            <CheckboxInputField class="containsNumber" :label="'Number'" :color="color"
-                                v-model="hasNumber" :fadeIn="true" :width="'100%'" :height="'1.25vh'"
-                                :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" :disabled="true" />
-                            <CheckboxInputField class="containsSpecialCharacter" :label="'Special Character'"
-                                :color="color" v-model="hasSpecialCharacter" :fadeIn="true" :width="'100%'"
                                 :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" :disabled="true" />
                         </div>
                         <EncryptedInputField ref="confirmEncryptedInputField"
-                            :label="'Confirm Key'"
-                            :colorModel="colorModel" v-model="reEnterKey" :width="'70%'" :maxWidth="''" />
-                        <CheckboxInputField class="createMasterKeyViewContainer__matchesKey" :label="'Matches Key'"
+                            :label="'Confirm Key'" :colorModel="colorModel" v-model="reEnterKey" :width="'70%'" :maxWidth="''" 
+                             @onInvalid="() => confirmKeyInvalid = true" @update:model-value="() => confirmKeyInvalid = false" />
+                        <CheckboxInputField class="createMasterKeyViewContainer__matchesKey" 
+                            :class="{ 'createMasterKeyViewContainer__matchesKey--shift': confirmKeyInvalid}" :label="'Matches Key'"
                             :color="color" v-model="matchesKey" :fadeIn="true" :width="'70%'" :height="'1.25vh'"
                             :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" :disabled="true" />
                     </div>
@@ -54,6 +49,7 @@ import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
 import errorCodes from '@vaultic/shared/Types/ErrorCodes';
 import { defaultPassword, Password } from '../../Types/DataTypes';
+import { RandomValueType } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
     name: "CreateMasterKeyView",
@@ -64,7 +60,7 @@ export default defineComponent({
         CheckboxInputField,
         ButtonLink,
     },
-    emits: ['onSuccess', 'onLoginFailed'],
+    emits: ['onSuccess', 'onLoginFailed', 'onInvalidPendingUser'],
     props: ['color', 'account'],
     setup(props, ctx)
     {
@@ -79,14 +75,14 @@ export default defineComponent({
         const confirmEncryptedInputField: Ref<InputComponent | null> = ref(null);
 
         const greaterThanTwentyCharacters: Ref<boolean> = ref(false);
-        const containesUpperAndLowerCase: Ref<boolean> = ref(false);
-        const hasNumber: Ref<boolean> = ref(false);
-        const hasSpecialCharacter: Ref<boolean> = ref(false);
         const matchesKey: Ref<boolean> = ref(false);
 
         const alertMessage: Ref<string> = ref('');
 
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(props.color));
+
+        const masterKeyInvalid: Ref<boolean> = ref(false);
+        const confirmKeyInvalid: Ref<boolean> = ref(false);
 
         async function showAlertMessage(message: string, title: string = 'Unable to create master key', showContactSupport: boolean = false)
         {
@@ -98,12 +94,9 @@ export default defineComponent({
 
         async function onSubmit()
         {
-            if (!greaterThanTwentyCharacters.value ||
-                !containesUpperAndLowerCase.value ||
-                !hasNumber.value ||
-                !hasSpecialCharacter.value)
+            if (!greaterThanTwentyCharacters.value)
             {
-                encryptedInputField.value?.invalidate("Please meet all the requirements below");
+                encryptedInputField.value?.invalidate("Please create a key at least 20 characters long");
                 return;
             }
             else if (!matchesKey.value)
@@ -113,7 +106,7 @@ export default defineComponent({
             }
 
             app.popups.showLoadingIndicator(props.color, "Creating Account");
-            const response = await api.helpers.server.registerUser(key.value, account.value.email, account.value.firstName,
+            const response = await api.helpers.server.registerUser(key.value, account.value.pendingUserToken!, account.value.firstName,
                 account.value.lastName);
 
             if (response.Success)
@@ -124,7 +117,7 @@ export default defineComponent({
                 const loginResponse = await api.helpers.server.logUserIn(key.value, account.value.email, true, false);
                 if (loginResponse.success && loginResponse.value!.Success)
                 {
-                    const createUserResult = await api.repositories.users.createUser(loginResponse.value?.masterKey!, account.value.email, account.value.firstName, account.value.lastName);
+                    const createUserResult = await api.repositories.users.createUser(key.value, account.value.email, account.value.firstName, account.value.lastName);
                     if (!createUserResult.success)
                     {
                         app.popups.hideLoadingIndicator();
@@ -137,7 +130,7 @@ export default defineComponent({
                     }
 
                     app.isOnline = true;
-                    if (!(await app.loadUserData(loginResponse.value?.masterKey!)))
+                    if (!(await app.loadUserData(createUserResult.value!)))
                     {
                         app.popups.hideLoadingIndicator();
                         showAlertMessage("An unexpected error occured when trying to load data. Please try signing in. If the issue persists", "Unable to load data", true);
@@ -146,16 +139,18 @@ export default defineComponent({
                         return;
                     }
 
-                    const password: Password = defaultPassword();
-                    password.isVaultic.value = true;
-                    password.password.value = key.value;
-                    password.login.value = account.value.email;
-                    password.domain.value = "Vaultic.org"; // TODO: switch to actual website
-                    password.email.value = account.value.email;
-                    password.passwordFor.value = "Vaultic Password Manager";
-                    password.additionalInformation.value = "Email used to log into your Vaultic Password Manager account.";
+                    const pendingPasswordStore = app.currentVault.passwordStore.getPendingState()!;
 
-                    await app.currentVault.passwordStore.addPassword(loginResponse.value?.masterKey!, password);
+                    const password: Password = defaultPassword();
+                    password.v = true;
+                    password.p = key.value;
+                    password.l = account.value.email;
+                    password.d = "Vaultic.org"; // TODO: switch to actual website
+                    password.e = account.value.email;
+                    password.f = "Vaultic Password Manager";
+                    password.additionalInformation = "Email used to log into your Vaultic Password Manager account.";
+
+                    await app.currentVault.passwordStore.addPassword(createUserResult.value!, password, [], pendingPasswordStore);
                     ctx.emit('onSuccess');
 
                     return;
@@ -171,6 +166,10 @@ export default defineComponent({
                 if (response.EmailIsTaken)
                 {
                     showAlertMessage("Email is already in use. Please use a different one");
+                }
+                else if (response.InvalidPendingUser)
+                {
+                    ctx.emit('onInvalidPendingUser');
                 }
                 else if (response.RestartOpaqueProtocol)
                 {
@@ -191,19 +190,12 @@ export default defineComponent({
         watch(() => key.value, async (newValue) =>
         {
             greaterThanTwentyCharacters.value = newValue.length >= 20;
-            containesUpperAndLowerCase.value = await api.helpers.validation.containsUppercaseAndLowercaseNumber(newValue);
-            hasNumber.value = await api.helpers.validation.containsNumber(newValue);
-            hasSpecialCharacter.value = await api.helpers.validation.containsSpecialCharacter(newValue);
-
             matchesKey.value = newValue == reEnterKey.value;
         });
 
         watch(() => reEnterKey.value, (newValue) =>
         {
-            if (!greaterThanTwentyCharacters.value ||
-                !containesUpperAndLowerCase.value ||
-                !hasNumber.value ||
-                !hasSpecialCharacter.value)
+            if (!greaterThanTwentyCharacters.value)
             {
                 return;
             }
@@ -212,20 +204,20 @@ export default defineComponent({
         });
 
         return {
+            RandomValueType,
             refreshKey,
             key,
             reEnterKey,
             encryptedInputField,
             confirmEncryptedInputField,
             greaterThanTwentyCharacters,
-            containesUpperAndLowerCase,
-            hasNumber,
-            hasSpecialCharacter,
             matchesKey,
             colorModel,
             alertMessage,
+            masterKeyInvalid,
+            confirmKeyInvalid,
             onSubmit,
-            openCreateStrongAndMemorablePasswords
+            openCreateStrongAndMemorablePasswords,
         }
     }
 })
@@ -252,6 +244,7 @@ export default defineComponent({
     align-items: center;
     height: 100%;
     width: 100%;
+    margin-top: 10px;
 }
 
 .createMasterKeyViewContainer__inputs {
@@ -274,5 +267,22 @@ export default defineComponent({
 
 .createMasterKeyViewContainer__matchesKey {
     transform: translateX(10px);
+    transition: 0.3s;
+}
+
+.createMasterKeyViewContainer__matchesKey--shift {
+    margin-top: 10px;
+}
+
+.createMasterKeyViewContainer__keyPopover {
+    z-index: 2001 !important;
+}
+
+.createMasterKeyViewContainer__isTwentyCharacters {
+    transition: 0.3s;
+}
+
+.createMasterKeyViewContainer__isTwentyCharacters--shift {
+    margin-top: 10px;
 }
 </style>

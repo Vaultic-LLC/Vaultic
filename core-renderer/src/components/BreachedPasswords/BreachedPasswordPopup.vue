@@ -9,7 +9,7 @@
                         <li class="breachedPasswordPopup__listRow">
                             <div class="breachedPasswordPopup__row">
                                 <div class="breachedPasswordPopup__rowTitle">Domain:</div>
-                                <div class="breachedPasswordPopup__rowValue">{{ password?.value.domain.value }}</div>
+                                <div class="breachedPasswordPopup__rowValue">{{ password?.d }}</div>
                             </div>
                         </li>
                         <li class="breachedPasswordPopup__listRow">
@@ -53,7 +53,6 @@ import app from "../../Objects/Stores/AppStore";
 import { ReactivePassword } from '../../Objects/Stores/ReactivePassword';
 import { popups } from '../../Objects/Stores/PopupStore';
 import { VaultDataBreach } from "@vaultic/shared/Types/ClientServerTypes";
-import { Field } from '@vaultic/shared/Types/Fields';
 
 export default defineComponent({
     name: "DeviceView",
@@ -71,7 +70,7 @@ export default defineComponent({
 
         const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const vaultDataBreach: Ref<VaultDataBreach | undefined> = ref(undefined);
-        const password: Ref<Field<ReactivePassword>| undefined> = ref(undefined);
+        const password: Ref<ReactivePassword | undefined> = ref(undefined);
         const disabled: Ref<boolean> = ref(false);
         const dateString: Ref<string> = ref('');
 
@@ -87,7 +86,7 @@ export default defineComponent({
             app.popups.showLoadingIndicator(primaryColor.value);
             disabled.value = true;
 
-            const succeeded = await app.vaultDataBreaches.dismissVaultDataBreach(vaultDataBreach.value?.VaultDataBreachID!);
+            const succeeded = await app.runAsAsyncProcess(() => app.vaultDataBreaches.dismissVaultDataBreach(vaultDataBreach.value?.VaultDataBreachID!));
             app.popups.hideLoadingIndicator();
 
             if (succeeded)
@@ -114,7 +113,7 @@ export default defineComponent({
                 dateString.value = `${dateBreached.getUTCMonth() + 1}/${dateBreached.getUTCDay() + 1}/${dateBreached.getUTCFullYear()}`;
             }
 
-            const foundPassword: Field<ReactivePassword> | undefined = app.currentVault.passwordStore.getState().passwordsByID.value.get(props.passwordID);
+            const foundPassword: ReactivePassword | undefined = app.currentVault.passwordStore.getState().p[props.passwordID];
             if (foundPassword)
             {
                 password.value = foundPassword;

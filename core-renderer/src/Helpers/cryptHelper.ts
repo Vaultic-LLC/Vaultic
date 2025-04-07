@@ -8,13 +8,12 @@ export interface CryptHelper
     decrypt: (key: string, value: string) => Promise<TypedMethodResponse<string | undefined>>;
 }
 
-// TODO: is this actually needed?
 async function encrypt(key: string, value: string): Promise<TypedMethodResponse<string | undefined>>
 {
     const result = await api.utilities.crypt.symmetricEncrypt(key, value);
     if (!result.success)
     {
-        app.popups.showErrorAlert(result.logID);
+        app.popups.showErrorAlert();
     }
 
     return result;

@@ -25,7 +25,6 @@ export default defineComponent({
 
         onMounted(async () =>
         {
-            // TODO: should probably be able to cancel this in case it is taking too long to load
             app.popups.showLoadingIndicator(currentPrimaryColor.value, "Loading");
 
             const response = await api.server.user.getMFAKey();
@@ -37,8 +36,7 @@ export default defineComponent({
                 return;
             }
 
-            // TODO: switch this with the users actuall email or name
-            qrCode.value = await generateMFAQRCode("Member", response.MFAKey!);
+            qrCode.value = await generateMFAQRCode(app.userInfo?.email ?? "Vaultic Member", response.MFAKey!);
             app.popups.hideLoadingIndicator();
         });
 

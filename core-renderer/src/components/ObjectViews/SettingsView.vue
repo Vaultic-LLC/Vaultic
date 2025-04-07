@@ -1,182 +1,130 @@
 <template>
-    <ObjectView ref="objectView" :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
-        :gridDefinition="gridDefinition">
-        <Accordion value="0" 
-            :pt="{
-                root: 'settingsView__accordion'
-            }">
-            <AccordionPanel value="0">
-                <AccordionHeader 
-                    :pt="{
-                        root: 'settingsView__accordionHeader'
-                    }">
-                        App
-                </AccordionHeader>
-                <AccordionContent
-                    :pt="{
-                        content: 'settingsView__accordianContentContent'
-                    }">
-                        <div class="settingsView__inputSection">
-                            <EnumInputField class="settingsView__autoLockTime" :label="'Auto Lock Time'" :color="color"
-                                v-model="appSettings.autoLockTime.value" :optionsEnum="AutoLockTime" fadeIn="true" :width="'10vw'"
-                                :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" :disabled="readOnly" />
-                            <EnumInputField class="settingsView__multipleFilterBehavior" :label="'Multiple Filter Behavior'"
-                                :color="color" v-model="appSettings.multipleFilterBehavior.value" :optionsEnum="FilterStatus"
-                                fadeIn="true" :width="'10vw'" :maxWidth="'300px'" :minWidth="'190px'" :height="'4vh'" :minHeight="'35px'"
-                                :disabled="readOnly" />
-                        </div>
-                        <div class="settingsView__inputSection">
-                            <TextInputField class="settingsView__maxLoginRecordsPerDay" :color="color"
-                                :label="'Max Login Records Per Day'" v-model="vaultSettings.loginRecordsToStorePerDay.value"
-                                :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-                                :minHeight="'35px'" :disabled="readOnly"
-                                :additionalValidationFunction="enforceLoginRecordsPerDay" />
-                            <TextInputField class="settingsView__daysToStoreLoginRecords" :color="color"
-                                :label="'Days to Store Login Records'" v-model="vaultSettings.numberOfDaysToStoreLoginRecords.value"
-                                :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-                                :minHeight="'35px'" :disabled="readOnly"
-                                :additionalValidationFunction="enforceDaysToStoreLoginRecords" />
-                        </div>                     
-                    </AccordionContent>
-                </AccordionPanel>
-                <AccordionPanel value="1">
-                    <AccordionHeader 
-                        :pt="{
-                            root: 'settingsView__accordionHeader'
-                        }">
-                            Security
-                    </AccordionHeader>
-                <AccordionContent 
-                    :pt="{
-                        content: 'settingsView__accordianContentContent'
-                    }">
-                        <div class="settingsView__inputSection">
-                            <TextInputField class="settingsView__oldPasswordDays" :color="color" :label="'Old Password Days'"
-                                v-model.number="appSettings.oldPasswordDays.value" :inputType="'number'" :width="'10vw'"
-                                :minWidth="'190px'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" :disabled="readOnly"
-                                :additionalValidationFunction="enforceOldPasswordDays" />
-                            <TextInputField class="settingsView__percentFilledMetricForPulse" :color="color"
-                                :label="'% Filled Metric for Pulse'" v-model.number="appSettings.percentMetricForPulse.value"
-                                :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-                                :minHeight="'35px'" :disabled="readOnly"
-                                :additionalValidationFunction="enforcePercentMetricForPulse" :showToolTip="true"
-                                :toolTipSize="'clamp(15px, 1vw, 28px)'"
-                                :toolTipMessage="'At what percent of the total value should the metric start pulsing. Ex. 50% would mean 5 / 10 Weak Passwords would start pusling. Does not apply to Breached Passwords.'" />
-                        </div>
-                        <div class="settingsView__inputSection">
-                            <TextInputField :color="color"
-                                :label="'Random Password Length'" v-model.number="appSettings.randomValueLength.value"
-                                :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-                                :minHeight="'35px'" :disabled="readOnly"
-                                :additionalValidationFunction="enforceMinRandomPasswordLength" />
-                            <TextInputField class="settingsView__randomPassphraseLength" :color="color"
-                                :label="'Random Passphrase Length'" v-model.number="appSettings.randomPhraseLength.value"
-                                :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-                                :minHeight="'35px'" :disabled="readOnly"
-                                :additionalValidationFunction="enforceMinRandomPassphraseLength" />
-                        </div>
-                        <div class="settingsView__inputSection">
-                            <TextInputField :color="color" :label="'Passphrase Seperator'" v-model.number="appSettings.passphraseSeperator.value"
-                                :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'" :minHeight="'35px'" :disabled="readOnly" />
-                            <EnumInputField v-if="isOnline" class="settingsView__multipleFilterBehavior" :label="'Require MFA On'"
-                                :color="color" v-model="requireMFAOn" :optionsEnum="DisplayRequireMFAOn" :hideClear="true"
-                                fadeIn="true" :width="'10vw'" :maxWidth="'300px'" :minWidth="'190px'" :height="'4vh'" :minHeight="'35px'"
-                                :disabled="readOnly || !isOnline || isLoadingSharedData" />
-                        </div>
-                        <div class="settingsView__inputSection">
-                            <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
-                                :label="'Remember Master Key While Logged In'" v-model="appSettings.temporarilyStoreMasterKey.value" />
-                        </div>
-                        <div class="settingsView__inputSection">
-                            <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
-                                :label="'Include Ambiguous Characters in Random Password'" v-model="appSettings.includeAmbiguousCharactersInRandomPassword.value" />
-                        </div>
-                        <div class="settingsView__inputSection">
-                            <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
-                                    :label="'Include Numbers in Random Passwords'" v-model="appSettings.includeNumbersInRandomPassword.value" />
-                        </div>
-                        <div class="settingsView__inputSection">
-                            <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
-                                :label="'Include Numbers in Random Passphrase'" v-model="appSettings.includeNumbersInRandomPassphrase.value" />
-                        </div>
-                        <div class="settingsView__inputSection">
-                            <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
-                                    :label="'Include Special Characters in Random Password'" v-model="appSettings.includeSpecialCharactersInRandomPassword.value" />
-                        </div>
-                        <div class="settingsView__inputSection">
-                            <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
-                                :label="'Include Special Characters in Random Passphrase'" v-model="appSettings.includeSpecialCharactersInRandomPassphrase.value" />
-                        </div>
-                        
-                    </AccordionContent>
-                </AccordionPanel>
-                <AccordionPanel value="2" 
-                    :pt="{
-                        root: 'settingsView__accordionPanel'
-                    }">
-                    <AccordionHeader 
-                        :pt="{
-                            root: 'settingsView__accordionHeader'
-                        }">
-                            Sharing
-                    </AccordionHeader>
-                    <AccordionContent
-                        :pt="{
-                            content: 'settingsView__accordianContentContent'
-                        }">
-                        <div v-if="isOnline" class="settingsView__inputSection">
-                            <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly || isLoadingSharedData || failedToLoadSharedData"
-                                :label="'Allow Shared Vaults From Others'" v-model="allowSharedVaultsFromOthers" />
-                        </div>
-                        <div v-if="isOnline && allowSharedVaultsFromOthers" class="settingsView__inputSection">
-                            <TextInputField ref="usernameField" class="settingsView__maxLoginRecordsPerDay" :color="color"
-                                :label="'Username'" v-model="username"
-                                :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
-                                :minHeight="'35px'" :disabled="readOnly || !allowSharedVaultsFromOthers || isLoadingSharedData || failedToLoadSharedData" />
-                            <EnumInputField class="settingsView__autoLockTime" :label="'Allow Sharing From'" :color="color"
-                                v-model="allowSharingFrom" :optionsEnum="AllowSharingFrom" fadeIn="true" :width="'10vw'" :maxWidth="'300px'"
-                                :height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" :hideClear="true" 
-                                :disabled="readOnly || isLoadingSharedData || failedToLoadSharedData" />
-                        </div>
-                        <div v-if="isOnline && allowSharedVaultsFromOthers && allowSharingFrom == AllowSharingFrom.SpecificUsers" 
-                            class="settingsView__inputSection settingsView__memberContainer">
-                            <MemberTable ref="memberTable" :id="'settingsView__memberTable'" :color="color" :emptyMessage="emptyMessage" 
-                                :currentMembers="currentAllowUsersToShare" :hidePermissions="true" :tabOverride="'Users'" 
-                                :externalLoading="isLoadingSharedData" :hideEdit="true" :disable="readOnly || isLoadingSharedData || failedToLoadSharedData" />
-                        </div>
-                    </AccordionContent>
-                </AccordionPanel>
-            </Accordion>
+    <ObjectView ref="objectView" :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey" :hideButtons="readOnly">
+        <VaulticAccordion :value="'0'">
+            <VaulticAccordionPanel :value="'0'">
+                <VaulticAccordionHeader :title="'App'" />
+                <VaulticAccordionContent>
+                    <div class="settingsView__inputSection">
+                        <EnumInputField class="settingsView__autoLockTime" :label="'Auto Lock Time'" :color="color"
+                            v-model="reactiveAppSettings.a" :optionsEnum="AutoLockTime" fadeIn="true" :width="'10vw'"
+                            :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" :disabled="readOnly" />
+                        <EnumInputField class="settingsView__multipleFilterBehavior" :label="'Multiple Filter Behavior'"
+                            :color="color" v-model="reactiveAppSettings.f" :optionsEnum="FilterStatus"
+                            fadeIn="true" :width="'10vw'" :maxWidth="'300px'" :minWidth="'190px'" :height="'4vh'" :minHeight="'35px'"
+                            :disabled="readOnly" />
+                    </div>                    
+                </VaulticAccordionContent>
+            </VaulticAccordionPanel>
+            <VaulticAccordionPanel :value="'1'">
+                <VaulticAccordionHeader :title="'Security'" />
+                <VaulticAccordionContent>
+                    <div class="settingsView__inputSection">
+                        <TextInputField class="settingsView__oldPasswordDays" :color="color" :label="'Old Password Days'"
+                            v-model.number="reactiveAppSettings.o" :inputType="'number'" :width="'10vw'"
+                            :minWidth="'190px'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" :disabled="readOnly"
+                            :additionalValidationFunction="enforceOldPasswordDays" />
+                        <TextInputField class="settingsView__percentFilledMetricForPulse" :color="color"
+                            :label="'% Filled Metric for Pulse'" v-model.number="reactiveAppSettings.p"
+                            :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
+                            :minHeight="'35px'" :disabled="readOnly"
+                            :additionalValidationFunction="enforcePercentMetricForPulse" :showToolTip="true"
+                            :toolTipSize="'clamp(15px, 1vw, 28px)'"
+                            :toolTipMessage="'At what percent of the total value should the metric start pulsing. Ex. 50% would mean 5 / 10 Weak Passwords would start pusling. Does not apply to Breached Passwords.'" />
+                    </div>
+                    <div class="settingsView__inputSection">
+                        <TextInputField :color="color"
+                            :label="'Random Password Length'" v-model.number="reactiveAppSettings.v"
+                            :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
+                            :minHeight="'35px'" :disabled="readOnly"
+                            :additionalValidationFunction="enforceMinRandomPasswordLength" />
+                        <TextInputField class="settingsView__randomPassphraseLength" :color="color"
+                            :label="'Random Passphrase Length'" v-model.number="reactiveAppSettings.r"
+                            :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
+                            :minHeight="'35px'" :disabled="readOnly"
+                            :additionalValidationFunction="enforceMinRandomPassphraseLength" />
+                    </div>
+                    <div class="settingsView__inputSection">
+                        <TextInputField :color="color" :label="'Passphrase Seperator'" v-model.number="reactiveAppSettings.e"
+                            :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'" :minHeight="'35px'" :disabled="readOnly" />
+                        <EnumInputField v-if="isOnline" class="settingsView__multipleFilterBehavior" :label="'Require MFA On'"
+                            :color="color" v-model="requireMFAOn" :optionsEnum="DisplayRequireMFAOn" :hideClear="true"
+                            fadeIn="true" :width="'10vw'" :maxWidth="'300px'" :minWidth="'190px'" :height="'4vh'" :minHeight="'35px'"
+                            :disabled="readOnly || !isOnline || isLoadingSharedData" />
+                    </div>
+                    <div class="settingsView__inputSection">
+                        <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
+                            :label="'Require Master Key to View or Update Sensitive Information'" v-model="reactiveAppSettings.q" />
+                        <ToolTip :color="color" :size="'clamp(15px, 0.8vw, 20px)'" :fadeIn="false"
+                            :message="'If checked, will prompt you to enter your Master Key when updating your settings, adding, updating, or deleting Passwords, Values, Vaults, Devices or Organizations, and unlocking fields on edit popups. This is to prevent tampering with your sensitive data if you happent to forget to lock your vault.'" />
+                    </div>
+                    <div class="settingsView__inputSection">
+                        <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
+                            :label="'Include Ambiguous Characters in Random Password'" v-model="reactiveAppSettings.m" />
+                    </div>
+                    <div class="settingsView__inputSection">
+                        <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
+                                :label="'Include Numbers in Random Passwords'" v-model="reactiveAppSettings.n" />
+                    </div>
+                    <div class="settingsView__inputSection">
+                        <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
+                                :label="'Include Special Characters in Random Password'" v-model="reactiveAppSettings.s" />
+                    </div>               
+                </VaulticAccordionContent>
+            </VaulticAccordionPanel>
+            <VaulticAccordionPanel :value="'2'" :final="true">
+                <VaulticAccordionHeader :title="'Sharing'" />
+                <VaulticAccordionContent>
+                    <div v-if="isOnline" class="settingsView__inputSection">
+                        <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly || isLoadingSharedData || failedToLoadSharedData"
+                            :label="'Allow Shared Vaults From Others'" v-model="allowSharedVaultsFromOthers" />
+                    </div>
+                    <div v-if="isOnline && allowSharedVaultsFromOthers" class="settingsView__inputSection">
+                        <TextInputField ref="usernameField" class="settingsView__maxLoginRecordsPerDay" :color="color"
+                            :label="'Username'" v-model="username"
+                            :inputType="'number'" :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'"
+                            :minHeight="'35px'" :disabled="readOnly || !allowSharedVaultsFromOthers || isLoadingSharedData || failedToLoadSharedData" />
+                        <EnumInputField class="settingsView__autoLockTime" :label="'Allow Sharing From'" :color="color"
+                            v-model="allowSharingFrom" :optionsEnum="AllowSharingFrom" fadeIn="true" :width="'10vw'" :maxWidth="'300px'"
+                            :height="'4vh'" :minHeight="'35px'" :minWidth="'190px'" :hideClear="true" 
+                            :disabled="readOnly || isLoadingSharedData || failedToLoadSharedData" />
+                    </div>
+                    <div v-if="isOnline && allowSharedVaultsFromOthers && allowSharingFrom == AllowSharingFrom.SpecificUsers" 
+                        class="settingsView__inputSection settingsView__memberContainer">
+                        <MemberTable ref="memberTable" :id="'settingsView__memberTable'" :color="color" :emptyMessage="emptyMessage" 
+                            :currentMembers="currentAllowUsersToShare" :hidePermissions="true" :tabOverride="'Users'" 
+                            :externalLoading="isLoadingSharedData" :hideEdit="true" :disable="readOnly || isLoadingSharedData || failedToLoadSharedData" />
+                    </div>
+                </VaulticAccordionContent>
+            </VaulticAccordionPanel>
+        </VaulticAccordion>
     </ObjectView>
 </template>
 <script lang="ts">
-import { ComputedRef, defineComponent, computed, ref, onMounted, Ref, watch } from 'vue';
+import { ComputedRef, defineComponent, computed, ref, onMounted, Ref, watch, reactive, Reactive, toRefs } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import EnumInputField from '../InputFields/EnumInputField.vue';
 import MemberTable from '../Table/MemberTable.vue';
-import Accordion from 'primevue/accordion';
-import AccordionPanel from 'primevue/accordionpanel';
-import AccordionHeader from 'primevue/accordionheader';
-import AccordionContent from 'primevue/accordioncontent';
+import VaulticAccordion from '../Accordion/VaulticAccordion.vue';
+import VaulticAccordionPanel from '../Accordion/VaulticAccordionPanel.vue';
+import VaulticAccordionHeader from '../Accordion/VaulticAccordionHeader.vue';
+import VaulticAccordionContent from '../Accordion/VaulticAccordionContent.vue';
+import ToolTip from '../ToolTip.vue';
 
-import { AutoLockTime } from '../../Types/App';
-import { GridDefinition } from '../../Types/Models';
 import app, { AppSettings } from "../../Objects/Stores/AppStore";
-import { VaultSettings } from "../../Objects/Stores/VaultStore";
 import StoreUpdateTransaction from "../../Objects/StoreUpdateTransaction";
-import { FilterStatus } from '../../Types/DataTypes';
 import { AllowSharingFrom, ServerAllowSharingFrom, ServerPermissions } from '@vaultic/shared/Types/ClientServerTypes';
 import { api } from '../../API';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { InputComponent, MemberChanges, MemberTableComponent, ObjectViewComponent } from '../../Types/Components';
 import { Member } from '@vaultic/shared/Types/DataTypes';
 import { DisplayRequireMFAOn, displayRequireMFAOnToRequireMFAOn, RequireMFAOn, reuireMFAOnToDisplay } from '@vaultic/shared/Types/Device';
+import { AutoLockTime, FilterStatus } from '@vaultic/shared/Types/Stores';
 
 export default defineComponent({
-    name: "ValueView",
+    name: "SettingsView",
     components:
     {
         ObjectView,
@@ -184,10 +132,11 @@ export default defineComponent({
         CheckboxInputField,
         EnumInputField,
         MemberTable,
-        Accordion,
-        AccordionPanel,
-        AccordionHeader,
-        AccordionContent
+        VaulticAccordion,
+        VaulticAccordionPanel,
+        VaulticAccordionHeader,
+        VaulticAccordionContent,
+        ToolTip
     },
     props: ['creating', 'currentView'],
     setup(props)
@@ -199,16 +148,17 @@ export default defineComponent({
         const usernameField: Ref<InputComponent | null> = ref(null);
         const objectView: Ref<ObjectViewComponent | null> = ref(null);
 
+        const appStoreState = app.getPendingState()!;
         // copy the objects so that we don't edit the original one. Also needed for change tracking
-        const originalAppSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings.value)));
-        const appSettings: Ref<AppSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings.value)));
+        const originalAppSettings: Ref<AppSettings> = ref(JSON.parse(JSON.stringify(app.settings)));
+        const reactiveAppSettings = appStoreState.createCustomRef("settings", originalAppSettings.value);
 
-        const originalVaultSettings: Ref<VaultSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.settings.value)));
-        const vaultSettings: Ref<VaultSettings> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.currentVault.settings.value)));
+        // const originalVaultSettings: Ref<VaultSettings> = ref(JSON.parse(JSON.stringify(app.currentVault.settings.value)));
+        // const vaultSettings: Ref<VaultSettings> = ref(JSON.parse(JSON.stringify(app.currentVault.settings.value)));
 
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const currentView: Ref<number> = ref(props.currentView ? props.currentView : 0);
-        const readOnly: ComputedRef<boolean> = computed(() => app.currentVault.isReadOnly.value);
+        const readOnly: Ref<boolean> = ref(app.currentVault.isReadOnly.value);
 
         const originalAllowSharedVaultsFromOthers: Ref<boolean> = ref(false);
         const originalUsername: Ref<string> = ref('');
@@ -225,19 +175,12 @@ export default defineComponent({
         const originalRequireMFAOnSetting: Ref<DisplayRequireMFAOn> = ref(DisplayRequireMFAOn.NoDevices);
         const requireMFAOn: Ref<DisplayRequireMFAOn> = ref(DisplayRequireMFAOn.NoDevices);
 
-        const gridDefinition: GridDefinition = {
-            rows: 1,
-            rowHeight: '100%',
-            columns: 1,
-            columnWidth: '100%'
-        };
-
         let saveSucceeded: (value: boolean) => void;
         let saveFaield: (value: boolean) => void;
 
         function onSave()
         {
-            app.popups.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
+            app.popups.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled, true);
             return new Promise((resolve, reject) =>
             {
                 saveSucceeded = resolve;
@@ -248,7 +191,6 @@ export default defineComponent({
         async function onAuthenticationSuccessful(masterKey: string)
         {
             app.popups.showLoadingIndicator(color.value, "Saving Settings");
-            const originalTemporarilyStoreMasterKey = app.settings.value.temporarilyStoreMasterKey.value;
             
             //check / save shared settinsg first in case username is already taken
             if (!await checkUpdateSettings())
@@ -257,38 +199,27 @@ export default defineComponent({
             }
 
             const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
-            if (JSON.vaulticStringify(originalAppSettings.value) != JSON.vaulticStringify(appSettings.value))
+            if (JSON.stringify(originalAppSettings.value) != JSON.stringify(reactiveAppSettings))
             {
-                const state = app.cloneState();
-                state.settings.value = appSettings.value;
+                appStoreState.commitProxyObject('settings', reactiveAppSettings);
+                transaction.updateUserStore(app, appStoreState);
 
-                transaction.updateUserStore(app, state);
-            }
-
-            if (JSON.vaulticStringify(originalVaultSettings.value) != JSON.vaulticStringify(vaultSettings.value))
-            {
-                const state = app.currentVault.cloneState();
-                state.settings.value = vaultSettings.value;
-
-                transaction.updateVaultStore(app.currentVault, state);
-            }
-
-            const succeeded = await transaction.commit(masterKey, app.isOnline);
-            if (succeeded && 
-                originalTemporarilyStoreMasterKey != app.settings.value.temporarilyStoreMasterKey.value)
-            {
-                if (app.settings.value.temporarilyStoreMasterKey.value)
+                if (!(await transaction.commit(masterKey)))
                 {
-                    await api.cache.setMasterKey(masterKey);
-                }
-                else
-                {
-                    await api.cache.clearMasterKey();
+                    return false;
                 }
             }
+
+            // if (JSON.stringify(originalVaultSettings.value) != JSON.stringify(vaultSettings.value))
+            // {
+            //     const state = app.currentVault.cloneState();
+            //     state.settings.value = vaultSettings.value;
+
+            //     transaction.updateVaultStore(app.currentVault, state);
+            // }
 
             app.popups.hideLoadingIndicator();
-            saveSucceeded(succeeded);
+            saveSucceeded(true);
         }
 
         async function checkUpdateSettings(): Promise<boolean>
@@ -545,10 +476,7 @@ export default defineComponent({
             objectView,
             usernameField,
             memberTable,
-            appSettings,
-            vaultSettings,
             refreshKey,
-            gridDefinition,
             AutoLockTime,
             FilterStatus,
             currentView,
@@ -562,6 +490,7 @@ export default defineComponent({
             currentAllowUsersToShare,
             requireMFAOn,
             DisplayRequireMFAOn,
+            reactiveAppSettings,
             onSave,
             onAuthenticationSuccessful,
             enforceLoginRecordsPerDay,
@@ -627,7 +556,6 @@ export default defineComponent({
 }
 
 :deep(#settingsView__memberTable) {
-    position: relative;
     min-height: 40vh;
     height: 100%;
 }

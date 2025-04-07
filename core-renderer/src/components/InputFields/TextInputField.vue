@@ -1,6 +1,6 @@
 <template>
-    <div class="textInputFieldContainer" :class="{ fadeIn: shouldFadeIn }">
-        <InputGroup 
+    <div class="textInputFieldContainer" :class="{ fadeIn: shouldFadeIn }" @click.right.stop="copyValue">
+        <InputGroup
             :pt="{
                 root: 'textInputFieldContainer__inputGroup'
             }">
@@ -13,7 +13,7 @@
                         }
                     }
                 }">{{ inputGroupAddon }}</InputGroupAddon>
-            <FloatLabel variant="in" :dt="floatLabelStyle"
+            <FloatLabel variant="in"
                 :pt="{
                     root: 'textInputFieldContainer__floatLabel'
                 }">
@@ -21,12 +21,13 @@
                     :pt="{
                         root: 'textInputFieldContainer__iconField'
                     }">
-                    <InputText :fluid="true" :id="id" v-model="valuePlaceHolder" :dt="inputStyle" :disabled="disabled" :invalid="isInvalid" 
+                    <InputText :fluid="true" :id="id" v-model="valuePlaceHolder" :disabled="disabled" :invalid="isInvalid" 
                         @update:model-value="onInput"
                         :pt="{
                             root: {
                                 class: {
                                     'textInputFieldContainer__input': true,
+                                    'textInputFieldContainer__input--invalid': isInvalid,
                                     'textInputFieldContainer__input--groupAddon': inputGroupAddon 
                                 }
                             }
@@ -49,13 +50,13 @@
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, useId, watch } from 'vue';
 
-import FloatLabel from "primevue/floatlabel";
-import InputText from 'primevue/inputtext';
-import InputIcon from 'primevue/inputicon';
-import IconField from 'primevue/iconfield';
-import InputGroup from 'primevue/inputgroup';
-import InputGroupAddon from 'primevue/inputgroupaddon';
-import Message from "primevue/message";
+import FloatLabel from "primevue-vaultic/floatlabel";
+import InputText from 'primevue-vaultic/inputtext';
+import InputIcon from 'primevue-vaultic/inputicon';
+import IconField from 'primevue-vaultic/iconfield';
+import InputGroup from 'primevue-vaultic/inputgroup';
+import InputGroupAddon from 'primevue-vaultic/inputgroupaddon';
+import Message from "primevue-vaultic/message";
 
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
 import { appHexColor, widgetBackgroundHexString, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
@@ -80,7 +81,7 @@ export default defineComponent({
     "additionalValidationFunction", "isOnWidget", "showToolTip", 'toolTipMessage', 'toolTipSize', 'isEmailField', 'inputGroupAddon'],
     setup(props, ctx)
     {
-        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor?.value);
+        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.r);
         const id = ref(useId());
         const valuePlaceHolder = ref(props.modelValue);
         const inputIcon: Ref<any> = ref();
@@ -102,37 +103,6 @@ export default defineComponent({
         const additionalValidationFunction: Ref<{ (input: string): [boolean, string]; } | undefined> = ref(props.additionalValidationFunction);
         const labelBackgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 
-        let floatLabelStyle = computed(() => {
-            return {
-                onActive: {
-                    background: background.value
-                },
-                focus: 
-                {
-                    color: props.color,
-                },
-                invalid:
-                {
-                    color: errorColor.value
-                }
-            }
-        });
-
-        let inputStyle = computed(() => {
-            return {
-                focus: 
-                {
-                    borderColor: props.color
-                },
-                background: background.value,
-                invalid: 
-                {
-                    borderColor: errorColor.value,
-                    placeholderColor: errorColor.value
-                }
-            }
-        });
-
         function validate(): boolean
         {
             isInvalid.value = false;
@@ -145,7 +115,7 @@ export default defineComponent({
 
             if (props.isEmailField)
             {
-                if (!/^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(props.modelValue))
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(props.modelValue))
                 {
                     invalidate('Please enter a valid email');
                     return false;
@@ -175,6 +145,11 @@ export default defineComponent({
         {
             isInvalid.value = false;
             ctx.emit("update:modelValue", value);
+        }
+
+        function copyValue()
+        {
+            app.copyToClipboard(valuePlaceHolder.value);
         }
 
         watch(() => props.modelValue, (newValue) =>
@@ -210,8 +185,6 @@ export default defineComponent({
             background,
             valuePlaceHolder,
             shouldFadeIn,
-            floatLabelStyle,
-            inputStyle,
             defaultInputColor,
             defaultInputTextColor,
             computedWidth,
@@ -223,17 +196,14 @@ export default defineComponent({
             labelBackgroundColor,
             inputIcon,
             onInput,
-            invalidate
+            invalidate,
+            copyValue
         };
     }
 })
 </script>
 
 <style scoped>
-/* .p-inputtext {
-    width: 100%;
-} */
-
 .textInputFieldContainer {
     position: relative;
     height: v-bind(computedHeight);
@@ -247,6 +217,11 @@ export default defineComponent({
 :deep(.textInputFieldContainer__input) {
     height: 100%;
     font-size: var(--input-font-size);
+    background: v-bind(background) !important;
+}
+
+:deep(.textInputFieldContainer__input--invalid) {
+    border-color: v-bind(errorColor) !important;
 }
 
 :deep(.textInputFieldContainer__inputGroup) {
@@ -267,6 +242,10 @@ export default defineComponent({
 :deep(.textInputFieldContainer__input--groupAddon) {
     border-top-left-radius: 0px;
     border-bottom-left-radius: 0px;
+}
+
+:deep(.textInputFieldContainer__input:focus) {
+    border-color: v-bind(color) !important;
 }
 
 :deep(.textInputFieldContainer__floatLabel) {
@@ -297,13 +276,22 @@ export default defineComponent({
     font-size: var(--input-font-size);
 }
 
-:deep(.p-floatlabel-in:has(input:focus) .textInputFieldContainer__label),
-:deep(.p-floatlabel-in:has(input.p-filled) .textInputFieldContainer__label) {
+:deep(.p-floatlabel-in:has(input:focus) label.textInputFieldContainer__label),
+:deep(.p-floatlabel-in:has(input.p-filled) label.textInputFieldContainer__label) {
     top: var(--input-label-active-top) !important;
     font-size: var(--input-label-active-font-size) !important;
 }
 
+:deep(.p-floatlabel:has(.p-invalid) .textInputFieldContainer__label) {
+    color: v-bind(errorColor) !important;
+}
+
+:deep(.p-floatlabel:has(input:focus) .textInputFieldContainer__label) {
+    color: v-bind(color) !important;
+}
+
 :deep(.textInputFieldContainer__messageText) {
     font-size: clamp(9px, 1vw, 14px) !important;
+    color: v-bind(errorColor) !important;
 }
 </style>

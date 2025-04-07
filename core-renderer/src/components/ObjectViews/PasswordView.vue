@@ -1,31 +1,31 @@
 <template>
     <ObjectView :title="'Password'" :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
-        :gridDefinition="gridDefinition">
+        :gridDefinition="gridDefinition" :hideButtons="readOnly" :isSensitive="true">
         <VaulticFieldset>
             <TextInputField class="passwordView__passwordFor" :color="color" :label="'Password For'"
-                v-model="passwordState.passwordFor.value" :width="'50%'" :maxWidth="''" :maxHeight="''" />
-            <TextInputField class="passwordView__username" :color="color" :label="'Username'" v-model="passwordState.login.value"
+                v-model="passwordState.f" :width="'50%'" :maxWidth="''" :maxHeight="''" />
+            <TextInputField class="passwordView__username" :color="color" :label="'Username'" v-model="passwordState.l"
                 :width="'50%'" :maxWidth="''" :maxHeight="''" />
         </VaulticFieldset>
         <VaulticFieldset>
             <EncryptedInputField ref="passwordInputField" class="passwordView__password" :colorModel="colorModel"
-                :label="'Password'" v-model="passwordState.password.value" :initialLength="initalLength"
-                :isInitiallyEncrypted="isInitiallyEncrypted" :showRandom="true" :showUnlock="true" :required="true"
+                :label="'Password'" v-model="passwordState.p" :isInitiallyEncrypted="isInitiallyEncrypted" 
+                :showRandom="true" :showUnlock="true" :required="true"
                 showCopy="true" :width="'50%'" :maxWidth="''" :maxHeight="''" @onDirty="passwordIsDirty = true" />
-            <TextInputField class="passwordView__domain" :inputGroupAddon="'www'" :color="color" :label="'Domain'" v-model="passwordState.domain.value"
+            <TextInputField class="passwordView__domain" :inputGroupAddon="'www'" :color="color" :label="'Domain'" v-model="passwordState.d"
                 :showToolTip="true"
                 :toolTipMessage="'Domain is used to search for Breached Passwords. An example is facebook.com'"
                 :toolTipSize="'clamp(15px, 1vw, 28px)'" :width="'50%'" :maxWidth="''" :maxHeight="''" />
         </VaulticFieldset>
         <VaulticFieldset>
-            <TextInputField class="passwordView__email" :color="color" :label="'Email'" v-model="passwordState.email.value"
+            <TextInputField class="passwordView__email" :color="color" :label="'Email'" v-model="passwordState.e"
                 :width="'50%'" :isEmailField="true" :maxWidth="''" :maxHeight="''" />
             <ObjectMultiSelect :label="'Groups'" :color="color" v-model="selectedGroups" :options="groupOptions" :width="'50%'" 
                 :maxWidth="''" :maxHeight="''" />
         </VaulticFieldset>
         <VaulticFieldset :fillSpace="true" :static="true">
             <TextAreaInputField class="passwordView__additionalInformation" :colorModel="colorModel"
-                :label="'Additional Information'" v-model="passwordState.additionalInformation.value" :width="'50%'"
+                :label="'Additional Information'" v-model="passwordState.additionalInformation" :width="'50%'"
                 :height="''" :minWidth="'216px'" :minHeight="''" :maxHeight="''" :maxWidth="''" />
             <VaulticTable ref="tableRef" id="passwordView__table" :color="color" :columns="tableColumns" 
                 :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyMessage" :allowPinning="false" :allowSearching="false"
@@ -56,13 +56,14 @@ import ObjectMultiSelect from '../InputFields/ObjectMultiSelect.vue';
 import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
 
 import { Password, SecurityQuestion, defaultPassword } from '../../Types/DataTypes';
-import { FieldedTableRowModel, GridDefinition, HeaderTabModel, InputColorModel, ObjectSelectOptionModel, TableColumnModel, TableDataSources, TableRowModel, defaultInputColorModel } from '../../Types/Models';
+import { GridDefinition, HeaderTabModel, InputColorModel, ObjectSelectOptionModel, TableColumnModel, TableDataSources, TableRowModel, defaultInputColorModel } from '../../Types/Models';
 import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import app from "../../Objects/Stores/AppStore";
-import { generateUniqueIDForMap } from '../../Helpers/generatorHelper';
 import { EncryptedInputFieldComponent, TableTemplateComponent } from '../../Types/Components';
-import { Field } from '@vaultic/shared/Types/Fields';
+import { uniqueIDGenerator } from '@vaultic/shared/Utilities/UniqueIDGenerator';
+import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
+import { DictionaryAsList } from '@vaultic/shared/Types/Stores';
 
 export default defineComponent({
     name: "PasswordView",
@@ -82,24 +83,30 @@ export default defineComponent({
     {
         const passwordInputField: Ref<EncryptedInputFieldComponent | null> = ref(null);
 
+        let pendingStoreState = app.currentVault.passwordStore.getPendingState()!;
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref("");
-        const passwordState: Ref<Password> = ref(props.model);
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value);
+        const passwordState: Reactive<Password> = props.creating ? reactive(props.model) : pendingStoreState.createCustomRef('dataTypesByID.dataType', props.model, props.model.id);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.p.p);
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
 
-        const securityQuestions: SortedCollection = new SortedCollection([]);
-        const initalLength: Ref<number> = ref(passwordState.value.passwordLength.value ?? 0);
         const isInitiallyEncrypted: Ref<boolean> = ref(!props.creating);
-
+                
         const passwordIsDirty: Ref<boolean> = ref(false);
-        const dirtySecurityQuestionQuestions: Ref<string[]> = ref([]);
-        const dirtySecurityQuestionAnswers: Ref<string[]> = ref([]);
-
+                    
+        let allSecurityQuestions: { [key: string]: SecurityQuestion } = {};
+        let addedSecurityQuestions: SecurityQuestion[] = [];
+        let removedSecurityQuestions: string[] = [];
+        let dirtySecurityQuestionQuestions: SecurityQuestion[] = [];
+        let dirtySecurityQuestionAnswers: SecurityQuestion[] = [];
+                    
+        const securityQuestions: SortedCollection = new SortedCollection([], () => allSecurityQuestions);
         const locked: Ref<boolean> = ref(!props.creating);
 
-        const selectedGroups: Ref<ObjectSelectOptionModel[]> = ref([]);
+        const selectedGroups: Ref<ObjectSelectOptionModel[]> = ref(getSelectedGroups());
         const groupOptions: Ref<ObjectSelectOptionModel[]> = ref([]);
+
+        const readOnly: Ref<boolean> = ref(app.currentVault.isReadOnly.value);
 
         const gridDefinition: GridDefinition = {
             rows: 1,
@@ -127,10 +134,11 @@ export default defineComponent({
         const tableColumns: ComputedRef<TableColumnModel[]> = computed(() => 
         {
             const models: TableColumnModel[] = [];
-            models.push({ header: "Question", field: "question", component: "EncryptedInputCell", 
-                data: { color: color.value, initalLengthField: 'questionLength', label: 'Question', onDirty: onQuestionDirty } });
-            models.push({ header: "Answer", field: "answer", component: "EncryptedInputCell", 
-                data: { color: color.value, initalLengthField: 'answerLength', label: 'Answer', onDirty: onAnswerDirty } });  
+            models.push(new TableColumnModel("Question", "q").setComponent("EncryptedInputCell")
+                .setData({ color: color.value, label: 'Question', onDirty: onQuestionDirty }).setSortable(false));
+
+            models.push(new TableColumnModel("Answer", "a").setComponent("EncryptedInputCell")
+                .setData({ color: color.value, label: 'Answer', onDirty: onAnswerDirty }).setSortable(false)); 
         
             return models;
         });
@@ -149,10 +157,10 @@ export default defineComponent({
 
         function setSecurityQuestionModels()
         {
-            const securityQuestionRows: FieldedTableRowModel<Field<SecurityQuestion>>[] = [];
-            passwordState.value.securityQuestions.value.forEach((v, k) => 
+            const securityQuestionRows: TableRowModel[] = [];
+            OH.forEachKey(allSecurityQuestions, (k) => 
             {
-                securityQuestionRows.push(new FieldedTableRowModel(k, false, undefined, v, 
+                securityQuestionRows.push(new TableRowModel(k, false, undefined, 
                 {
                     isInitiallyEncrypted: isInitiallyEncrypted.value
                 }));
@@ -164,7 +172,7 @@ export default defineComponent({
         function onSave()
         {
             passwordInputField.value?.toggleMask(true);
-            app.popups.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled);
+            app.popups.showRequestAuthentication(color.value, onAuthenticationSuccessful, onAuthenticationCanceled, true);
 
             return new Promise((resolve, reject) =>
             {
@@ -177,21 +185,22 @@ export default defineComponent({
         {
             app.popups.showLoadingIndicator(color.value, "Saving Password");
 
-            passwordState.value.groups.value = new Map();
-            selectedGroups.value.forEach(g => 
-            {
-                passwordState.value.groups.value.set(g.backingObject!.value.id.value, new Field(g.backingObject!.value.id.value));
-            });
-
             if (props.creating)
             {
-                if (await app.currentVault.passwordStore.addPassword(key, passwordState.value))
+                // its ok to set these since we are adding the entire object anyways
+                selectedGroups.value.forEach(g => 
                 {
-                    passwordState.value = defaultPassword();
-                    refreshKey.value = Date.now().toString();
-                    selectedGroups.value = [];
+                    passwordState.g[g.backingObject!.id] = true;
+                });
 
+                console.time('add password');
+                if (await app.currentVault.passwordStore.addPassword(key, passwordState, addedSecurityQuestions, 
+                    pendingStoreState))
+                {
+                    console.timeEnd('add password');
+                    reset()
                     handleSaveResponse(true);
+
                     return;
                 }
 
@@ -199,9 +208,17 @@ export default defineComponent({
             }
             else
             {
+                // we want to pass the current selection instead of setting them so change tracking
+                // can add them properly
+                const newGroups: DictionaryAsList = {};
+                selectedGroups.value.forEach(g => 
+                {
+                    newGroups[g.backingObject!.id] = true;
+                });
+
                 if (await app.currentVault.passwordStore.updatePassword(key,
-                    passwordState.value, passwordIsDirty.value, dirtySecurityQuestionQuestions.value,
-                    dirtySecurityQuestionAnswers.value))
+                    passwordState, passwordIsDirty.value, addedSecurityQuestions, dirtySecurityQuestionQuestions,
+                    dirtySecurityQuestionAnswers, removedSecurityQuestions, newGroups, pendingStoreState))
                 {
                     handleSaveResponse(true);
                     return;
@@ -209,6 +226,25 @@ export default defineComponent({
 
                 handleSaveResponse(false);
             }
+        }
+
+        function reset()
+        {
+            // This won't track changes within the pending store since we didn't re create the 
+            // custom ref but that's ok since we are creating
+            Object.assign(passwordState, defaultPassword());
+            pendingStoreState = app.currentVault.passwordStore.getPendingState()!;
+
+            securityQuestions.updateValues([]);
+
+            allSecurityQuestions = {};
+            addedSecurityQuestions = [];
+            removedSecurityQuestions = [];
+            dirtySecurityQuestionAnswers = [];
+            dirtySecurityQuestionQuestions = [];
+
+            selectedGroups.value = [];
+            refreshKey.value = Date.now().toString();
         }
 
         function handleSaveResponse(succeeded: boolean)
@@ -237,90 +273,127 @@ export default defineComponent({
 
         async function onAddSecurityQuestion()
         {
-            const id = await generateUniqueIDForMap(passwordState.value.securityQuestions.value);
-            const securityQuestion: Field<SecurityQuestion> = new Field({
-                id: new Field(id),
-                question: new Field(''),
-                questionLength: new Field(0),
-                answer: new Field(''),
-                answerLength: new Field(0)
+            const id = uniqueIDGenerator.generate();
+            const securityQuestion: SecurityQuestion = {
+                id: id,
+                q: '',
+                a: '',
+            };
+
+            allSecurityQuestions[id] = securityQuestion;
+            addedSecurityQuestions.push(securityQuestion);
+
+            const securityQuestionModel: TableRowModel = new TableRowModel(securityQuestion.id, undefined, undefined, {
+                isInitiallyEncrypted: false
             });
-
-            passwordState.value.securityQuestions.value.set(id, securityQuestion);
-
-            const securityQuestionModel: FieldedTableRowModel<Field<SecurityQuestion>> = new FieldedTableRowModel(
-                securityQuestion.id, undefined, undefined, securityQuestion, 
-                {
-                    isInitiallyEncrypted: false
-                });
 
             securityQuestions.push(securityQuestionModel);
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
 
-        function onQuestionDirty(securityQuestion: Field<SecurityQuestion>)
+        function onQuestionDirty(securityQuestion: SecurityQuestion)
         {
-            if (!dirtySecurityQuestionQuestions.value.includes(securityQuestion.value.id.value))
+            const addedIndex = addedSecurityQuestions.findIndex(q => q.id == securityQuestion.id);
+            if (addedIndex >= 0)
             {
-                dirtySecurityQuestionQuestions.value.push(securityQuestion.value.id.value);
+                // we want to count this as an add, not an update
+                return;
+            }
+
+            const dirtyIndex = dirtySecurityQuestionQuestions.findIndex(q => q.id == securityQuestion.id);
+            if (dirtyIndex == -1)
+            {
+                dirtySecurityQuestionQuestions.push(securityQuestion);
             }
         }
 
-        function onAnswerDirty(securityQuestion: Field<SecurityQuestion>)
+        function onAnswerDirty(securityQuestion: SecurityQuestion)
         {
-            if (!dirtySecurityQuestionAnswers.value.includes(securityQuestion.value.id.value))
+            const addedIndex = addedSecurityQuestions.findIndex(q => q.id == securityQuestion.id);
+            if (addedIndex >= 0)
             {
-                dirtySecurityQuestionAnswers.value.push(securityQuestion.value.id.value);
+                // we want to count this as an add, not an update
+                return;
+            }
+
+            const dirtyIndex = dirtySecurityQuestionAnswers.findIndex(q => q.id == securityQuestion.id);
+            if (dirtyIndex == -1)
+            {
+                dirtySecurityQuestionAnswers.push(securityQuestion);
             }
         }
 
-        function onDeleteSecurityQuestion(securityQuestion: Field<SecurityQuestion>)
+        function onDeleteSecurityQuestion(securityQuestion: SecurityQuestion)
         {
-            passwordState.value.securityQuestions.value.delete(securityQuestion.value.id.value);
-            if (dirtySecurityQuestionQuestions.value.includes(securityQuestion.value.id.value))
+            delete allSecurityQuestions[securityQuestion.id];
+
+            const addedIndex = addedSecurityQuestions.findIndex(q => q.id == securityQuestion.id);
+            if (addedIndex >= 0)
             {
-                dirtySecurityQuestionQuestions.value.splice(dirtySecurityQuestionQuestions.value.indexOf(securityQuestion.value.id.value), 1);
+                addedSecurityQuestions.splice(addedIndex, 1);
+
+                // Don't want to count this as a delete since it was never offically added
+                return;
             }
 
-            if (dirtySecurityQuestionAnswers.value.includes(securityQuestion.value.id.value))
+            const dirtyQuestionIndex = dirtySecurityQuestionQuestions.findIndex(q => q.id == securityQuestion.id);
+            if (dirtyQuestionIndex >= 0)
             {
-                dirtySecurityQuestionAnswers.value.splice(dirtySecurityQuestionAnswers.value.indexOf(securityQuestion.value.id.value), 1);
+                dirtySecurityQuestionQuestions.splice(dirtyQuestionIndex, 1);
             }
 
-            securityQuestions.remove(securityQuestion.value.id.value);
+            const dirtyAnswerIndex = dirtySecurityQuestionAnswers.findIndex(q => q.id == securityQuestion.id);
+            if (dirtyAnswerIndex >= 0)
+            {
+                dirtySecurityQuestionAnswers.splice(dirtyAnswerIndex, 1);
+            }
+
+            removedSecurityQuestions.push(securityQuestion.id);
+
+            securityQuestions.remove(securityQuestion.id);
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
 
-        onMounted(() =>
+        function getSelectedGroups()
         {
-            setSecurityQuestionModels();
-            groupOptions.value = app.currentVault.groupStore.passwordGroups.map(g => 
+            const selected: ObjectSelectOptionModel[] = [];
+            OH.forEachKey(passwordState.g, (k) => 
             {
-                const option: ObjectSelectOptionModel = 
-                {
-                    label: g.value.name.value,
-                    backingObject: g,
-                    icon: g.value.icon.value,
-                    color: g.value.color.value
-                };
-
-                return option
-            });
-
-            passwordState.value.groups.value.forEach((v, k) => 
-            {
-                const group = app.currentVault.groupStore.passwordGroupsByID.value.get(k);
+                const group = app.currentVault.groupStore.passwordGroupsByID[k];
                 if (!group)
                 {
                     return;
                 }
 
-                selectedGroups.value.push({
-                    label: group.value.name.value,
+                selected.push({
+                    id: group.id,
+                    label: group.n,
                     backingObject: group,
-                    icon: group.value.icon.value,
-                    color: group.value.color.value
+                    icon: group.i,
+                    color: group.c
                 });
+            });
+
+            return selected;
+        }
+
+        onMounted(() =>
+        {
+            allSecurityQuestions = JSON.parse(JSON.stringify(passwordState.q));
+            setSecurityQuestionModels();
+
+            groupOptions.value = app.currentVault.groupStore.passwordGroups.map(g => 
+            {
+                const option: ObjectSelectOptionModel = 
+                {
+                    id: g.id,
+                    label: g.n,
+                    backingObject: g,
+                    icon: g.i,
+                    color: g.c
+                };
+
+                return option
             });
         });
 
@@ -329,7 +402,6 @@ export default defineComponent({
             color,
             passwordState,
             refreshKey,
-            initalLength,
             isInitiallyEncrypted,
             passwordIsDirty,
             gridDefinition,
@@ -342,6 +414,7 @@ export default defineComponent({
             tableColumns,
             selectedGroups,
             groupOptions,
+            readOnly,
             onAuthenticationSuccessful,
             onAuthenticationCanceled,
             onSave,
@@ -356,9 +429,10 @@ export default defineComponent({
 
 <style>
 #passwordView__table {
-    position: relative;
-    width: 50%;
+    right: 0;
+    width: 49%;
     height: 88%;
+    height: calc(102% - clamp(40px, 5vh, 60px));
 }
 
 .passwordViewTableHeaderControls {

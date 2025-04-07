@@ -1,8 +1,7 @@
 <template>
-    <div ref="container" class="encryptedInputFieldContainer" :class="{ fadeIn: shouldFadeIn }" @mouseenter="hovering = true" 
-        @mouseleave="onContainerMouseLeave">
+    <div ref="container" class="encryptedInputFieldContainer" :class="{ fadeIn: shouldFadeIn }" @click.right.stop="copyValue">
         <div class="textInuptContainer">
-            <FloatLabel variant="in" :dt="floatLabelStyle"
+            <FloatLabel variant="in"
                 :pt="{
                     root: 'encryptedInputFieldContainer__floatLabel'
                 }">
@@ -11,20 +10,20 @@
                     { 
                         root: ({state}) => 
                         {
-                            isFocused = state.focused;
                             state.unmasked = isUnmasked;
-
                             return 'encryptedInputFieldContainer__password'
                         }, 
                         pcInputText:
-                        { 
+                        {
+                            // @ts-ignore
                             root: ({ instance, context}) => 
                             {
                                 textFieldInstance = instance;
                                 return {
                                     class: {
                                         'encryptedInputFieldContainer__input': true,
-                                        'encryptedInputFieldContainer__input--invalid': isInvalid 
+                                        'encryptedInputFieldContainer__input--invalid': isInvalid,
+                                        'encryptedInputFieldContainer__input--extendedPadding': showRandom
                                     }
                                 }
                             }
@@ -33,11 +32,19 @@
                     :fluid="true" name="password" v-model="inputText" :inputId="id" :disabled="isDisabled" toggleMask :feedback="computedFeedback" 
                     :invalid="isInvalid" @update:model-value="onInput">
                     <template #maskicon="slotProps">
-                        <IonIcon class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'eye-off-outline'" @click="toggleMask(true)"></IonIcon>
+                        <div class="encryptedInputFieldContainer__icons">
+                            <IonIcon v-if="showRandom && !isLocked" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'dice-outline'" @click="togglePopover"></IonIcon>
+                            <IonIcon class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'eye-off-outline'" @click="toggleMask(true)"></IonIcon>
+                        </div>
                     </template>
                     <template #unmaskicon="slotProps">
-                        <IonIcon v-if="isLocked && showUnlock" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'lock-open-outline'" @click="unlock"></IonIcon>
-                        <IonIcon v-else class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'eye-outline'" @click="toggleMask(false)"></IonIcon>
+                        <div class="encryptedInputFieldContainer__icons">
+                            <IonIcon v-if="showRandom && !isLocked" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'dice-outline'" @click="togglePopover"></IonIcon>
+                            <IonIcon v-if="isLocked && showUnlock" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'lock-open-outline'" @click="unlock"></IonIcon>
+                            <IonIcon v-else-if="!isLocked" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'eye-outline'" @click="toggleMask(false)"></IonIcon>
+                            <!-- Prime vue requires something to be here otherwise it'll render its own icon -->
+                            <span v-else></span>
+                        </div>
                     </template>
                     <template #content>
                         <div></div>
@@ -52,11 +59,12 @@
                 }">
                 {{ invalidMessage }}
             </Message>
-            <Popover ref="popover" @mouseenter="popoverHover = true" @mouseleave="onPopoverMouseLeave"
+            <Popover ref="popover"
                 :pt="{
                     root: ({state}) =>
                     {
                         popupIsShowing = state.visible;
+                        return popoverClass;
                     }
                 }">
                 <div class="encryptedInputFieldContainer__randomPasswordPopover">
@@ -65,29 +73,28 @@
                             :width="'100%'" :maxWidth="''" :maxHeight="''" />
                     </VaulticFieldset>
                     <VaulticFieldset>
-                        <EnumInputField :color="colorModel.color" :label="'Type'" v-model="randomValueType" :optionsEnum="RandomValueType" 
-                            :width="'100%'" :maxWidth="''" :maxHeight="''" @onFocus="onTypeFocus" @onBlur="typeDidBlur = true"
-                            :hideClear="true" />
+                        <EnumInputField v-if="canChangeRandomType !== false" :color="colorModel.color" :label="'Type'" v-model="randomValueType" :optionsEnum="RandomValueType" 
+                            :width="'100%'" :maxWidth="''" :maxHeight="''" :hideClear="true" />
                     </VaulticFieldset>
                     <VaulticFieldset v-if="randomValueType == RandomValueType.Passphrase">
-                        <TextInputField :color="colorModel.color" :label="'Seperator'" v-model="appSettings.value.passphraseSeperator.value" 
+                        <TextInputField :color="colorModel.color" :label="'Seperator'" v-model="appSettings.e" 
                             :width="'100%'" :maxWidth="''" :maxHeight="''" />
                     </VaulticFieldset>
                     <VaulticFieldset>
-                        <SliderInput :color="colorModel.color" :label="'Length'" :minValue="0" :maxValue="40" v-model="length.value" />
+                        <SliderInput :color="colorModel.color" :label="'Length'" :minValue="0" :maxValue="40" v-model="length" />
                     </VaulticFieldset>
-                    <VaulticFieldset> 
-                        <CheckboxInputField :color="colorModel.color" :label="'Numbers'" v-model="includeNumbers.value" 
+                    <VaulticFieldset v-if="randomValueType == RandomValueType.Password"> 
+                        <CheckboxInputField :color="colorModel.color" :label="'Numbers'" v-model="appSettings.n" 
                             :width="'100%'" :maxWidth="''" :maxHeight="''" :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" />
                     </VaulticFieldset>
-                    <VaulticFieldset> 
+                    <VaulticFieldset v-if="randomValueType == RandomValueType.Password"> 
                         <CheckboxInputField :color="colorModel.color" :label="'Special Characters'" 
-                            v-model="includeSpecialCharacters.value" :width="'100%'" :maxWidth="''" :maxHeight="''"
+                            v-model="appSettings.s" :width="'100%'" :maxWidth="''" :maxHeight="''"
                             :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" />
                     </VaulticFieldset>
                     <VaulticFieldset v-if="randomValueType == RandomValueType.Password"> 
                         <CheckboxInputField :color="colorModel.color" :label="'Include Ambiguous Characters'"
-                            v-model="appSettings.value.includeAmbiguousCharactersInRandomPassword.value":width="'100%'" :maxWidth="''" :maxHeight="''"
+                            v-model="appSettings.m":width="'100%'" :maxWidth="''" :maxHeight="''"
                             :height="'1.25vh'" :minHeight="'15px'" :fontSize="'clamp(11px, 1vh, 20px)'" />
                     </VaulticFieldset>
                     <div class="encryptedInputFieldContainer__randomPasswordPopupButtons">
@@ -102,10 +109,10 @@
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, watch, useId, nextTick } from 'vue';
 
-import Password from "primevue/password";
-import FloatLabel from 'primevue/floatlabel';
-import Popover from 'primevue/popover';
-import Message from "primevue/message";
+import Password from "primevue-vaultic/password";
+import FloatLabel from 'primevue-vaultic/floatlabel';
+import Popover from 'primevue-vaultic/popover';
+import Message from "primevue-vaultic/message";
 import VaulticFieldset from './VaulticFieldset.vue';
 import TextInputField from './TextInputField.vue';
 import EnumInputField from './EnumInputField.vue';
@@ -115,13 +122,12 @@ import SliderInput from './SliderInput.vue';
 import IonIcon from '../Icons/IonIcon.vue';
 
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
-import clipboard from 'clipboardy';
 import { appHexColor, widgetBackgroundHexString, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
 import { InputColorModel } from '../../Types/Models';
 import app, { AppSettings } from "../../Objects/Stores/AppStore";
 import cryptHelper from '../../Helpers/cryptHelper';
 import { ValidationFunctionsKey, DecryptFunctionsKey, RequestAuthorizationKey } from '../../Constants/Keys';
-import { Field, RandomValueType } from '@vaultic/shared/Types/Fields';
+import { RandomValueType } from '@vaultic/shared/Types/Fields';
 import { api } from '../../API';
 
 export default defineComponent({
@@ -140,10 +146,10 @@ export default defineComponent({
         SliderInput,
         IonIcon
     },
-    emits: ["update:modelValue", "onDirty"],
-    props: ["modelValue", "label", "colorModel", "fadeIn", "disabled", "initialLength", "isInitiallyEncrypted",
+    emits: ["update:modelValue", "onDirty", "onInvalid"],
+    props: ["modelValue", "label", "colorModel", "fadeIn", "disabled", "isInitiallyEncrypted",
         "showRandom", "showUnlock", "showCopy", "additionalValidationFunction", "required", "width", "minWidth", "maxWidth", "height",
-        "minHeight", "maxHeight", 'isOnWidget', 'randomValueType', 'feedback'],
+        "minHeight", "maxHeight", 'isOnWidget', 'randomValueType', 'feedback', 'popoverClass', 'canChangeRandomType'],
     setup(props, ctx)
     {        
         const id = ref(useId());
@@ -153,16 +159,9 @@ export default defineComponent({
         const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
         const decryptFunctions: Ref<{ (key: string): void }[]> | undefined = inject(DecryptFunctionsKey, ref([]));
         const requestAuthorization: Ref<boolean> = inject(RequestAuthorizationKey, ref(false));
-        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor?.value);
+        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.r);
 
-        const hovering: Ref<boolean> = ref(false);
-        const popoverHover: Ref<boolean> = ref(false);
-        const isFocused: Ref<boolean> = ref(false);
         const popupIsShowing: Ref<boolean> = ref(false);
-        const typeIsFocused: Ref<boolean> = ref(false);
-        const typeDidBlur: Ref<boolean> = ref(false);
-        const showPopup: ComputedRef<boolean> = computed(() => props.showRandom === true && isLocked.value === false && 
-            isDisabled.value === false && (hovering.value || isFocused.value || popoverHover.value || typeIsFocused.value));
 
         const computedHeight: ComputedRef<string> = computed(() => props.height ?? "4vh");
         const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "35px");
@@ -181,7 +180,7 @@ export default defineComponent({
 
         let isDisabled: Ref<boolean> = ref(!!props.isInitiallyEncrypted || !!props.disabled);
         let isLocked: Ref<boolean> = ref(!!props.isInitiallyEncrypted);
-        let inputText: Ref<string> = ref(props.initialLength > 0 ? "*".repeat(props.initialLength) : props.modelValue);
+        let inputText: Ref<string> = ref(props.isInitiallyEncrypted ? "*".repeat(5) : props.modelValue);
 
         const isUnmasked: Ref<boolean> = ref(false);
 
@@ -192,28 +191,10 @@ export default defineComponent({
         const inputBackgroundColor: ComputedRef<string> = computed(() => widgetBackgroundHexString());
 
         const randomPasswordPreview: Ref<string> = ref('');
-        const randomValueType: Ref<RandomValueType> = ref(RandomValueType.Password);
-        const appSettings: Ref<Field<AppSettings>> = ref(JSON.vaulticParse(JSON.vaulticStringify(app.settings)));
+        const randomValueType: Ref<RandomValueType> = ref(props.randomValueType ?? RandomValueType.Password);
+        const appSettings: Ref<AppSettings> = ref(JSON.parse(JSON.stringify(app.settings)));
 
-        const length: ComputedRef<Field<number>> = computed(() => randomValueType.value == RandomValueType.Password ? appSettings.value.value.randomValueLength : appSettings.value.value.randomPhraseLength);
-        const includeNumbers: ComputedRef<Field<boolean>> = computed(() => randomValueType.value == RandomValueType.Password ? appSettings.value.value.includeNumbersInRandomPassword : appSettings.value.value.includeNumbersInRandomPassphrase);
-        const includeSpecialCharacters: ComputedRef<Field<boolean>> = computed(() => randomValueType.value == RandomValueType.Password ? appSettings.value.value.includeSpecialCharactersInRandomPassword : appSettings.value.value.includeSpecialCharactersInRandomPassphrase);
-
-        let floatLabelStyle = computed(() => {
-            return {
-                onActive: {
-                    background: widgetBackgroundHexString()
-                },
-                focus: 
-                {
-                    color: colorModel.value.color
-                },
-                invalid:
-                {
-                    color: errorColor.value
-                }
-            }
-        });
+        const length: ComputedRef<number> = computed(() => randomValueType.value == RandomValueType.Password ? appSettings.value.v : appSettings.value.r);
 
         function unlock()
         {
@@ -266,8 +247,12 @@ export default defineComponent({
 
         function copyValue()
         {
-            clipboard.write(inputText.value);
-            app.popups.showToast("Copied", true);
+            if (isLocked.value)
+            {
+                return;
+            }
+
+            app.copyToClipboard(inputText.value);
         }
 
         function focus()
@@ -285,6 +270,8 @@ export default defineComponent({
         {
             isInvalid.value = true;
             invalidMessage.value = message;
+
+            ctx.emit('onInvalid');
         }
 
         function toggleMask(mask: boolean)
@@ -301,37 +288,10 @@ export default defineComponent({
             }
         }
 
-        // delay it so that there isn't any jitter when moving from hovering over the container to the 
-        // popover
-        function onContainerMouseLeave()
-        {
-            setTimeout(() => 
-            {
-                hovering.value = false;
-            }, 50);
-        }
-
-        // delay it so that there isn't any jitter when moving from hovering over the container to the 
-        // popover
-        function onPopoverMouseLeave()
-        {
-            setTimeout(() =>
-            {
-                popoverHover.value = false;
-            }, 50);
-        }
-
-        function onTypeFocus()
-        {
-            typeIsFocused.value = true;
-            typeDidBlur.value = false;
-        }
-
         async function onGenerateRandomPasswordOrPhrase()
         {
-            randomPasswordPreview.value = await api.utilities.generator.generateRandomPasswordOrPassphrase(randomValueType.value, length.value.value,
-                includeNumbers.value.value, includeSpecialCharacters.value.value, 
-                appSettings.value.value.includeAmbiguousCharactersInRandomPassword.value, appSettings.value.value.passphraseSeperator.value);
+            randomPasswordPreview.value = await api.utilities.generator.generateRandomPasswordOrPassphrase(randomValueType.value, length.value,
+                appSettings.value.n, appSettings.value.s, appSettings.value.m, appSettings.value.e);
         }
 
         function confirmRandomPasswordOrPhrase()
@@ -339,9 +299,13 @@ export default defineComponent({
             onInput(randomPasswordPreview.value);
             randomPasswordPreview.value = "";
 
-            //popover.value.toggle();
-            popoverHover.value = false;
-            hovering.value = false;
+            togglePopover();
+        }
+
+        function togglePopover()
+        {
+            popover.value.toggle({currentTarget: container.value}); 
+            popupIsShowing.value = !popupIsShowing.value;  
         }
 
         onMounted(() =>
@@ -360,34 +324,13 @@ export default defineComponent({
             inputText.value = newValue;
         });
 
-        watch(() => showPopup.value, (newValue) => 
-        {
-            if (newValue != popupIsShowing.value)
-            {
-                popover.value.toggle({currentTarget: container.value}); 
-                popupIsShowing.value = newValue;        
-            }
-        });
-
-        watch(() => [hovering.value, isFocused.value, popoverHover.value], () =>
-        {
-            if (typeDidBlur.value)
-            {
-                typeIsFocused.value = false;
-                typeDidBlur.value = false;
-            }
-        });
-
         return {
             id,
             errorColor,
             textFieldInstance,
             popover,
             isDisabled,
-            hovering,
-            popoverHover,
             popupIsShowing,
-            isFocused,
             isLocked,
             inputType,
             inputText,
@@ -405,13 +348,9 @@ export default defineComponent({
             backgroundColor,
             container,
             length,
-            typeIsFocused,
-            typeDidBlur,
             colorModel,
             RandomValueType,
             randomValueType,
-            includeNumbers,
-            includeSpecialCharacters,
             appSettings,
             onAuthenticationSuccessful,
             onInput,
@@ -420,17 +359,14 @@ export default defineComponent({
             focus,
             validate,
             invalidate,
-            floatLabelStyle,
             inputBackgroundColor,
             computedFeedback,
             randomPasswordPreview,
             isUnmasked,
             toggleMask,
-            onContainerMouseLeave,
-            onPopoverMouseLeave,
             onGenerateRandomPasswordOrPhrase,
             confirmRandomPasswordOrPhrase,
-            onTypeFocus
+            togglePopover
         }
     }
 })
@@ -500,18 +436,19 @@ export default defineComponent({
 }
 
 .encryptedInputFieldContainer__icon {
+    position: relative;
     width: clamp(15px, 1.5vw, 25px) !important;
     height: clamp(15px, 1.5vw, 25px) !important;
-    top: 50%;
-    transform: translateY(-50%);
-    margin: 0;
+    margin: 0 !important;
     transition: 0.3s;
     cursor: pointer;
+    top: unset !important;
+    inset-inline-end: 0;
 }
 
 .encryptedInputFieldContainer__icon:hover {
     color: v-bind('colorModel.activeBorderColor');
-    transform: translateY(-50%) scale(1.05);
+    transform: scale(1.05);
 }
 
 :deep(.encryptedInputFieldContainer__message) {
@@ -538,8 +475,17 @@ export default defineComponent({
     font-size: var(--input-label-active-font-size) !important;
 }
 
+:deep(.p-floatlabel:has(input:focus) .encryptedInputFieldContainer__label) {
+    color: v-bind('colorModel.color') !important;
+}
+
+:deep(.p-floatlabel:has(.p-invalid) .encryptedInputFieldContainer__label) {
+    color: v-bind(errorColor) !important;
+}
+
 :deep(.encryptedInputFieldContainer__messageText) {
     font-size: clamp(9px, 1vw, 14px) !important;
+    color: v-bind(errorColor) !important;
 }
 
 .encryptedInputFieldContainer__randomPasswordPopover {
@@ -555,5 +501,20 @@ export default defineComponent({
     justify-content: center;
     align-items: flex-end;
     margin-top: 10px;
+}
+
+:deep(.encryptedInputFieldContainer__icons) {
+    position: absolute;
+    right: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    column-gap: clamp(5px, 0.2vw, 10px);
+}
+
+/* increase the padding so the extra button disn't overlap the input text. The 10px comes from right: 10px on the icon container */
+:deep(.encryptedInputFieldContainer__input--extendedPadding) {
+    padding-inline-end: calc(clamp(15px, 1.5vw, 25px) * 2.5 + 10px) !important
 }
 </style>

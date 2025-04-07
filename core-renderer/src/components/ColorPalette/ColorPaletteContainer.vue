@@ -11,9 +11,9 @@
 
 <script lang="ts">
 import { ComputedRef, computed, defineComponent } from "vue";
-import { ColorPalette } from '../../Types/Colors';
 import ColorPaletteDisplay from "./ColorPaletteDisplay.vue";
 import app from "../../Objects/Stores/AppStore";
+import { ColorPalette } from "@vaultic/shared/Types/Color";
 
 export default defineComponent({
     name: "ColorPaletteContainer",
@@ -22,12 +22,12 @@ export default defineComponent({
     },
     setup()
     {
-        const cpOne: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[0].value);
-        const cpTwo: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[1].value);
-        const cpThree: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[2].value);
-        const cpFour: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[3].value);
-        const cpFive: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[4].value);
-        const cpSix: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[5].value);
+        const cpOne: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[0]);
+        const cpTwo: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[1]);
+        const cpThree: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[2]);
+        const cpFour: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[3]);
+        const cpFive: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[4]);
+        const cpSix: ComputedRef<ColorPalette> = computed(() => app.colorPalettes[5]);
 
         return {
             cpOne,
@@ -56,7 +56,7 @@ export default defineComponent({
     column-gap: 10%;
     row-gap: 10%;
     z-index: 1;
-    grid-template-rows: repeat(3, clamp(30px, 7vh, 68px));
+    grid-template-rows: repeat(3, clamp(25px, 6vh, 68px));
     grid-template-columns: repeat(2, clamp(91px, 9vw, 205px));
     transition: 0.3s;
 }

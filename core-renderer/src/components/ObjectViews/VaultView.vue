@@ -4,7 +4,7 @@
         <h2 v-else>Edit Vault</h2>
     </div>
     <div class="vaultView__content">
-        <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey">
+        <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey" :hideButtons="readOnly">
             <VaulticFieldset :centered="true">
                 <TextInputField :label="'Name'" v-model="vaultState.name" :color="color"
                     :width="'50%'" :maxWidth="''" />
@@ -36,7 +36,6 @@ import TextInputField from '../InputFields/TextInputField.vue';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
 import ObjectMultiSelect from '../InputFields/ObjectMultiSelect.vue';
-import VaulticTable from '../Table/VaulticTable.vue';
 import MemberTable from '../Table/MemberTable.vue';
 
 import app from "../../Objects/Stores/AppStore";
@@ -54,7 +53,6 @@ export default defineComponent({
         VaulticFieldset,
         CheckboxInputField,
         ObjectMultiSelect,
-        VaulticTable,
         MemberTable
     },
     props: ['creating', 'model'],
@@ -71,15 +69,17 @@ export default defineComponent({
         const shareVault: Ref<boolean> = ref(vaultState.value.shared);
         const vaultMembers: Ref<Map<number, Member>> = ref(new Map());
 
-        const selectedOrganizations: Ref<ObjectSelectOptionModel[]> = ref([]);
+        const selectedOrganizations: Ref<ObjectSelectOptionModel[]> = ref(getSelectedOrds());
         const allOrganizations: Ref<ObjectSelectOptionModel[]> = ref([]);
+
+        const readOnly: Ref<boolean> = ref(app.currentVault.isReadOnly.value);
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
 
         function onSave()
         {
-            app.popups.showRequestAuthentication(color.value, doSave, onAuthCancelled);
+            app.popups.showRequestAuthentication(color.value, doSave, onAuthCancelled, true);
             return new Promise((resolve, reject) =>
             {
                 saveSucceeded = resolve;
@@ -121,14 +121,14 @@ export default defineComponent({
             const sharedIndividualsChanges: MemberChanges | undefined = memberTable.value?.getChanges()!;
             if (props.creating)
             {
-                handleSaveResponse((await app.createNewVault(key, vaultState.value.name, shareVault.value, true, 
-                    addedOrgs, sharedIndividualsChanges?.addedMembers.valueArray() ?? [])));
+                app.runAsAsyncProcess(async () => handleSaveResponse((await app.createNewVault(key, vaultState.value.name, shareVault.value, true, 
+                    addedOrgs, sharedIndividualsChanges?.addedMembers.valueArray() ?? []))));
             }
             else
             {
-                handleSaveResponse((await app.updateVault(key, vaultState.value, shareVault.value, 
+                app.runAsAsyncProcess(async () => handleSaveResponse((await app.updateVault(key, vaultState.value, shareVault.value, 
                     addedOrgs, removedOrgs, sharedIndividualsChanges?.addedMembers.valueArray() ?? [], 
-                    sharedIndividualsChanges?.updatedMembers.valueArray() ?? [], sharedIndividualsChanges?.removedMembers.valueArray() ?? [])));
+                    sharedIndividualsChanges?.updatedMembers.valueArray() ?? [], sharedIndividualsChanges?.removedMembers.valueArray() ?? []))));
             }
 
             if (props.creating)
@@ -161,11 +161,11 @@ export default defineComponent({
             saveFailed(false);
         }
 
-        onMounted(async () =>
+        function getSelectedOrds()
         {
-            loadingIndividuals.value = true;
-
+            const selected: ObjectSelectOptionModel[] = [];
             const selectedOrgs = app.organizations.organizationIDsByVaultIDs.get(vaultState.value.vaultID);
+
             if (selectedOrgs)
             {
                 selectedOrgs.forEach(o => 
@@ -173,18 +173,27 @@ export default defineComponent({
                     const org = app.organizations.organizationsByID.get(o);
                     const model: ObjectSelectOptionModel = 
                     {
+                        id: o.toString(),
                         label: org?.name!,
                         backingObject: org
                     };
 
-                    selectedOrganizations.value.push(model)
+                    selected.push(model)
                 });
             }
+
+            return selected;
+        }
+
+        onMounted(async () =>
+        {
+            loadingIndividuals.value = true;
 
             allOrganizations.value = app.organizations.organizations.value.map(o => 
             {
                 const model: ObjectSelectOptionModel = 
                 {
+                    id: o.organizationID.toString(),
                     label: o.name,
                     backingObject: o
                 };
@@ -238,6 +247,7 @@ export default defineComponent({
             emptyMessage,
             vaultMembers,
             loadingIndividuals,
+            readOnly,
             onSave,
         };
     }
@@ -264,7 +274,6 @@ export default defineComponent({
 }
 
 #vaultView__memberTable {
-    position: relative;
     height: 90%;
     width: 85%;
 }

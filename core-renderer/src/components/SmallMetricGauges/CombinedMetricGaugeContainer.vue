@@ -38,9 +38,9 @@ export default defineComponent({
 	flex-direction: column;
 	background-color: var(--widget-background-color);
 	border-radius: 20px;
-	padding-left: clamp(15px, 2vw, 50px);
-	padding-right: clamp(15px, 2vw, 50px);
 	padding-bottom: clamp(5px, 4vh, 60px);
+    justify-content: center;
+    align-items: center;
 }
 
 .combinedMetricGaugeContainer__metrics {

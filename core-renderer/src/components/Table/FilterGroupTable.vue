@@ -2,7 +2,8 @@
     <div id="filterGroupTableContainer">
         <VaulticTable ref="tableRef" id="filterTable" :color="color" :columns="tableColumns" 
             :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyTableMessage"
-            :onPin="onPin" :onEdit="onEdit" :onDelete="onDelete" :searchBarSizeModel="searchBarSizeModel">
+            :allowPinning="!readOnly" :onPin="onPin" :onEdit="onEdit" :onDelete="onDelete" 
+            :searchBarSizeModel="searchBarSizeModel">
             <template #tableControls>
                 <Transition name="fade" mode="out-in">
                     <AddDataTableItemButton v-if="!readOnly" :color="color" :initalActiveContentOnClick="tabToOpenOnAdd" />
@@ -42,8 +43,7 @@ import { SortedCollection } from '../../Objects/DataStructures/SortedCollections
 import { getEmptyTableMessage, getFilterGroupTableRowModels } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
 import { TableTemplateComponent } from '../../Types/Components';
-import { Filter, DataType, Group, ISecondaryDataObject } from '../../Types/DataTypes';
-import { Field } from '@vaultic/shared/Types/Fields';
+import { Filter, DataType, Group } from '../../Types/DataTypes';
 
 export default defineComponent({
     name: 'FilterGroupTable',
@@ -61,17 +61,17 @@ export default defineComponent({
         const tabToOpenOnAdd: ComputedRef<number> = computed(() => app.activeFilterGroupsTable);
         const readOnly: ComputedRef<boolean> = computed(() => app.currentVault.isReadOnly.value);
 
-        const passwordFilters: SortedCollection = new SortedCollection([], "name");
-        const pinnedPasswordFilters: SortedCollection = new SortedCollection([], "name");
+        const passwordFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.passwordFiltersByID, "n");
+        const pinnedPasswordFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.passwordFiltersByID, "n");
 
-        const passwordGroups: SortedCollection = new SortedCollection([], "name");
-        const pinnedPasswordGroups: SortedCollection = new SortedCollection([], "name");
+        const passwordGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.passwordGroupsByID, "n");
+        const pinnedPasswordGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.passwordGroupsByID, "n");
 
-        const valueFilters: SortedCollection = new SortedCollection([], "name");
-        const pinnedValueFilters: SortedCollection = new SortedCollection([], "name");
+        const valueFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.nameValuePairFiltersByID,  "n");
+        const pinnedValueFilters: SortedCollection = new SortedCollection([], () => app.currentVault.filterStore.nameValuePairFiltersByID,  "n");
 
-        const valueGroups: SortedCollection = new SortedCollection([], "name");
-        const pinnedValueGroups: SortedCollection = new SortedCollection([], "name");
+        const valueGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.valueGroupsByID, "n");
+        const pinnedValueGroups: SortedCollection = new SortedCollection([], () => app.currentVault.groupStore.valueGroupsByID, "n");
 
         const showEditGroupPopup: Ref<boolean> = ref(false);
         const currentlyEditingGroupModel: Ref<Group | any> = ref({});
@@ -92,10 +92,10 @@ export default defineComponent({
             switch (app.activeFilterGroupsTable)
             {
                 case DataType.Groups:
-                    return app.userPreferences.currentColorPalette.groupsColor.value;
+                    return app.userPreferences.currentColorPalette.g;
                 case DataType.Filters:
                 default:
-                    return app.userPreferences.currentColorPalette.filtersColor.value;
+                    return app.userPreferences.currentColorPalette.f;
             }
         });
 
@@ -143,37 +143,49 @@ export default defineComponent({
             {
                 name: 'Filters',
                 active: computed(() => app.activeFilterGroupsTable == DataType.Filters),
-                color: computed(() => app.userPreferences.currentColorPalette.filtersColor.value),
+                color: computed(() => app.userPreferences.currentColorPalette.f),
                 onClick: () => { app.activeFilterGroupsTable = DataType.Filters; }
             },
             {
                 name: 'Groups',
                 active: computed(() => app.activeFilterGroupsTable == DataType.Groups),
-                color: computed(() => app.userPreferences.currentColorPalette.groupsColor.value),
+                color: computed(() => app.userPreferences.currentColorPalette.g),
                 onClick: () => { app.activeFilterGroupsTable = DataType.Groups; }
             }
         ];
 
+        async function toggleFilter(f: Filter)
+        {
+            await app.userPreferences.toggleFilter(f.id);
+        }
+
+        function isFilterActive(f: Filter)
+        {
+            return app.userPreferences.activeFilters[f.id];
+        }
+
         const tableColumns: ComputedRef<TableColumnModel[]> = computed(() =>
         {
-            const models: TableColumnModel[] = []
+            const models: TableColumnModel[] = [];
             if (app.activeFilterGroupsTable == DataType.Filters)
             {
-                models.push({ header: "Active", field: "isActive", component: 'SelectorButtonTableRowCell', 
-                    data: { 'color': color, onClick: (f: Field<Filter>) => app.currentVault.filterStore.toggleFilter(f.value.id.value) }, startingWidth: '105px' });
-                models.push({ header: "Name", field: "name" });
+                models.push(new TableColumnModel("Active", "a").setComponent("SelectorButtonTableRowCell")
+                    .setData({ 'color': color, onClick: toggleFilter, isActive: isFilterActive, startingWidth: '105px' }).setOnClick(toggleFilter));
+
+                models.push(new TableColumnModel("Name", "n"));
             }
             else
             {
-                models.push({ header: "Name", field: "name" });
-                models.push({ header: "Color", field: "color", component: 'ColorTableRowCell' });
+                models.push(new TableColumnModel("Name", "n"));
+                models.push(new TableColumnModel("Icon", "").setIsGroupIconCell(true).setData({ 'color': color })
+                    .setSortable(false));
             }
 
             return models;
         });
 
         const searchBarSizeModel: Ref<ComponentSizeModel> = ref({
-            width: '9vw',
+            width: '8vw',
             maxWidth: '250px',
             minWidth: '85px',
             minHeight: '25px'
@@ -187,10 +199,14 @@ export default defineComponent({
                     switch (app.activePasswordValuesTable)
                     {
                         case DataType.Passwords:
-                            passwordGroups.updateValues(getFilterGroupTableRowModels(DataType.Groups, DataType.Passwords, app.currentVault.groupStore.passwordGroups));
+                            const [pgModels, pgPinnedModels] = getFilterGroupTableRowModels(DataType.Groups, DataType.Passwords, app.currentVault.groupStore.passwordGroups);
+                            passwordGroups.updateValues(pgModels);
+                            pinnedPasswordGroups.updateValues(pgPinnedModels);
                             break;
                         case DataType.NameValuePairs:
-                            valueGroups.updateValues(getFilterGroupTableRowModels(DataType.Groups, DataType.NameValuePairs, app.currentVault.groupStore.valuesGroups));
+                            const [vgModels, vgPinnedModels] = getFilterGroupTableRowModels(DataType.Groups, DataType.NameValuePairs, app.currentVault.groupStore.valuesGroups);
+                            valueGroups.updateValues(vgModels);
+                            pinnedValueGroups.updateValues(vgPinnedModels);
                             break;
                     }
                     break;
@@ -198,10 +214,14 @@ export default defineComponent({
                     switch (app.activePasswordValuesTable)
                     {
                         case DataType.Passwords:
-                            passwordFilters.updateValues(getFilterGroupTableRowModels(DataType.Filters, DataType.Passwords, app.currentVault.filterStore.passwordFilters));
+                            const [pfModels, pfPinnedModels] = getFilterGroupTableRowModels(DataType.Filters, DataType.Passwords, app.currentVault.filterStore.passwordFilters);
+                            passwordFilters.updateValues(pfModels);
+                            pinnedPasswordFilters.updateValues(pfPinnedModels);
                             break;
                         case DataType.NameValuePairs:
-                            valueFilters.updateValues(getFilterGroupTableRowModels(DataType.Filters, DataType.NameValuePairs, app.currentVault.filterStore.nameValuePairFilters));
+                            const [vfModels, vfPinnedModels] = getFilterGroupTableRowModels(DataType.Filters, DataType.NameValuePairs, app.currentVault.filterStore.nameValuePairFilters);
+                            valueFilters.updateValues(vfModels);
+                            pinnedValueFilters.updateValues(vfPinnedModels);
                             break;
                     }
                 default:
@@ -298,63 +318,63 @@ export default defineComponent({
             }
         }
 
-        function onPinFilter(isPinned: boolean, value: Field<Filter>)
+        function onPinFilter(isPinned: boolean, value: Filter)
         {
             if (isPinned)
             {
-                app.userPreferences.removePinnedFilters(value.value.id.value);
+                app.userPreferences.removePinnedFilters(value.id);
             }
             else
             {
-                app.userPreferences.addPinnedFilter(value.value.id.value);
+                app.userPreferences.addPinnedFilter(value.id);
             }
         }
 
-        function onPinGroup(isPinned: boolean, value: Field<Group>)
+        function onPinGroup(isPinned: boolean, value: Group)
         {
             if (isPinned)
             {
-                app.userPreferences.removePinnedGroups(value.value.id.value);
+                app.userPreferences.removePinnedGroups(value.id);
             }
             else
             {
-                app.userPreferences.addPinnedGroup(value.value.id.value);
+                app.userPreferences.addPinnedGroup(value.id);
             }
         }
 
-        function onPin(isPinned: boolean, dataType: Field<Filter | Group>)
+        function onPin(isPinned: boolean, dataType: (Filter | Group))
         {
             if (app.activeFilterGroupsTable == DataType.Filters)
             {
-                onPinFilter(isPinned, dataType as Field<Filter>);
+                onPinFilter(isPinned, dataType as Filter);
             }
             else if (app.activeFilterGroupsTable == DataType.Groups)
             {
-                onPinGroup(isPinned, dataType as Field<Group>);
+                onPinGroup(isPinned, dataType as Group);
             }
         }
 
-        function onEdit(dataType: Field<Filter | Group>)
+        function onEdit(dataType: (Filter | Group))
         {
             if (app.activeFilterGroupsTable == DataType.Filters)
             {
-                onEditFilter(dataType.value as Filter);
+                onEditFilter(dataType as Filter);
             }
             else if (app.activeFilterGroupsTable == DataType.Groups)
             {
-                onEditGroup(dataType.value as Group);
+                onEditGroup(dataType as Group);
             }
         }
 
-        function onDelete(dataType: Field<Filter | Group>)
+        function onDelete(dataType: Filter | Group)
         {
             if (app.activeFilterGroupsTable == DataType.Filters)
             {
-                onFilterDeleteInitiated(dataType.value as Filter);
+                onFilterDeleteInitiated(dataType as Filter);
             }
             else if (app.activeFilterGroupsTable == DataType.Groups)
             {
-                onGroupDeleteInitiated(dataType.value as Group);
+                onGroupDeleteInitiated(dataType as Group);
             }
         }
 
@@ -377,6 +397,7 @@ export default defineComponent({
         watch(() => app.activePasswordValuesTable, () =>
         {
             setTableRowDatas();
+            setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         });
 
         watch(() => app.currentVault.filterStore.passwordFilters.length, () =>

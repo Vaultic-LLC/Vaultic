@@ -1,5 +1,4 @@
 import { ServerPermissions } from "./ClientServerTypes";
-import { Field, FieldedObject, IFieldedObject } from "./Fields";
 
 export interface Organization
 {
@@ -7,14 +6,6 @@ export interface Organization
     name: string;
     membersByUserID: Map<number, Member>;
     vaultIDsByVaultID: Map<number, number>;
-}
-
-export interface FieldedOrganization extends FieldedObject
-{
-    organizationID: Field<number>;
-    name: Field<string>;
-    membersByUserID: Field<Map<number, Field<Member>>>;
-    vaultIDsByVaultID: Field<Map<number, Field<number>>>;
 }
 
 export interface Member
@@ -26,17 +17,6 @@ export interface Member
     permission: ServerPermissions;
     icon: string | undefined;
     publicEncryptingKey: string | undefined;
-}
-
-export class PasswordsByDomainType extends FieldedObject
-{
-    passwordsByDomain: Field<Map<string, Field<string>>>;
-
-    constructor()
-    {
-        super();
-        this.passwordsByDomain = new Field(new Map<string, Field<string>>());
-    }
 }
 
 export interface BreachRequestVault

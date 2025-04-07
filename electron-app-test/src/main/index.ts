@@ -1,4 +1,7 @@
-import { app, shell, BrowserWindow, session, ipcMain } from 'electron'
+import * as PolyFills from "@vaultic/shared/Types/PolyFills";
+PolyFills.a;
+
+import { app, shell, BrowserWindow, session, ipcMain, nativeImage, Tray, Menu } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -6,19 +9,49 @@ import setupIPC from './ipcSetup';
 import { electronAPI } from "@electron-toolkit/preload";
 
 import { environment } from "./Core/Environment"
-import cryptUtility from "./Core/Utilities/CoreCryptUtility";
-import coreHashUtility from "./Core/Utilities/CoreHashUtility";
+import { CryptUtility } from "./Utilities/CryptUtility";
+import { HashUtility } from "./Utilities/HashUtility";
 import generatorUtility from './Utilities/Generator';
 import { getDeviceInfo } from './Objects/DeviceInfo';
 import database, { createDataSource, deleteDatabase } from './Helpers/DatabaseHelper';
 import fs from "fs";
 import http2 from "http2";
+import { DataUtility } from "./Utilities/DataUtility";
+import { handleUserLogOut } from "./Core/Helpers/RepositoryHelper";
+
+let tray: Tray | null = null
+function createTray()
+{
+    const icon = join(__dirname, '/app.png'); // required.
+    const trayicon = nativeImage.createFromPath(icon);
+
+    tray = new Tray(trayicon.resize({ width: 16 }));
+    const contextMenu = Menu.buildFromTemplate([
+        {
+            label: 'Open App',
+            click: () =>
+            {
+                createWindow()
+            }
+        },
+        {
+            label: 'Quit',
+            click: () =>
+            {
+                app.quit() // actually quit the app.
+            }
+        },
+    ]);
+
+    tray.setContextMenu(contextMenu);
+}
 
 async function createWindow(): Promise<void>
 {
-    //@ts-ignore
-    const isTest = import.meta.env.VITE_ISTEST === "true";
-    await setupEnvironment(isTest);
+    if (!tray)
+    {
+        createTray();
+    }
 
     // needed for test environment to bypass ssl errors
     process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
@@ -63,9 +96,13 @@ async function createWindow(): Promise<void>
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(() =>
+app.whenReady().then(async () =>
 {
     setupIPC();
+
+    //@ts-ignore
+    const isTest = import.meta.env.VITE_ISTEST === "true";
+    await setupEnvironment(isTest);
 
     // Set app user model id for windows
     electronApp.setAppUserModelId('com.electron')
@@ -88,15 +125,11 @@ app.whenReady().then(() =>
     });
 });
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
-app.on('window-all-closed', () =>
+app.on('window-all-closed', async () =>
 {
-    if (process.platform !== 'darwin')
-    {
-        app.quit()
-    }
+    // don't call app.quit() since we want to back up the users data if possible
+    app.dock?.hide() // for macOS
+    await handleUserLogOut();
 });
 
 app.on('web-contents-created', (event, contents) =>
@@ -147,9 +180,10 @@ async function setupEnvironment(isTest: boolean)
         },
         utilities:
         {
-            crypt: cryptUtility,
-            hash: coreHashUtility,
-            generator: generatorUtility
+            crypt: new CryptUtility(),
+            hash: new HashUtility(),
+            generator: generatorUtility,
+            data: new DataUtility()
         },
         database:
         {

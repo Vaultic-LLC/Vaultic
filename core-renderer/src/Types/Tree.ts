@@ -1,5 +1,7 @@
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { TreeNodeButton } from "./Models";
+import { Field } from "@vaultic/shared/Types/Fields";
+import { ObjectPropertyManager, PropertyManagerConstructor } from "@vaultic/shared/Utilities/PropertyManagers";
 
 export class TreeNodeMember 
 {
@@ -153,6 +155,22 @@ export class TreeNodeListManager
                     addNodes(n.children);
                 }
             });
+        }
+    }
+
+    show(id: number)
+    {
+        let node: TreeNodeMember | undefined = this.nodesByID[id];
+        if (!node)
+        {
+            return;
+        }
+
+        while (node)
+        {
+            node.selected = true;
+            node.display = true;
+            node = node.parent;
         }
     }
 }

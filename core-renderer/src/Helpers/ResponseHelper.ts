@@ -15,10 +15,6 @@ export function defaultHandleFailedResponse(response: any, showAlerts: boolean =
     {
         app.popups.showPaymentSetup();
     }
-    else if (response.IncorrectDevice === true)
-    {
-        app.popups.showIncorrectDevice(response);
-    }
     else if (response.InvalidSession === true)
     {
         app.popups.showSessionExpired();

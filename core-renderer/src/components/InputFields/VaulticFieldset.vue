@@ -28,6 +28,7 @@ export default defineComponent({
     display: flex;
     width: 100%;
     column-gap: 10px;
+    position: relative;
 }
 
 .vaulticFieldsetContainer--fillSpace {

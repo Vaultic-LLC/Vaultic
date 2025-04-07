@@ -1,33 +1,33 @@
 <template>
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
-        :gridDefinition="gridDefinition">
+        :gridDefinition="gridDefinition" :hideButtons="readOnly">
         <VaulticFieldset :centered="true">
             <ColorPickerInputField :label="'Error Color'" :color="color"
-                v-model="colorPaletteState.errorColor.value" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
+                v-model="colorPaletteState.r" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
                 :minWidth="'125px'" />
             <ColorPickerInputField :label="'Success Color'" :color="color"
-                v-model="colorPaletteState.successColor.value" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
+                v-model="colorPaletteState.s" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
                 :minWidth="'125px'" />
         </VaulticFieldset>
         <VaulticFieldset :centered="true">
             <ColorPickerInputField :label="'Sub Color One'" :color="color"
-                v-model="colorPaletteState.filtersColor.value" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
+                v-model="colorPaletteState.f" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
                 :minWidth="'125px'" />
             <ColorPickerInputField :label="'Sub Color Two'" :color="color"
-                v-model="colorPaletteState.groupsColor.value" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
+                v-model="colorPaletteState.g" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
                 :minWidth="'125px'" />
         </VaulticFieldset>
         <VaulticFieldset :centered="true">
             <div class="colorPaletteView__groupedColorPickers colorPaletteView__passwordColors">
                 <label class="colorPaletteView__groupedColorPickerLabels">Main Colors One</label>
                 <ColorPickerInputField :label="'Primary'" :color="color"
-                    v-model="colorPaletteState.passwordsColor.value.primaryColor.value" :width="'8vw'" :height="'4vh'"
+                    v-model="colorPaletteState.p.p" :width="'8vw'" :height="'4vh'"
                     :minHeight="'30px'" :minWidth="'125px'" />
                 <ColorPickerInputField :label="'Secondary One'" :color="color"
-                    v-model="colorPaletteState.passwordsColor.value.secondaryColorOne.value" :width="'8vw'" :height="'4vh'"
+                    v-model="colorPaletteState.p.o" :width="'8vw'" :height="'4vh'"
                     :minHeight="'30px'" :minWidth="'125px'" />
                 <ColorPickerInputField :label="'Seconday Two'" :color="color"
-                    v-model="colorPaletteState.passwordsColor.value.secondaryColorTwo.value" :width="'8vw'" :height="'4vh'"
+                    v-model="colorPaletteState.p.t" :width="'8vw'" :height="'4vh'"
                     :minHeight="'30px'" :minWidth="'125px'" />
                 <ToolTip :color="color" :message="'Secondary Colors are used for the border of popups'"
                     :size="'clamp(18px, 1.7vw, 28px)'" />
@@ -37,13 +37,13 @@
             <div class="colorPaletteView__groupedColorPickers colorPaletteView__valueColors">
                 <label class="colorPaletteView__groupedColorPickerLabels">Main Colors Two</label>
                 <ColorPickerInputField :label="'Primary'" :color="color"
-                    v-model="colorPaletteState.valuesColor.value.primaryColor.value" :width="'8vw'" :height="'4vh'" :minHeight="'30px'"
+                    v-model="colorPaletteState.v.p" :width="'8vw'" :height="'4vh'" :minHeight="'30px'"
                     :minWidth="'125px'" />
                 <ColorPickerInputField :label="'Secondary One'" :color="color"
-                    v-model="colorPaletteState.valuesColor.value.secondaryColorOne.value" :width="'8vw'" :height="'4vh'"
+                    v-model="colorPaletteState.v.o" :width="'8vw'" :height="'4vh'"
                     :minHeight="'30px'" :minWidth="'125px'" />
                 <ColorPickerInputField :label="'Secondary Two'" :color="color"
-                    v-model="colorPaletteState.valuesColor.value.secondaryColorTwo.value" :width="'8vw'" :height="'4vh'"
+                    v-model="colorPaletteState.v.t" :width="'8vw'" :height="'4vh'"
                     :minHeight="'30px'" :minWidth="'125px'" />
                 <ToolTip :color="color" :message="'Secondary Colors are used for the border of popups'"
                     :size="'clamp(18px, 1.7vw, 28px)'" />
@@ -52,7 +52,7 @@
     </ObjectView>
 </template>
 <script lang="ts">
-import { defineComponent, ComputedRef, computed, Ref, ref, watch } from 'vue';
+import { defineComponent, ComputedRef, computed, Ref, ref, watch, onMounted, Reactive, reactive } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import ColorPickerInputField from '../InputFields/ColorPickerInputField.vue';
@@ -60,8 +60,8 @@ import ToolTip from '../ToolTip.vue';
 import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
 
 import { GridDefinition } from '../../Types/Models';
-import { ColorPalette } from '../../Types/Colors';
 import app from "../../Objects/Stores/AppStore";
+import { ColorPalette } from '@vaultic/shared/Types/Color';
 
 export default defineComponent({
     name: "ColorPaletteView",
@@ -74,10 +74,14 @@ export default defineComponent({
     props: ['creating', 'model'],
     setup(props)
     {
+        const appStoreState = app.getPendingState()!;
+
         const refreshKey: Ref<string> = ref("");
-        const colorPaletteState: Ref<ColorPalette> = ref(props.model);
+        let colorPaletteState: Reactive<ColorPalette> = props.creating ? reactive(props.model) : getCustomRef(props.model);
         const color: ComputedRef<string> = computed(() => '#d0d0d0');
         const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
+
+        const readOnly: Ref<boolean> = ref(app.currentVault.isReadOnly.value);
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
@@ -103,10 +107,10 @@ export default defineComponent({
         async function doSave(key: string)
         {
             app.popups.showLoadingIndicator(primaryColor.value, "Saving Color Palette");
-            colorPaletteState.value.isCreated.value = true;
-            colorPaletteState.value.editable.value = true;
+            colorPaletteState.i = true;
+            colorPaletteState.e = true;
 
-            await app.updateColorPalette(key, colorPaletteState.value);
+            await app.updateColorPalette(key, colorPaletteState, appStoreState);
 
             refreshKey.value = Date.now().toString();
 
@@ -119,9 +123,20 @@ export default defineComponent({
             saveFailed(false);
         }
 
+        function getCustomRef(colorPalette: ColorPalette)
+        {
+            colorPalette.p = appStoreState.createCustomRef('colorPalette.passwordColors', colorPalette.p, colorPalette.id);
+            colorPalette.v = appStoreState.createCustomRef('colorPalette.valueColors', colorPalette.v, colorPalette.id);
+
+            // Do this last so that editing p and v don't get tracked as actual changes
+            const customRef = appStoreState.createCustomRef('colorPalettes.palette', colorPalette, colorPalette.id);
+
+            return customRef;
+        }
+
         watch(() => props.model, (newValue) =>
         {
-            colorPaletteState.value = newValue;
+            Object.assign(colorPaletteState, newValue);
             refreshKey.value = Date.now().toString();
         });
 
@@ -130,6 +145,7 @@ export default defineComponent({
             color,
             refreshKey,
             gridDefinition,
+            readOnly,
             onSave
         };
     },

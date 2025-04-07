@@ -73,7 +73,15 @@ export interface CreateSessionResponse extends BaseResponse
 
 export interface ValidateEmailResponse extends BaseResponse
 {
+    PendingUserToken?: string;
     EmailIsTaken?: boolean;
+    Code?: string;
+}
+
+export interface VerifyEmailResponse extends BaseResponse
+{
+    InvalidPendingUser?: boolean;
+    IncorrectEmailVerificationCode?: boolean;
 }
 
 export interface ValidateUserResponse extends InvalidLicenseResponse, CreateSessionResponse
@@ -136,14 +144,16 @@ export interface GetChartDataResponse extends UseSessionLicenseAndDeviceAuthenti
     ChartData?: ChartData;
 }
 
-export interface StartRegistrationResponse extends BaseResponse, EmailIsTakenResposne, PendingUserResponse, OpaqueResponse
+export interface StartRegistrationResponse extends BaseResponse, EmailIsTakenResposne, OpaqueResponse
 {
     ServerRegistrationResponse?: string;
+    InvalidPendingUser?: boolean;
 }
 
-export interface FinishRegistrationResponse extends BaseResponse
+export interface FinishRegistrationResponse extends BaseResponse, OpaqueResponse
 {
     MFASecret?: string;
+    InvalidPendingUser?: boolean;
 }
 
 export interface StartLoginResponse extends UnknownEmailResponse, PendingUserResponse, OpaqueResponse
@@ -164,6 +174,7 @@ export interface FinishLoginResponse extends UserDataPayloadResponse, OpaqueResp
 
 export interface LogUserInResponse extends StartLoginResponse, FinishLoginResponse 
 {
+    isSyncing?: boolean;
 }
 
 export interface CreateVaultResponse extends BaseResponse

@@ -1,5 +1,5 @@
 import { RandomValueType } from "./Fields";
-import { PublicPrivateKey } from "./Keys";
+import { Algorithm, PublicPrivateKey } from "./Keys";
 import { ECEncryptionResult, TypedMethodResponse } from "./MethodResponse";
 
 export interface CoreCryptUtility
@@ -12,6 +12,11 @@ export interface ClientCryptUtility extends CoreCryptUtility
 {
     symmetricEncrypt: (key: string, value: string) => Promise<TypedMethodResponse<string | undefined>>;
     symmetricDecrypt: (key: string, value: string) => Promise<TypedMethodResponse<string | undefined>>;
+}
+
+export interface ClientHashUtility
+{
+    hash: (algorithm: Algorithm, value: string, salt?: string) => Promise<TypedMethodResponse<string | undefined>>;
 }
 
 export interface CoreGeneratorUtility

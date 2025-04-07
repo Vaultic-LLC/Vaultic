@@ -4,12 +4,13 @@ import { DeviceInfo } from "./Device";
 import { ClientEnvironment, ClientVaulticCache } from "./Environment";
 import { RepositoryHelper, ServerHelper, ValidationHelper, VaulticHelper } from "./Helpers";
 import { ClientLogRepository, ClientUserRepository, ClientUserVaultRepository, ClientVaultRepository } from "./Repositories";
-import { ClientCryptUtility, ClientGeneratorUtility } from "./Utilities";
+import { ClientCryptUtility, ClientGeneratorUtility, ClientHashUtility } from "./Utilities";
 
 export interface Utilities
 {
     crypt: ClientCryptUtility;
     generator: Promisify<ClientGeneratorUtility>;
+    hash: ClientHashUtility;
 }
 
 export interface Helpers

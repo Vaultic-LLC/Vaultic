@@ -1,7 +1,12 @@
-import { FieldedMapFields, UnfieldedMapFields } from "./Fields";
+import { Field } from "./Fields";
 
 declare global 
 {
+    interface Object
+    {
+        has: (prop: string) => boolean;
+    }
+
     interface Set<T>
     {
         difference: (other: Set<T>) => Set<T>
@@ -87,17 +92,19 @@ Map.prototype.mapWhere = function <T>(this: Map<any, any>, predicate: (k: any, v
     return temp;
 }
 
+const isMapIdentifier = "im";
+
 JSON.vaulticParse = (text: string) => 
 {
+    const childrenByParentID: Map<string, any[]> = new Map();
     return JSON.parse(text, (key: string, value: any) => 
     {
-        if (FieldedMapFields.has(key as any))
+        if (value && typeof value === "object")
         {
-            return { ...value, value: new Map(value.value) }
-        }
-        else if (UnfieldedMapFields.has(key as any))
-        {
-            return new Map(value);
+            if (isMapIdentifier in value)
+            {
+                return new Map(value.value);
+            }
         }
 
         return value;
@@ -108,15 +115,13 @@ JSON.vaulticStringify = (value: any) =>
 {
     return JSON.stringify(value, (key: string, value: any) => 
     {
-        if (FieldedMapFields.has(key as any))
+        if (value && typeof value === "object")
         {
-            // return a new obj so we don't alter the existing one and cauese issue with 
-            // it being used after serialization
-            return { ...value, value: Array.from(value.value.entries()) };
-        }
-        else if (UnfieldedMapFields.has(key as any))
-        {
-            return Array.from(value.entries());
+            if (value instanceof Map)
+            {
+                // im = isMap
+                return { im: 1, value: Array.from(value.entries()) };
+            }
         }
 
         return value;

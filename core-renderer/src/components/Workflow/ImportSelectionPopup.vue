@@ -2,26 +2,24 @@
     <div class="importSelectionPopup">
         <ObjectPopup :closePopup="onClose" :width="'50%'" :minWidth="'600px'" :minHeight="'480px'">
             <ObjectView :color="color" :creating="false" :defaultSave="onConfirm" :gridDefinition="gridDefinition"
-                :buttonText="'Confirm'" :skipOnSaveFunctionality="true" :anchorButtonsDown="true">
+                :buttonText="'Confirm'" :skipOnSaveFunctionality="true">
                 <div class="importSelectionPopup__content">
                     <h2 class="importSelectionPopup__header">Select which columns map to each property</h2>
-                    <ScrollView class="importSelectionPopup__sections" :color="color">
-                        <div class="importSelectionPopup__pickers">
-                            <div v-for="(mapper, idx) in csvHeaderPropertyMappers" :key="idx"
-                                class="importSelectionPopup__headerPropertyPicker">
-                                <TextInputField :disabled="true" :color="color" :label="'Property'"
-                                    v-model="mapper.property.displayName" :width="'8vw'" :maxWidth="'330px'"
-                                    :minWidth="'100px'" :height="'4vh'" :minHeight="'35px'" />
-                                <EnumInputField :label="'CSV Header'" :color="color" v-model="mapper.csvHeader"
-                                    :optionsEnum="mockHeadersEnum" :width="'8vw'" :height="'4vh'" :minHeight="'35px'"
-                                    :minWidth="'100px'" :maxHeight="'50px'" :fadeIn="true"
-                                    :required="mapper.property.required" />
-                                <TextInputField v-if="mapper.property.requiresDelimiter" :color="color"
-                                    :label="'Delimiter'" v-model="mapper.property.delimiter" :width="'4vw'"
-                                    :maxWidth="'100px'" :minWidth="'80px'" :height="'4vh'" :minHeight="'35px'" />
-                            </div>
+                    <div class="importSelectionPopup__pickers">
+                        <div v-for="(mapper, idx) in csvHeaderPropertyMappers" :key="idx"
+                            class="importSelectionPopup__headerPropertyPicker">
+                            <TextInputField :disabled="true" :color="color" :label="'Property'"
+                                v-model="mapper.property.displayName" :width="'8vw'" :maxWidth="'330px'"
+                                :minWidth="'100px'" :height="'4vh'" :minHeight="'35px'" />
+                            <EnumInputField :label="'CSV Header'" :color="color" v-model="mapper.csvHeader"
+                                :optionsEnum="mockHeadersEnum" :width="'8vw'" :height="'4vh'" :minHeight="'35px'"
+                                :minWidth="'100px'" :maxHeight="'50px'" :fadeIn="true"
+                                :required="mapper.property.required" />
+                            <TextInputField v-if="mapper.property.requiresDelimiter" :color="color"
+                                :label="'Delimiter'" v-model="mapper.property.delimiter" :width="'4vw'"
+                                :maxWidth="'100px'" :minWidth="'80px'" :height="'4vh'" :minHeight="'35px'" />
                         </div>
-                    </ScrollView>
+                    </div>
                 </div>
             </ObjectView>
         </ObjectPopup>
@@ -82,7 +80,7 @@ export default defineComponent({
 
         function onConfirm()
         {
-            return app.popups.showRequestAuthentication(props.color, buildAndEmit, () => { });
+            return app.popups.showRequestAuthentication(props.color, buildAndEmit, () => { }, true);
         }
 
         function buildAndEmit(masterKey: string)
@@ -133,8 +131,6 @@ export default defineComponent({
 }
 
 .importSelectionPopup__content {
-    direction: ltr;
-    height: 100%;
     color: white;
 }
 

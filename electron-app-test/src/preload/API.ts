@@ -2,7 +2,7 @@ import { ipcRenderer } from "electron";
 
 import { DeviceInfo, RequireMFAOn, RequiresMFA } from "@vaultic/shared/Types/Device";
 import { AppController, ClientUserController, ClientVaultController, OrganizationController, SessionController } from "@vaultic/shared/Types/Controllers";
-import { ClientCryptUtility, ClientGeneratorUtility } from "@vaultic/shared/Types/Utilities";
+import { ClientCryptUtility, ClientGeneratorUtility, ClientHashUtility } from "@vaultic/shared/Types/Utilities";
 import { RepositoryHelper, ServerHelper, ValidationHelper, VaulticHelper } from "@vaultic/shared/Types/Helpers";
 import { ClientEnvironment, ClientVaulticCache } from "@vaultic/shared/Types/Environment";
 import { ClientLogRepository, ClientUserRepository, ClientUserVaultRepository, ClientVaultRepository } from "@vaultic/shared/Types/Repositories";
@@ -32,6 +32,7 @@ const sessionController: SessionController =
 const userController: ClientUserController =
 {
     validateEmail: (email: string) => ipcRenderer.invoke('userController:validateEmail', email),
+    verifyEmail: (pendingUserToken: string, emailVerificationCode: string) => ipcRenderer.invoke('userController:verifyEmail', pendingUserToken, emailVerificationCode),
     getDevices: () => ipcRenderer.invoke('userController:getDevices'),
     registerDevice: (name: string, requiresMFA: RequiresMFA) => ipcRenderer.invoke('userController:registerDevice', name, requiresMFA),
     updateDevice: (name: string, requiresMFA: RequiresMFA, desktopDeviceID?: number, mobileDeviceID?: number) => ipcRenderer.invoke('userController:updateDevice', name, requiresMFA, desktopDeviceID, mobileDeviceID),
@@ -53,7 +54,7 @@ const vaultController: ClientVaultController =
 {
     getMembers: (userOrganizationID: number, userVaultID: number) => ipcRenderer.invoke('vaultController:getMembers', userOrganizationID, userVaultID),
     getVaultDataBreaches: (getVaultDataBreachesData: string) => ipcRenderer.invoke('vaultController:getVaultDataBreaches', getVaultDataBreachesData),
-    checkPasswordForBreach: (checkPasswordForBreachData: string) => ipcRenderer.invoke('vaultController:checkPasswordForBreach', checkPasswordForBreachData),
+    checkPasswordsForBreach: (checkPasswordForBreachData: string) => ipcRenderer.invoke('vaultController:checkPasswordsForBreach', checkPasswordForBreachData),
     dismissVaultDataBreach: (userOrganizaitonID: number, vaultID: number, vaultDataBreachID: number) => ipcRenderer.invoke('vaultController:dismissVaultDataBreach', userOrganizaitonID, vaultID, vaultDataBreachID),
     clearDataBreaches: (vaults: BreachRequestVault[]) => ipcRenderer.invoke('vaultController:clearDataBreaches', vaults)
 }
@@ -81,9 +82,14 @@ const generatorUtility: Promisify<ClientGeneratorUtility> =
     ECKeys: () => ipcRenderer.invoke('generatorUtility:ECKeys')
 };
 
+const hashUtility: Promisify<ClientHashUtility> =
+{
+    hash: (algorithm: Algorithm, value: string, salt?: string) => ipcRenderer.invoke('hashUtility:hash', algorithm, value, salt)
+};
+
 const validationHelper: Promisify<ValidationHelper> =
 {
-    isWeak: (value: string, type: string) => ipcRenderer.invoke('validationHelper:isWeak', value, type),
+    isWeak: (value: string) => ipcRenderer.invoke('validationHelper:isWeak', value),
     containsNumber: (value: string) => ipcRenderer.invoke('validationHelper:containsNumber', value),
     containsSpecialCharacter: (value: string) => ipcRenderer.invoke('validationHelper:containsSpecialCharacter', value),
     containsUppercaseAndLowercaseNumber: (value: string) => ipcRenderer.invoke('validationHelper:containsUppercaseAndLowercaseNumber', value)
@@ -98,13 +104,14 @@ const vaulticHelper: VaulticHelper =
 
 const serverHelper: ServerHelper =
 {
-    registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => ipcRenderer.invoke('serverHelper:registerUser', masterKey, email, firstName, lastName),
+    registerUser: (masterKey: string, pendingUserToken: string, firstName: string, lastName: string) => ipcRenderer.invoke('serverHelper:registerUser', masterKey, pendingUserToken, firstName, lastName),
     logUserIn: (masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean, mfaCode?: string) => ipcRenderer.invoke('serverHelper:logUserIn', masterKey, email, firstLogin, reloadAllData, mfaCode),
 };
 
 const repositoryHelepr: RepositoryHelper =
 {
-    backupData: (masterKey: string) => ipcRenderer.invoke('repositoryHelper:backupData', masterKey)
+    backupData: (masterKey: string) => ipcRenderer.invoke('repositoryHelper:backupData', masterKey),
+    handleUserLogOut: () => ipcRenderer.invoke('repositoryHelper:handleUserLogOut')
 }
 
 const environment: ClientEnvironment =
@@ -132,7 +139,7 @@ const userRepository: ClientUserRepository =
     setCurrentUser: (masterKey: string, email: string) => ipcRenderer.invoke("userRepository:setCurrentUser", masterKey, email),
     getCurrentUserData: (masterKey: string) => ipcRenderer.invoke('userRepository:getCurrentUserData', masterKey),
     verifyUserMasterKey: (masterKey: string, email?: string, isVaulticKey?: boolean) => ipcRenderer.invoke('userRepository:verifyUserMasterKey', masterKey, email, isVaulticKey),
-    saveUser: (masterKey: string, newData: string, currentData: string) => ipcRenderer.invoke('userRepository:saveUser', masterKey, newData, currentData),
+    saveUser: (masterKey: string, changes: string) => ipcRenderer.invoke('userRepository:saveUser', masterKey, changes),
     getStoreStates: (masterKey: string, storeStatesToRetrieve: UserData) => ipcRenderer.invoke('userRepository:getStoreStates', masterKey, storeStatesToRetrieve),
     getValidMasterKey: () => ipcRenderer.invoke('userRepository:getValidMasterKey'),
 };
@@ -141,16 +148,16 @@ const vaultRepository: ClientVaultRepository =
 {
     updateVault: (masterKey: string, updateVaultData: string) => ipcRenderer.invoke('vaultRepository:updateVault', masterKey, updateVaultData),
     setActiveVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultRepository:setActiveVault', masterKey, userVaultID),
-    saveVaultData: (masterKey: string, userVaultID: number, newData: string, currentData?: string) => ipcRenderer.invoke('vaultRepository:saveVaultData', masterKey, userVaultID, newData, currentData),
+    saveVaultData: (masterKey: string, userVaultID: number, changes: string) => ipcRenderer.invoke('vaultRepository:saveVaultData', masterKey, userVaultID, changes),
     createNewVaultForUser: (masterKey: string, updateVaultData: string) => ipcRenderer.invoke('vaultRepository:createNewVaultForUser', masterKey, updateVaultData),
     getStoreStates: (masterKey: string, userVaultID: number, storeStatesToRetrieve: CondensedVaultData) => ipcRenderer.invoke('vaultRepository:getStoreStates', masterKey, userVaultID, storeStatesToRetrieve),
     deleteVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultRepository:deleteVault', masterKey, userVaultID),
-    syncVaults: (masterKey: string) => ipcRenderer.invoke('vaultRepository:syncVaults', masterKey),
+    syncVaults: (email: string, masterKey?: string, reloadAllData?: boolean) => ipcRenderer.invoke('vaultRepository:syncVaults', email, masterKey, reloadAllData),
 };
 
 const userVaultRepository: ClientUserVaultRepository =
 {
-    saveUserVault: (masterKey: string, userVaultID: number, newData: string, currentData: string) => ipcRenderer.invoke('userVaultRepository:saveUserVault', masterKey, userVaultID, newData, currentData),
+    saveUserVault: (masterKey: string, userVaultID: number, changes: string) => ipcRenderer.invoke('userVaultRepository:saveUserVault', masterKey, userVaultID, changes),
     getStoreStates: (masterKey: string, userVaultID: number, storeStatesToRetrieve: CondensedVaultData) => ipcRenderer.invoke('userVaultRepository:getStoreStates', masterKey, userVaultID, storeStatesToRetrieve)
 };
 
@@ -175,6 +182,7 @@ const api: IAPI =
     utilities: {
         crypt: cryptUtility,
         generator: generatorUtility,
+        hash: hashUtility
     },
     helpers: {
         validation: validationHelper,

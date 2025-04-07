@@ -1,47 +1,53 @@
 import { computed, ComputedRef, ref, Ref } from "vue";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
-import { Store, StoreState } from "./Base";
+import { Store } from "./Base";
 import { FilterStore, ReactiveFilterStore } from "./FilterStore";
 import { GroupStore, ReactiveGroupStore } from "./GroupStore";
 import { PasswordStore, PasswordStoreState, ReactivePasswordStore } from "./PasswordStore";
 import { ValueStore, ReactiveValueStore } from "./ValueStore";
 import { VaultPreferencesStore } from "./VaultPreferencesStore";
 import { CondensedVaultData, DisplayVault } from "@vaultic/shared/Types/Entities";
-import { Field, IFieldedObject, KnownMappedFields } from "@vaultic/shared/Types/Fields";
 import { ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
-import { PasswordsByDomainType } from "@vaultic/shared/Types/DataTypes";
+import { defaultVaultStoreState, DoubleKeyedObject, PendingStoreState, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import app from "./AppStore";
 
-export interface VaultSettings extends IFieldedObject
-{
-    loginRecordsToStorePerDay: Field<number>;
-    numberOfDaysToStoreLoginRecords: Field<number>;
-}
-
-interface DaysLogins extends IFieldedObject
-{
-    daysLogin: Field<Map<number, Field<number>>>;
-}
+const MAX_LOGIN_RECORDS = 500;
+export interface VaultSettings { }
 
 interface IVaultStoreState extends StoreState
 {
-    settings: Field<VaultSettings>;
-    loginHistory: Field<Map<string, Field<KnownMappedFields<DaysLogins>>>>;
+    /** Settings */
+    s: VaultSettings;
+    /** Login History */
+    l: number[];
 }
 
-export type VaultStoreState = KnownMappedFields<IVaultStoreState>;
+export interface VaultStoreStateKeys extends StateKeys
+{
+    'loginHistory': '';
+}
+
+const VaultStorePathRetriever: StorePathRetriever<VaultStoreStateKeys> =
+{
+    'loginHistory': (...ids: string[]) => `l`,
+};
+
+export type VaultStoreState = IVaultStoreState;
 
 export class BaseVaultStore<V extends PasswordStore,
-    W extends ValueStore, X extends FilterStore, Y extends GroupStore> extends Store<VaultStoreState>
+    W extends ValueStore, X extends FilterStore, Y extends GroupStore> extends Store<VaultStoreState, VaultStoreStateKeys>
 {
     protected internalName: string;
     protected internalShared: boolean;
-    protected internalIsArchived: boolean;
-    protected internalIsOwner: boolean;
+    protected internalIsArchived: Ref<boolean>;
+    protected internalIsOwner: Ref<boolean>;
+    protected internalPermissions: Ref<ServerPermissions | undefined>;
     protected internalIsReadOnly: Ref<boolean>;
+    protected internalReadOnlyComputed: ComputedRef<boolean>;
     protected internalUserOrganizationID: number;
     protected internalUserVaultID: number;
     protected internalVaultID: number;
-    protected internalPasswordsByDomain: Field<Map<string, Field<KnownMappedFields<PasswordsByDomainType>>>> | undefined;
+    protected internalPasswordsByDomain: DoubleKeyedObject | undefined;
 
     protected internalPasswordStore: V;
     protected internalValueStore: W;
@@ -51,16 +57,17 @@ export class BaseVaultStore<V extends PasswordStore,
 
     get name() { return this.internalName; }
     get shared() { return this.internalShared; }
-    get isArchived() { return this.internalIsArchived; }
+    get isArchived() { return this.internalIsArchived.value; }
+    set isArchived(val: boolean) { this.internalIsArchived.value = val; }
     get isOwner() { return this.internalIsOwner; }
-    get isReadOnly() { return this.internalIsReadOnly; }
+    get isReadOnly() { return this.internalReadOnlyComputed; }
     get userOrganizationID() { return this.internalUserOrganizationID; }
     get userVaultID() { return this.internalUserVaultID; }
     get vaultID() { return this.internalVaultID; }
     get passwordsByDomain() { return this.internalPasswordsByDomain; }
     set passwordsByDomain(value) { this.internalPasswordsByDomain = value; }
 
-    get settings() { return this.state.settings; }
+    get settings() { return this.state.s; }
 
     get passwordStore() { return this.internalPasswordStore; }
     get valueStore() { return this.internalValueStore; }
@@ -70,9 +77,15 @@ export class BaseVaultStore<V extends PasswordStore,
 
     constructor() 
     {
-        super("vaultStoreState");
+        super(StoreType.Vault, VaultStorePathRetriever);
         this.internalIsReadOnly = ref(false);
+        this.internalReadOnlyComputed = computed(() => this.internalIsArchived.value || this.internalIsReadOnly.value || app.isSyncing.value || app.forceReadOnly.value ||
+            (this.internalIsOwner.value === false && this.internalPermissions.value == ServerPermissions.View));
         this.internalVaultPreferencesStore = new VaultPreferencesStore(this);
+
+        this.internalIsArchived = ref(false);
+        this.internalIsOwner = ref(false);
+        this.internalPermissions = ref(ServerPermissions.View);
     }
 
     protected async setBaseVaultStoreData(data: CondensedVaultData)
@@ -80,11 +93,11 @@ export class BaseVaultStore<V extends PasswordStore,
         this.internalUserOrganizationID = data.userOrganizationID;
         this.internalUserVaultID = data.userVaultID;
         this.internalVaultID = data.vaultID;
-        this.internalIsOwner = data.isOwner;
-        this.internalIsReadOnly.value = data.isArchived || (data.isOwner === false && data.permissions === ServerPermissions.View);
+        this.internalIsOwner.value = data.isOwner;
+        this.internalPermissions.value = data.permissions;
         this.internalShared = data.shared;
-        this.internalIsArchived = data.isArchived;
-        this.internalPasswordsByDomain = (JSON.vaulticParse(data.passwordStoreState) as PasswordStoreState).passwordsByDomain ?? new Field(new Map());
+        this.internalIsArchived.value = data.isArchived;
+        this.internalPasswordsByDomain = (JSON.parse(data.passwordStoreState) as PasswordStoreState).passwordsByDomain ?? new Map();
 
         await this.initalizeNewStateFromJSON(data.vaultStoreState);
         await this.internalVaultPreferencesStore.initalizeNewStateFromJSON(data.vaultPreferencesStoreState);
@@ -92,16 +105,7 @@ export class BaseVaultStore<V extends PasswordStore,
 
     protected defaultState(): VaultStoreState 
     {
-        return {
-            version: new Field(0),
-            settings: new Field(
-                {
-                    id: new Field(""),
-                    loginRecordsToStorePerDay: new Field(13),
-                    numberOfDaysToStoreLoginRecords: new Field(30)
-                }),
-            loginHistory: new Field(new Map<string, Field<KnownMappedFields<DaysLogins>>>())
-        }
+        return defaultVaultStoreState();
     }
 }
 
@@ -146,7 +150,7 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
     protected internalReactiveUserVaultID: ComputedRef<number>;
 
     get reactiveUserVaultID() { return this.internalReactiveUserVaultID.value; }
-    get loginHistory() { return this.state.loginHistory; }
+    get loginHistory() { return this.state.l; }
 
     constructor()
     {
@@ -158,7 +162,7 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
         this.internalGroupStore = new ReactiveGroupStore(this);
     }
 
-    public async setReactiveVaultStoreData(masterKey: string, data: CondensedVaultData)
+    public async setReactiveVaultStoreData(masterKey: string, data: CondensedVaultData, secondLoad: boolean)
     {
         await super.setBaseVaultStoreData(data);
 
@@ -167,7 +171,10 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
         await this.internalFilterStore.initalizeNewStateFromJSON(data.filterStoreState);
         await this.internalGroupStore.initalizeNewStateFromJSON(data.groupStoreState);
 
-        await this.updateLogins(masterKey);
+        if (!secondLoad)
+        {
+            await this.updateLogins(masterKey);
+        }
     }
 
     public async setVaultDataFromBasicVault(masterKey: string, basicVault: BasicVaultStore, recordLogin: boolean, readOnly: boolean)
@@ -193,9 +200,8 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
 
     private async updateLogins(masterKey: string)
     {
-        const pendingState = this.cloneState();
+        const pendingState = this.getPendingState()!;
         await this.recordLogin(pendingState, Date.now());
-        await this.checkRemoveOldLoginRecords(pendingState);
 
         const transaction = new StoreUpdateTransaction(this.userVaultID);
         transaction.updateVaultStore(this, pendingState);
@@ -203,44 +209,19 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
         await transaction.commit(masterKey);
     }
 
-    private async recordLogin(pendingState: VaultStoreState, dateTime: number): Promise<void>
+    private async recordLogin(
+        pendingState: PendingStoreState<VaultStoreState, VaultStoreStateKeys>,
+        dateTime: number): Promise<void>
     {
-        const dateObj: Date = new Date(dateTime);
-        const loginHistoryKey: string = `${dateObj.getFullYear()}-${dateObj.getMonth()}-${dateObj.getDate()}`;
-
-        if (!pendingState.loginHistory.value.has(loginHistoryKey))
+        if (pendingState.state.l.length >= MAX_LOGIN_RECORDS)
         {
-            const daysLogin: KnownMappedFields<DaysLogins> =
+            for (let i = pendingState.state.l.length - MAX_LOGIN_RECORDS; i >= 0; i--)
             {
-                id: new Field(""),
-                daysLogin: new Field(new Map<number, Field<number>>([[dateTime, new Field(dateTime)]]))
-            };
-
-            pendingState.loginHistory.value.set(loginHistoryKey, new Field(daysLogin));
-        }
-        else if (pendingState.loginHistory.value.get(loginHistoryKey)!.value.daysLogin.value.size < this.state.settings.value.loginRecordsToStorePerDay.value)
-        {
-            pendingState.loginHistory.value.get(loginHistoryKey)?.value.daysLogin.value.set(dateTime, new Field(dateTime));
-        }
-        else
-        {
-            const valueToDelete = pendingState.loginHistory.value.get(loginHistoryKey)!.value.daysLogin.value.entries().next().value![0];
-            pendingState.loginHistory.value.get(loginHistoryKey)!.value.daysLogin.value.delete(valueToDelete);
-            pendingState.loginHistory.value.get(loginHistoryKey)?.value.daysLogin.value.set(dateTime, new Field(dateTime));
-        }
-    }
-
-    private async checkRemoveOldLoginRecords(pendingState: VaultStoreState)
-    {
-        const daysToStoreLoginsAsMiliseconds: number = this.state.settings.value.numberOfDaysToStoreLoginRecords.value * 24 * 60 * 60 * 1000;
-        pendingState.loginHistory.value.forEach((v, k, m) => 
-        {
-            const date: number = Date.parse(k);
-            if (date - Date.now() > daysToStoreLoginsAsMiliseconds)
-            {
-                pendingState.loginHistory.value.delete(k);
+                pendingState.deleteValue("loginHistory", "");
             }
-        });
+        }
+
+        pendingState.addValue("loginHistory", "", dateTime);
     }
 }
 

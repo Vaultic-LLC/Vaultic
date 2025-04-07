@@ -40,7 +40,6 @@ import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import PopupButton from '../InputFields/PopupButton.vue';
 
-import { ColorPalette } from '../../Types/Colors';
 import { defaultInputColorModel, InputColorModel } from '../../Types/Models';
 import { getLinearGradientFromColor } from '../../Helpers/ColorHelper';
 import { EncryptedInputFieldComponent } from '../../Types/Components';
@@ -50,6 +49,7 @@ import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { TypedMethodResponse } from '@vaultic/shared/Types/MethodResponse';
 import { VerifyUserMasterKeyResponse } from '@vaultic/shared/Types/Repositories';
 import { Algorithm, VaulticKey } from '@vaultic/shared/Types/Keys';
+import { ColorPalette } from '@vaultic/shared/Types/Color';
 
 export default defineComponent({
     name: "AuthenticationPopup",
@@ -147,7 +147,7 @@ export default defineComponent({
                     key: key.value
                 };
 
-                ctx.emit("onAuthenticationSuccessful", JSON.vaulticStringify(vaulticKey));
+                ctx.emit("onAuthenticationSuccessful", JSON.stringify(vaulticKey));
             }
         }
 

@@ -1,9 +1,10 @@
 <template>
     <div class="organizationDevicesTableContainer">
         <VaulticTable ref="tableRef" id="organizationDevicesTable" :color="color" :columns="tableColumns" 
-            :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyTableMessage" :allowPinning="!devicesAreSelected"
+            :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyTableMessage" 
+            :allowPinning="!devicesAreSelected && !readOnly" :searchBarSizeModel="searchBarSizeModel"
             :onPin="onPinOrganization" :onEdit="devicesAreSelected ? onEditDevice : onEditOrganization" 
-            :onDelete="devicesAreSelected ? onDeleteDevice : onDeleteOrganization">
+            :onDelete="onDelete">
             <template #tableControls>
                 <AddButton v-if="showAdd" :color="color" @click="onAdd" />
             </template>
@@ -17,7 +18,7 @@ import { ComputedRef, Reactive, Ref, computed, defineComponent, onMounted, react
 import VaulticTable from './VaulticTable.vue';
 import AddButton from './Controls/AddButton.vue';
 
-import { HeaderTabModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
+import { ComponentSizeModel, HeaderTabModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
 import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
 import { TableTemplateComponent } from '../../Types/Components';
@@ -25,6 +26,7 @@ import { ClientDevice } from '@vaultic/shared/Types/Device';
 import { SortedCollection, VaultListSortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { Organization } from '@vaultic/shared/Types/DataTypes';
 import { DataType } from '../../Types/DataTypes';
+import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
 
 export default defineComponent({
     name: "OrganizationDeviceTable",
@@ -37,14 +39,17 @@ export default defineComponent({
     {
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
+        const readOnly: ComputedRef<boolean> = computed(() => app.currentVault.isReadOnly.value);
 
-        const devices: SortedCollection = new SortedCollection([]);
+        const devices: SortedCollection = new SortedCollection([], () => app.devices.devicesByID, "Name");
         
-        const organizations: VaultListSortedCollection = new VaultListSortedCollection([]);
-        const pinnedOrganizations: VaultListSortedCollection = new VaultListSortedCollection([]);
+        const organizations: VaultListSortedCollection = new VaultListSortedCollection([], () => app.organizations.organizationsByID, "name");
+        const pinnedOrganizations: VaultListSortedCollection = new VaultListSortedCollection([], () => app.organizations.organizationsByID, "name");
             
         const devicesAreSelected: ComputedRef<boolean> = computed(() => app.activeDeviceOrganizationsTable == DataType.Devices);
         const showAdd: ComputedRef<boolean> = computed(() => app.isOnline && (!devicesAreSelected.value || (devicesAreSelected.value && !app.devices.hasRegisteredCurrentDevice)));
+
+        let doDeleteValue: ((key: string) => Promise<any>) | undefined;
 
         const emptyTableMessage: ComputedRef<string> = computed(() =>
         {
@@ -82,7 +87,7 @@ export default defineComponent({
             {
                 name: 'Registered Devices',
                 active: devicesAreSelected,
-                color: computed(() => app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value),
+                color: computed(() => app.userPreferences.currentColorPalette.p.p),
                 onClick: () => 
                 {
                     app.activeDeviceOrganizationsTable = DataType.Devices;
@@ -91,7 +96,7 @@ export default defineComponent({
             {
                 name: 'Organizations',
                 active: computed(() => !devicesAreSelected.value),
-                color: computed(() => app.userPreferences.currentColorPalette.valuesColor.value.primaryColor.value),
+                color: computed(() => app.userPreferences.currentColorPalette.v.p),
                 onClick: () => 
                 {
                     app.activeDeviceOrganizationsTable = DataType.Organizations;
@@ -104,15 +109,15 @@ export default defineComponent({
             const models: TableColumnModel[] = []
             if (devicesAreSelected.value)
             {
-                models.push({ header: "Name", field: "Name", isFielded: false });
-                models.push({ header: "Type", field: "type", isFielded: false });
-                models.push({ header: "Model", field: "Model", isFielded: false });
-                models.push({ header: "Version", field: "Version", isFielded: false });
+                models.push(new TableColumnModel("Name", "Name").setIsFielded(false));
+                models.push(new TableColumnModel("Type", "type").setIsFielded(false));
+                models.push(new TableColumnModel("Model", "Model").setIsFielded(false));
+                models.push(new TableColumnModel("Version", "Version").setIsFielded(false));
             }
             else 
             {
-                models.push({ header: "Name", field: "name", isFielded: false });
-                models.push({ header: "Vaults", field: "vaultIDsByVaultID", component: "VaultListCell", isFielded: false});
+                models.push(new TableColumnModel("Name", "name").setIsFielded(false));
+                models.push(new TableColumnModel("Vaults", "vaultIDsByVaultID").setComponent("VaultListCell").setIsFielded(false));
             }
 
             return models;
@@ -135,13 +140,19 @@ export default defineComponent({
             ]
         });
 
+        const searchBarSizeModel: Ref<ComponentSizeModel> = ref({
+            width: '9vw',
+            minWidth: '110px',
+        });
+
         async function setTableRows(mounting: boolean)
         {
             if (mounting || app.activeDeviceOrganizationsTable == DataType.Devices)
             {
-                const deviceRows = app.devices.devices.map((d) =>
+                const deviceRows: TableRowModel[] = [];
+                app.devices.devicesByID.forEach((v, k, map) =>
                 {
-                    return new TableRowModel(d.id, (obj: ClientDevice) => obj.id, undefined, false, undefined, d);
+                    deviceRows.push(new TableRowModel(k));
                 });
     
                 devices.updateValues(deviceRows);
@@ -149,18 +160,23 @@ export default defineComponent({
 
             if (mounting || app.activeDeviceOrganizationsTable == DataType.Organizations)
             {
-                const organizationRows = app.organizations.organizations.value.map(o => 
+                const newOrganizationModels: TableRowModel[] = [];
+                const newPinnedOrganizationModels: TableRowModel[] = [];
+
+                app.organizations.organizationsByID.forEach((v, k, map) =>
                 {
-                    return new TableRowModel(o.organizationID.toString(), (obj: Organization) => obj.organizationID, undefined, false, undefined, o);
+                    if (OH.has(app.userPreferences.pinnedOrganizations, k.toString()))
+                    {
+                        newPinnedOrganizationModels.push(new TableRowModel(k, true));
+                    }
+                    else
+                    {
+                        newOrganizationModels.push(new TableRowModel(k));
+                    }
                 });
     
-                const pinnedOrganizationRows = app.organizations.pinnedOrganizations.map(o => 
-                {
-                    return new TableRowModel(o.organizationID.toString(), (obj: Organization) => obj.organizationID, undefined, true, undefined, o);
-                });
-    
-                organizations.updateValues(organizationRows);
-                pinnedOrganizations.updateValues(pinnedOrganizationRows);
+                organizations.updateValues(newOrganizationModels);
+                pinnedOrganizations.updateValues(newPinnedOrganizationModels);
             }
         }
 
@@ -186,9 +202,41 @@ export default defineComponent({
             app.popups.showDevicePopup(device);
         }
 
-        function onDeleteDevice(device: ClientDevice)
+        function onDelete(obj: ClientDevice | Organization)
         {
-            app.devices.deleteDevice(device.id);
+            if (devicesAreSelected.value)
+            {
+                doDeleteValue = async (key: string) =>
+                {
+                    if (await app.runAsAsyncProcess(() => app.devices.deleteDevice((obj as ClientDevice).id)))
+                    {
+                        app.popups.showToast("Device Unregistered", true);
+                    }
+                    else
+                    {
+                        app.popups.showToast("Unregister Failed", false);
+                    }
+                };
+            }
+            else
+            {
+                doDeleteValue = async (key: string) =>
+                {
+                    app.popups.showLoadingIndicator(app.userPreferences.currentPrimaryColor.value, "Deleting Organization");
+                    if (await app.runAsAsyncProcess(() => app.organizations.deleteOrganization((obj as Organization).organizationID)))
+                    {
+                        app.popups.showToast("Organization Deleted", true);
+                    }
+                    else
+                    {
+                        app.popups.showToast("Delete Failed", false);
+                    }
+
+                    app.popups.hideLoadingIndicator();
+                };
+            }
+
+            app.popups.showRequestAuthentication(color.value, doDeleteValue, () => { }, true);
         }
 
         function onPinOrganization(isPinned: boolean, org: Organization)
@@ -211,21 +259,6 @@ export default defineComponent({
         function onEditOrganization(organization: Organization)
         {
             app.popups.showOrganizationPopup(() => {}, organization);
-        }
-
-        async function onDeleteOrganization(organization: Organization)
-        {
-            app.popups.showLoadingIndicator(app.userPreferences.currentPrimaryColor.value, "Deleting Organization");
-            if (await app.organizations.deleteOrganization(organization.organizationID))
-            {
-                app.popups.showToast("Organization Deleted", true);
-            }
-            else
-            {
-                app.popups.showToast("Delete Failed", false);
-            }
-
-            app.popups.hideLoadingIndicator();
         }
 
         watch(() => app.devices.devices.length, (_, __) => 
@@ -257,12 +290,13 @@ export default defineComponent({
             emptyTableMessage,
             tableDataSources,
             showAdd,
+            searchBarSizeModel,
+            readOnly,
             onAdd,
             onEditDevice,
             onPinOrganization,
-            onDeleteDevice,
             onEditOrganization,
-            onDeleteOrganization
+            onDelete
         }
     }
 })

@@ -5,7 +5,7 @@
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, ref } from 'vue';
+import { computed, ComputedRef, defineComponent, onMounted, Ref, ref } from 'vue';
 
 import SelectorButton from '../../InputFields/SelectorButton.vue';
 import { SelectorButtonModel } from '../../../Types/Models';
@@ -23,13 +23,18 @@ export default defineComponent({
 		{
             const model: SelectorButtonModel = 
             {
-                isActive: ref(props.model.value.isActive.value),
+                isActive: computed(() => props.data.isActive(props.model)),
                 color: ref(props.data["color"]),
-                onClick: () => props.data["onClick"](props.model)
+                onClick
             }
 
             return model;
 		});
+
+        async function onClick()
+        {
+            await props.data["onClick"](props.model);
+        }
 
 		return {
             selectorButtonModel

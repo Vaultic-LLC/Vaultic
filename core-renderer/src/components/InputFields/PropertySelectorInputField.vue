@@ -1,19 +1,31 @@
 <template>
     <div class="dropDownContainer">
-        <FloatLabel variant="in" :dt="floatLabelStyle"
+        <FloatLabel variant="in"
             :pt="{
                 root: 'dropDownContainer__floatLabel'
             }">
             <Select 
                 :pt="{
-                    root: {
-                        class: {
-                            'dropDownContainer__select': true,
-                            'dropDownContainer__select--invalid': isInvalid
+                    root: ({state}) => {
+                         return {
+                            class: {
+                                'dropDownContainer__select': true,
+                                'dropDownContainer__select--invalid': isInvalid,
+                                'dropDownContainer__select--focus': state.focused
+                            }
                         }
                     },
                     clearIcon: 'dropDownContainer__clearIcon',
-                    dropdownIcon: 'dropDownContainer__dropDownicon',
+                    // @ts-ignore
+                    dropDownIcon: ({ state }) => {
+                        let className = 'dropDownContainer__dropDownicon';
+                        if (state.overlayVisible)
+                        {
+                            className += ' dropDownContainer__dropDownicon--overlayVisible';
+                        }
+
+                        return className;
+                    },                    
                     label: 'dropDownContainer__selectLabel',
                     option: ({ context }) => {
                         const style: { [key: string]: any} = 
@@ -48,9 +60,9 @@
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, useId } from 'vue';
 
-import FloatLabel from 'primevue/floatlabel';
-import Select from "primevue/select";
-import Message from "primevue/message";
+import FloatLabel from 'primevue-vaultic/floatlabel';
+import Select from "primevue-vaultic/select";
+import Message from "primevue-vaultic/message";
 
 import { appHexColor, widgetBackgroundHexString, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
 import { ValidationFunctionsKey } from '../../Constants/Keys';
@@ -66,13 +78,13 @@ export default defineComponent({
         Message
     },
     emits: ["update:modelValue", "propertyTypeChanged"],
-    props: ["modelValue", "displayFieldOptions", "label", "color", 'isOnWidget', 'height', 'minHeight', 'maxHeight',
+    props: ["modelValue", "defaultType", "displayFieldOptions", "label", "color", 'isOnWidget', 'height', 'minHeight', 'maxHeight',
         'width', 'minWidth', 'maxWidth'],
     setup(props, ctx)
     {
         const id = ref(useId());
 
-        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.errorColor?.value);
+        const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.r);
         const selectBackgroundColor: Ref<string> = ref(widgetBackgroundHexString()); 
 
         const options: ComputedRef<any[]> = computed(() => 
@@ -84,7 +96,7 @@ export default defineComponent({
         const invalidMessage: Ref<string> = ref('');
         
         let selectedValue: Ref<any> = ref();
-        let selectedPropertyType: PropertyType = PropertyType.String;
+        let selectedPropertyType: PropertyType = props.defaultType ?? PropertyType.String;
         const backgroundColor: Ref<string> = ref(props.isOnWidget == true ? widgetInputLabelBackgroundHexColor() : appHexColor());
 
         const validationFunction: Ref<{ (): boolean }[]> | undefined = inject(ValidationFunctionsKey, ref([]));
@@ -104,7 +116,7 @@ export default defineComponent({
             selectedValue.value = option;
             ctx.emit('update:modelValue', option?.df?.backingProperty ?? null);
 
-            if (option?.df?.type && option?.df?.type != selectedPropertyType)
+            if (option?.df?.type !== undefined && option?.df?.type != selectedPropertyType)
             {
                 selectedPropertyType = option.df.type;
                 if (selectedPropertyType == PropertyType.Enum)
@@ -136,22 +148,6 @@ export default defineComponent({
             invalidMessage.value = message;
         }
 
-        let floatLabelStyle = computed(() => {
-            return {
-                onActive: {
-                    background: widgetBackgroundHexString()
-                },
-                focus: 
-                {
-                    color: props.color
-                },
-                invalid: 
-                {
-                    color: errorColor.value
-                }
-            }
-        });
-
         onMounted(() =>
         {
             const initialValue = options.value.filter(v => v.df.backingProperty == props.modelValue);
@@ -173,7 +169,6 @@ export default defineComponent({
             errorColor,
             isInvalid,
             invalidMessage,
-            floatLabelStyle,
             selectBackgroundColor,
             options,
             selectedValue,
@@ -224,6 +219,10 @@ export default defineComponent({
     height: 100%;
 }
 
+:deep(.dropDownContainer__select--focus) {
+    border-color: v-bind(color) !important;
+}
+
 :deep(.dropDownContainer__selectLabel) {
     font-size: var(--input-font-size);
     padding-block-start: clamp(17px, 1vw, 24px) !important;
@@ -241,17 +240,31 @@ export default defineComponent({
 
 :deep(.dropDownContainer__clearIcon),
 :deep(.dropDownContainer__dropDownicon) {
+    transition: 0.3s;
     width: clamp(12px, 1vw, 16px) !important;
     height: clamp(12px, 1vw, 16px) !important;
 }
 
-.p-floatlabel-in:has(.p-inputwrapper-focus) .dropDownContainer__label, 
-.p-floatlabel-in:has(.p-inputwrapper-filled) .dropDownContainer__label {
+:deep(.dropDownContainer__dropDownicon--overlayVisible) {
+    transform: rotate(180deg);
+}
+
+.p-floatlabel-in:has(.p-inputwrapper-focus) label.dropDownContainer__label, 
+.p-floatlabel-in:has(.p-inputwrapper-filled) label.dropDownContainer__label {
     top: var(--input-label-active-top) !important;
     font-size: var(--input-label-active-font-size) !important;
 }
 
+:deep(.p-floatlabel:has(.p-inputwrapper-focus) .dropDownContainer__label) {
+    color: v-bind(color) !important;
+}
+
+:deep(.p-floatlabel:has(.dropDownContainer__select--invalid) .dropDownContainer__label) {
+    color: v-bind(errorColor) !important;
+}
+
 :deep(.dropDownContainer__messageText) {
     font-size: clamp(9px, 1vw, 14px) !important;
+    color: v-bind(errorColor) !important;
 }
 </style>

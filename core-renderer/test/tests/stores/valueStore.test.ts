@@ -119,7 +119,7 @@ valueStoreSuite.tests.push({
 
         await app.currentVault.groupStore.addGroup(masterKey, group);
 
-        value.groups.value.set(group.id.value, new Field(group.id.value));
+        value.groups.value.set(group.id.value, Field.create(group.id.value));
 
         await app.currentVault.valueStore.addNameValuePair(masterKey, value);
 
@@ -142,11 +142,11 @@ valueStoreSuite.tests.push({
         const filter: Filter = defaultFilter(DataType.NameValuePairs);
         filter.name.value = "ValueStore Add With Filter Works";
 
-        filter.conditions.value.set("ValueStore Add With Filter Works", new Field({
-            id: new Field("ValueStore Add With Filter Works"),
-            property: new Field("name"),
-            filterType: new Field(FilterConditionType.EqualTo),
-            value: new Field("ValueStore Add With Filter Works")
+        filter.conditions.value.set("ValueStore Add With Filter Works", Field.create({
+            id: Field.create("ValueStore Add With Filter Works"),
+            property: Field.create("name"),
+            filterType: Field.create(FilterConditionType.EqualTo),
+            value: Field.create("ValueStore Add With Filter Works")
         }));
 
         await app.currentVault.filterStore.addFilter(masterKey, filter);
@@ -349,8 +349,8 @@ valueStoreSuite.tests.push({
         await app.currentVault.groupStore.addGroup(masterKey, group);
         await app.currentVault.valueStore.addNameValuePair(masterKey, value);
 
-        const valueWithGroup: NameValuePair = JSON.vaulticParse(JSON.vaulticStringify(value));
-        valueWithGroup.groups.value.set(group.id.value, new Field(group.id.value));
+        const valueWithGroup: NameValuePair = JSON.parse(JSON.stringify(value));
+        valueWithGroup.groups.value.set(group.id.value, Field.create(group.id.value));
 
         await app.currentVault.valueStore.updateNameValuePair(masterKey, valueWithGroup, false);
 
@@ -362,7 +362,7 @@ valueStoreSuite.tests.push({
         ctx.assertTruthy("Value has group id", retrieveValue.value.groups.value.has(retrievedGroup.value.id.value));
         ctx.assertTruthy("Group has value id", retrievedGroup.value.values.value.has(retrieveValue.value.id.value));
 
-        const valueWithoutGroup: NameValuePair = JSON.vaulticParse(JSON.vaulticStringify(valueWithGroup));
+        const valueWithoutGroup: NameValuePair = JSON.parse(JSON.stringify(valueWithGroup));
         valueWithoutGroup.groups.value = new Map();
 
         await app.currentVault.valueStore.updateNameValuePair(masterKey, valueWithoutGroup, false);
@@ -385,11 +385,11 @@ valueStoreSuite.tests.push({
         const filter: Filter = defaultFilter(DataType.NameValuePairs);
         filter.name.value = "ValueStore Update With Filter Works";
 
-        filter.conditions.value.set("ValueStore Update With Filter Works", new Field({
-            id: new Field("ValueStore Update With Filter Works"),
-            property: new Field("name"),
-            filterType: new Field(FilterConditionType.EqualTo),
-            value: new Field("ValueStore Update With Filter Works")
+        filter.conditions.value.set("ValueStore Update With Filter Works", Field.create({
+            id: Field.create("ValueStore Update With Filter Works"),
+            property: Field.create("name"),
+            filterType: Field.create(FilterConditionType.EqualTo),
+            value: Field.create("ValueStore Update With Filter Works")
         }));
 
         await app.currentVault.filterStore.addFilter(masterKey, filter);
@@ -562,7 +562,7 @@ valueStoreSuite.tests.push({
         group.color.value = "#FFFFFF";
 
         await app.currentVault.groupStore.addGroup(masterKey, group);
-        value.groups.value.set(group.id.value, new Field(group.id.value));
+        value.groups.value.set(group.id.value, Field.create(group.id.value));
 
         await app.currentVault.valueStore.addNameValuePair(masterKey, value);
 
@@ -592,11 +592,11 @@ valueStoreSuite.tests.push({
         const filter: Filter = defaultFilter(DataType.NameValuePairs);
         filter.name.value = name;
 
-        filter.conditions.value.set(name, new Field({
-            id: new Field(name),
-            property: new Field("name"),
-            filterType: new Field(FilterConditionType.EqualTo),
-            value: new Field(name)
+        filter.conditions.value.set(name, Field.create({
+            id: Field.create(name),
+            property: Field.create("name"),
+            filterType: Field.create(FilterConditionType.EqualTo),
+            value: Field.create(name)
         }));
 
         await app.currentVault.filterStore.addFilter(masterKey, filter);

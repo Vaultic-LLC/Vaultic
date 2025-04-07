@@ -7,10 +7,10 @@ import app from './core/Objects/Stores/AppStore';
 import "@melloware/coloris/dist/coloris.css";
 import Coloris from "@melloware/coloris";
 import { setupCalendar } from 'v-calendar-tw';
-import PrimeVue from 'primevue/config';
+import PrimeVue from 'primevue-vaultic/config';
 import Aura from '@primevue/themes/aura';
-import ConfirmationService from 'primevue/confirmationservice';
-import runAllTests, { runAllMergingDataTests, runAllPasswordTests, runCryptUtilityTests, runAllValueTests, runAllGroupTests, runAllFilterTests, runAllTransactionTests, runServerHelperTests, runImportExportHelperTests } from "../tests/index"
+import ConfirmationService from 'primevue-vaultic/confirmationservice';
+import runAllTests, { runServerHelperTests, runAllMergingDataTests, runAllPasswordTests, runCryptUtilityTests, runAllValueTests, runAllGroupTests, runAllFilterTests, runAllTransactionTests, runServerHelperTests, runImportExportHelperTests } from "../tests/index"
 
 api.setAPI(window.api);
 
@@ -35,6 +35,53 @@ Coloris({
         '#161e29',
         '#0f141a'
     ]
+});
+
+function onError()
+{
+    // hide the loading indicator in case it was showing when the error occured.
+    app.popups.hideLoadingIndicator();
+    app.popups.showAlert("Error", "An error has occured, please try again. If the issue persists, try restarting the app or", true);
+}
+
+window.addEventListener('error', (e: ErrorEvent) =>
+{
+    if (e?.error instanceof Error)
+    {
+        const error: Error = e.error as Error
+
+        try
+        {
+            if (!app.isOnline)
+            {
+                return;
+            }
+
+        }
+        catch { }
+    }
+
+    onError();
+});
+
+window.addEventListener('unhandledrejection', (e) =>
+{
+    if (e?.reason instanceof Error)
+    {
+        const error: Error = e.reason as Error
+
+        try
+        {
+            if (!app.isOnline)
+            {
+                return;
+            }
+
+        }
+        catch { }
+    }
+
+    onError();
 });
 
 api.environment.failedToInitalizeDatabase().then((failed: boolean) =>
@@ -77,4 +124,10 @@ function initApp()
 
     app.use(ConfirmationService);
     app.mount("#app");
+
+    // gives time to set breakpoints if needed
+    setTimeout(() =>
+    {
+        //runServerHelperTests();
+    }, 10000);
 }

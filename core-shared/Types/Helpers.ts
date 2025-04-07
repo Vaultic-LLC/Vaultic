@@ -1,9 +1,9 @@
 import { TypedMethodResponse } from "./MethodResponse";
-import { FinishRegistrationResponse, GetUserDeactivationKeyResponse, LogUserInResponse } from "./Responses";
+import { FinishRegistrationResponse, GetUserDeactivationKeyResponse, LogUserInResponse, StartRegistrationResponse } from "./Responses";
 
 export interface ValidationHelper
 {
-    isWeak: (value: string, type: string) => [boolean, string];
+    isWeak: (value: string) => [boolean, number];
     containsNumber: (value: string) => boolean;
     containsSpecialCharacter: (value: string) => boolean;
     containsUppercaseAndLowercaseNumber: (value: string) => boolean;
@@ -18,11 +18,12 @@ export interface VaulticHelper
 
 export interface ServerHelper
 {
-    registerUser: (masterKey: string, email: string, firstName: string, lastName: string) => Promise<FinishRegistrationResponse>;
+    registerUser: (masterKey: string, pendingUserToken: string, firstName: string, lastName: string) => Promise<StartRegistrationResponse | FinishRegistrationResponse>;
     logUserIn: (masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean, mfaCode?: string) => Promise<TypedMethodResponse<LogUserInResponse | undefined>>;
 };
 
 export interface RepositoryHelper 
 {
     backupData: (masterKey: string) => Promise<TypedMethodResponse<boolean | undefined>>;
+    handleUserLogOut: () => Promise<void>;
 }

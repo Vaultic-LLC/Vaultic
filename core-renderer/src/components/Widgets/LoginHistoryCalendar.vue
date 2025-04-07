@@ -31,19 +31,16 @@ export default defineComponent({
         const attributes = computed(() =>
         {
             let attr: any[] = [];
-            app.currentVault.loginHistory.value.forEach((v, k, map) =>
+            app.currentVault.loginHistory.forEach(v =>
             {
-                v.value.daysLogin.value.forEach((dv, dk, dmap) => 
-                {
-                    attr.push({
-                        key: dk,
-                        dates: [dk],
-                        dot: true,
-                        popover: {
-                            label: new Date(dk).toLocaleTimeString(),
-                            visibility: "hover"
-                        }
-                    })
+                attr.push({
+                    key: v,
+                    dates: [v],
+                    dot: true,
+                    popover: {
+                        label: new Date(v).toLocaleTimeString(),
+                        visibility: "hover"
+                    }
                 });
             });
 

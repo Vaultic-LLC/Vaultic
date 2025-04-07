@@ -2,12 +2,11 @@ import { environment } from "../../Environment";
 import * as jose from 'jose'
 import { Column, ObjectLiteral, AfterLoad } from "typeorm"
 import { StoreState } from "./States/StoreState";
-import { EntityState, IVaulticEntity } from "@vaultic/shared/Types/Entities";
+import { EntityState, IVaulticEntity, VaultType } from "@vaultic/shared/Types/Entities";
 import { nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
-import { Algorithm } from "@vaultic/shared/Types/Keys";
-import { hexToBytes } from "@noble/hashes/utils";
+import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
 
 const VaulticHandler =
 {
@@ -26,7 +25,7 @@ const VaulticHandler =
         if (typeof newValue != 'object' && !obj.propertiesToSync.includes(prop) && obj.backupableProperties().includes(prop))
         {
             obj.propertiesToSync.push(prop);
-            obj.serializedPropertiesToSync = JSON.vaulticStringify(obj.updatedProperties);
+            obj.serializedPropertiesToSync = JSON.stringify(obj.updatedProperties);
         }
 
         obj[prop] = newValue;
@@ -66,7 +65,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
     @AfterLoad()
     afterLoad()
     {
-        this.propertiesToSync = JSON.vaulticParse(this.serializedPropertiesToSync);
+        this.propertiesToSync = JSON.parse(this.serializedPropertiesToSync);
     }
 
     identifier(): number 
@@ -113,6 +112,11 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
     }
 
     protected getUserUpdatableProperties(): string[]
+    {
+        return [];
+    }
+
+    public getCompressableProperties(): string[]
     {
         return [];
     }
@@ -204,30 +208,48 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
             return false;
         }
 
-        const seriazliedMakeup = JSON.vaulticStringify(signatureMakeup);
+        const seriazliedMakeup = JSON.stringify(signatureMakeup);
+
         const hashedEntity = await environment.utilities.hash.hash(Algorithm.SHA_256, seriazliedMakeup);
         if (!hashedEntity.success)
         {
             return false;
         }
 
-        const hashedKey = await environment.utilities.hash.hash(Algorithm.SHA_256, key);
-        if (!hashedKey.success)
+        try 
         {
-            return false;
+            let keyToUse = key;
+            try 
+            {
+                const vaulticKey: VaulticKey = JSON.parse(key);
+                keyToUse = vaulticKey.key;
+            }
+            catch { }
+
+            const hashedKey = await environment.utilities.hash.hash(Algorithm.SHA_256, keyToUse);
+            if (!hashedKey.success)
+            {
+                return false;
+            }
+
+            const keyBytes = environment.utilities.crypt.hexToBytes(hashedKey.value);
+            const jwt = await new jose.EncryptJWT({ entity: hashedEntity.value })
+                .setProtectedHeader({ alg: 'dir', enc: 'A256GCM' })
+                .setIssuedAt()
+                .setIssuer('vaultic')
+                .setAudience('vaulticUser')
+                .setExpirationTime('999y')
+                .encrypt(keyBytes);
+
+            this.currentSignature = jwt;
+            return true;
+        }
+        catch (e)
+        {
+
         }
 
-        const keyBytes = hexToBytes(hashedKey.value);
-        const jwt = await new jose.EncryptJWT({ entity: hashedEntity.value })
-            .setProtectedHeader({ alg: 'dir', enc: 'A256GCM' })
-            .setIssuedAt()
-            .setIssuer('vaultic')
-            .setAudience('vaulticUser')
-            .setExpirationTime('999y')
-            .encrypt(keyBytes);
-
-        this.currentSignature = jwt;
-        return true;
+        return false;
     }
 
     protected async internalVerify(key: string): Promise<TypedMethodResponse<any>>
@@ -243,23 +265,31 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
             return TypedMethodResponse.fail(errorCodes.NO_SIGNATURE_MAKEUP);
         }
 
-        const serializedMakeup = JSON.vaulticStringify(signatureMakeup);
+        const serializedMakeup = JSON.stringify(signatureMakeup);
         const hashedEntity = await environment.utilities.hash.hash(Algorithm.SHA_256, serializedMakeup);
+
         if (!hashedEntity.success)
         {
             return TypedMethodResponse.fail();
         }
 
-        const hashedKey = await environment.utilities.hash.hash(Algorithm.SHA_256, key);
-        if (!hashedKey.success)
-        {
-            return TypedMethodResponse.fail();
-        }
-
-        const keyBytes = hexToBytes(hashedKey.value);
-
         try
         {
+            let keyToUse = key;
+            try
+            {
+                const vaulticKey: VaulticKey = JSON.parse(key);
+                keyToUse = vaulticKey.key;
+            }
+            catch { }
+
+            const hashedKey = await environment.utilities.hash.hash(Algorithm.SHA_256, keyToUse);
+            if (!hashedKey.success)
+            {
+                return TypedMethodResponse.fail();
+            }
+
+            const keyBytes = environment.utilities.crypt.hexToBytes(hashedKey.value);
             const response = await jose.jwtDecrypt(this.currentSignature, keyBytes, {
                 issuer: 'vaultic',
                 audience: 'vaulticUser',
@@ -284,7 +314,6 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
             const equalHashes = environment.utilities.hash.compareHashes(retrievedEntity, hashedEntity.value);
             if (!equalHashes)
             {
-                console.log(`Failed verify: ${JSON.stringify(this)}`);
                 return TypedMethodResponse.fail(errorCodes.HASHES_DONT_MATCH);
             }
 

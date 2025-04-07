@@ -1,8 +1,8 @@
 <template>
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
-        :gridDefinition="gridDefinition">
+        :gridDefinition="gridDefinition" :hideButtons="readOnly">
         <VaulticFieldset :centered="true">
-            <TextInputField class="filterView__name" :label="'Name'" :color="color" v-model="filterState.name.value"
+            <TextInputField class="filterView__name" :label="'Name'" :color="color" v-model="filterState.n"
                 :width="'50%'" :maxWidth="''" :fadeIn="false" />
         </VaulticFieldset>
         <VaulticFieldset :centered="true" :end="true" :fill-space="true">
@@ -27,15 +27,17 @@ import AddButton from '../Table/Controls/AddButton.vue';
 import VaulticTable from '../Table/VaulticTable.vue';
 import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
 
-import { DataType, defaultFilter, Filter, FilterCondition, FilterConditionType } from '../../Types/DataTypes';
-import { FieldedTableRowModel, GridDefinition, HeaderTabModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
+import { DataType, defaultFilter, EqualFilterConditionType, Filter, FilterCondition, FilterConditionType, NameValuePairType } from '../../Types/DataTypes';
+import { GridDefinition, HeaderTabModel, TableColumnModel, TableDataSources, TableRowModel } from '../../Types/Models';
 import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
-import { generateUniqueIDForMap } from '../../Helpers/generatorHelper';
 import { TableTemplateComponent } from '../../Types/Components';
-import { DisplayField, FilterablePasswordProperties, FilterableValueProperties, PropertyType } from '../../Types/Fields';
-import { Field } from '@vaultic/shared/Types/Fields';
+import { FilterablePasswordProperties, FilterableValueProperties, PropertySelectorDisplayFields, PropertyType } from '../../Types/Fields';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
+import { uniqueIDGenerator } from '@vaultic/shared/Utilities/UniqueIDGenerator';
+import { PendingStoreState } from '@vaultic/shared/Types/Stores';
+import { FilterStoreState, FilterStoreStateKeys } from '../../Objects/Stores/FilterStore';
+import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
 
 export default defineComponent({
     name: "FilterView",
@@ -46,20 +48,28 @@ export default defineComponent({
         VaulticTable,
         VaulticFieldset
     },
-    props: ['creating', 'model'],
+    props: ['creating', 'model', 'currentPrimaryDataType'],
     setup(props)
     {
+        let filterStoreState: PendingStoreState<FilterStoreState, FilterStoreStateKeys> = app.currentVault.filterStore.getPendingState()!;
+        
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref("");
-        const filterState: Ref<Filter> = ref(props.model);
-        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.filtersColor.value);
-        const displayFieldOptions: ComputedRef<DisplayField[]> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
+        const filterState: Reactive<Filter> = props.creating ? reactive(props.model) : setupProxies(props.model);
+        const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.f);
+        const displayFieldOptions: ComputedRef<PropertySelectorDisplayFields[]> = computed(() => props.currentPrimaryDataType == DataType.Passwords ?
             FilterablePasswordProperties : FilterableValueProperties);
 
-        const filterConditionModels: SortedCollection = new SortedCollection([]);
+        let allConditions: { [key: string]: FilterCondition } = {};
+        let addedConditions: FilterCondition[] = [];
+        let removedConditions: string[] = [];
+
+        const filterConditionModels: SortedCollection = new SortedCollection([], () => allConditions);
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
+
+        const readOnly: Ref<boolean> = ref(app.currentVault.isReadOnly.value);
 
         const emptyMessage: Ref<string> = ref(getEmptyTableMessage("Filter Conditions"));
 
@@ -83,12 +93,14 @@ export default defineComponent({
         const tableColumns: ComputedRef<TableColumnModel[]> = computed(() => 
         {
             const tableColumnsModels: TableColumnModel[] = [];
-            tableColumnsModels.push({ header: "Property", field: "property", component: "PropertySelectorCell",
-                data: { color: color.value, properties: displayFieldOptions.value, label: "Property" } });
-            tableColumnsModels.push({ header: "Condition", field: "filterType", component: "EnumInputCell", 
-                data: { color: color.value, label: "Condition" } });
-            tableColumnsModels.push({ header: "Value", field: "value", component: "FilterValueSelectorCell", 
-                data: { color: color.value } });
+            tableColumnsModels.push(new TableColumnModel("Property", "p").setComponent("PropertySelectorCell")
+                .setData({ color: color.value, properties: displayFieldOptions.value, label: "Property" }).setSortable(false));
+
+            tableColumnsModels.push(new TableColumnModel("Condition", "t").setComponent("EnumInputCell")
+                .setData({ color: color.value, label: "Condition" }).setSortable(false));
+
+            tableColumnsModels.push(new TableColumnModel("Value", "v").setComponent("FilterValueSelectorCell")
+                .setData({ color: color.value }).setSortable(false));
 
             return tableColumnsModels;
         });
@@ -120,13 +132,27 @@ export default defineComponent({
             app.popups.showLoadingIndicator(color.value, "Saving Filter");
             if (props.creating)
             {
-                if (await app.currentVault.filterStore.addFilter(key, filterState.value))
-                {
-                    filterState.value = await defaultFilter(filterState.value.type.value);
-                    await onAdd();
-                    refreshKey.value = Date.now().toString();
+                // just add all our conditions here so that the entire filter object can get tracked as an add
+                addedConditions.forEach(c => filterState.c[c.id] = c);
 
+                if (await app.currentVault.filterStore.addFilter(key, filterState, filterStoreState))
+                {
+                    // This won't track changes within the pending store since we didn't re create the 
+                    // custom ref but that's ok since we are creating
+                    filterStoreState = app.currentVault.filterStore.getPendingState()!;
+
+                    Object.assign(filterState, defaultFilter(filterState.t));
+
+                    filterConditionModels.updateValues([]);
+                    allConditions = {};
+                    addedConditions = [];
+                    removedConditions = [];
+
+                    refreshKey.value = Date.now().toString();
+                    
+                    setTimeout(onAdd, 50);
                     handleSaveResponse(true);
+
                     return;
                 }
 
@@ -134,7 +160,8 @@ export default defineComponent({
             }
             else
             {
-                if (await app.currentVault.filterStore.updateFilter(key, filterState.value))
+                if (await app.currentVault.filterStore.updateFilter(key, filterState, addedConditions, 
+                    removedConditions, filterStoreState))
                 {
                     handleSaveResponse(true);
                     return;
@@ -170,17 +197,18 @@ export default defineComponent({
 
         async function onAdd()
         {
-            const id = await generateUniqueIDForMap(filterState.value.conditions.value);
-            const filterCondition: Field<FilterCondition> = new Field({
-                id: new Field(id),
-                property: new Field(''),
-                value: new Field(''),
-                filterType: new Field(undefined)
-            });
+            const id = uniqueIDGenerator.generate();
+            const filterCondition: FilterCondition = {
+                id,
+                p: '',
+                v: '',
+                t: undefined
+            };
 
-            filterState.value.conditions.value.set(id, filterCondition);
+            allConditions[id] = filterCondition;
+            addedConditions.push(filterCondition);
 
-            const tableRowModel = new FieldedTableRowModel(id, false, undefined, filterCondition, 
+            const tableRowModel = new TableRowModel(id, false, undefined, 
             {
                 filterConditionType: FilterConditionType,
                 inputType: PropertyType.String
@@ -190,28 +218,69 @@ export default defineComponent({
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
         }
 
-        function onDelete(filterCondition: Field<FilterCondition>)
+        function onDelete(filterCondition: FilterCondition)
         {
-            filterState.value.conditions.value.delete(filterCondition.value.id.value);
-            filterConditionModels.remove(filterCondition.value.id.value);
+            delete allConditions[filterCondition.id];
+
+            const addedIndex = addedConditions.findIndex(c => c.id == filterCondition.id);
+            if (addedIndex >= 0)
+            {
+                addedConditions.splice(addedIndex, 1);
+            }
+            else
+            {
+                removedConditions.push(filterCondition.id);
+            }
+
+            filterConditionModels.remove(filterCondition.id);
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);
+        }
+
+        function setupProxies(filter: Filter)
+        {
+            let dataTypePath: keyof FilterStoreStateKeys | undefined;
+            let conditionPath: keyof FilterStoreStateKeys | undefined;
+
+            if (filter.t == DataType.Passwords)
+            {
+                dataTypePath = 'passwordDataTypesByID.dataType';
+                conditionPath = 'passwordDataTypes.conditions.condition';
+            }
+            else
+            {
+                dataTypePath = 'valueDataTypesByID.dataType';
+                conditionPath = 'valueDataTypes.conditions.condition';
+            }
+
+            OH.forEachValue(filter.c, (c) =>
+            {
+                filter.c[c.id] = filterStoreState.createCustomRef(conditionPath, c, filter.id, c.id);
+            });
+            
+            // Do this last so that updating setting the conditions doesn't actually track them as a change
+            return filterStoreState.createCustomRef(dataTypePath, filter, filter.id);
         }
 
         onMounted(() =>
         {
-            if (filterState.value.conditions.value.size == 0)
+            if (OH.size(filterState.c) == 0)
             {
                 onAdd();
             }
             else
             {
-                let models: FieldedTableRowModel<Field<FilterCondition>>[] = [];
-                filterState.value.conditions.value.forEach((v, k, map) =>
+                let models: TableRowModel[] = [];
+                OH.forEach(filterState.c, (k, v)  =>
                 {
-                    models.push(new FieldedTableRowModel(k, false, undefined, v, 
+                    allConditions[k] = v;
+
+                    const propertyType = displayFieldOptions.value.find(df => df.backingProperty == v.p)?.type ?? PropertyType.String;
+                    models.push(new TableRowModel(k, false, undefined, 
                     {
-                        filterConditionType: FilterConditionType,
-                        inputType: PropertyType.String
+                        filterConditionType: propertyType == PropertyType.String ? FilterConditionType : EqualFilterConditionType,
+                        inputType: propertyType,
+                        filterType: v.t,
+                        inputEnumType: propertyType == PropertyType.Enum ? NameValuePairType : undefined    // Passwords don't have an emum selectable type
                     }));
                 });
 
@@ -230,6 +299,7 @@ export default defineComponent({
             headerTabs,
             tableColumns,
             tableDataSources,
+            readOnly,
             onSave,
             onAdd,
             onDelete
@@ -240,9 +310,8 @@ export default defineComponent({
 
 <style>
 #addFilterTable {
-    position: relative;
     width: 70%;
-    height: 76%;
+    height: 70%;
     transform: translateY(-15%);
 }
 </style>

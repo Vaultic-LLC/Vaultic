@@ -25,18 +25,10 @@ export default defineComponent({
     setup(props)
     {
         // copy the object so that we don't edit the original one. Also needed for change tracking
-        const passwordModel: ComputedRef<Password> = computed(() => JSON.vaulticParse(JSON.vaulticStringify(props.model)));
-
-        const selectorItemModel: SingleSelectorItemModel = {
-            isActive: ref(true),
-            title: ref("Edit Password"),
-            color: ref(app.userPreferences.currentColorPalette.passwordsColor.value.primaryColor.value),
-            onClick: () => { }
-        }
+        const passwordModel: ComputedRef<Password> = computed(() => JSON.parse(JSON.stringify(props.model)));
 
         return {
-            passwordModel,
-            selectorItemModel
+            passwordModel
         }
     }
 })

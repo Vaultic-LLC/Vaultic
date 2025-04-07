@@ -1,8 +1,12 @@
+import { ObjectPropertyManager, PropertyManagerConstructor } from "../Utilities/PropertyManagers";
+import { uniqueIDGenerator } from "../Utilities/UniqueIDGenerator";
+import { DictionaryAsList } from "./Stores";
+
 export type Primitive = string | boolean | number;
 
 export interface IIdentifiable
 {
-    id: Field<string>;
+    id: string;
 }
 
 export interface IFieldObject
@@ -15,11 +19,11 @@ export type IFieldedObject = IIdentifiable & IFieldObject;
 export class FieldedObject implements IFieldedObject
 {
     [key: string]: Field<Primitive | KnownMappedFields<IFieldObject>> | FieldMap;
-    id: Field<string>;
+    id: string;
 
     constructor() 
     {
-        this.id = new Field("");
+        this.id = "";
     }
 };
 
@@ -45,52 +49,136 @@ export type NonArrayType<T> = T extends any[] ? never : T;
 // @ts-ignore
 export type FieldMap = Field<Map<any, Field<NonArrayType<Primitive | KnownMappedFields<IFieldedObject> | FieldMap>>>>;
 
-export type PrimaryDataObjectCollection = "passwords" | "values";
-export type SecondaryDataObjectCollection = "filters" | "groups";
+// p = Passwords
+// v = Values
+export type PrimaryDataObjectCollection = "p" | "v";
+
+// i = Filters
+// g = Groups
+export type SecondaryDataObjectCollection = "i" | "g";
 
 // Keyed by password / value ID
 export type PrimaryDataObjectCollectionType =
     {
-        [key in PrimaryDataObjectCollection]: Field<Map<string, Field<string>>>;
+        [key in PrimaryDataObjectCollection]: DictionaryAsList;
     }
 
 // Keyed by filter / group ID
 export type SecondaryDataObjectCollectionType =
     {
-        [key in SecondaryDataObjectCollection]: Field<Map<string, Field<string>>>;
+        [key in SecondaryDataObjectCollection]: DictionaryAsList;
     }
 
 // We use this to know what fields need to be specially handled when serializing / parsing objects into JSON
-export type KnownFieldedMappedFieldsType = PrimaryDataObjectCollection | SecondaryDataObjectCollection | "passwordsByID" | "valuesByID" |
-    "passwordFiltersByID" | "valueFiltersByID" | "passwordGroupsByID" | "valueGroupsByID" | "userColorPalettes" | "pinnedDataTypes" |
-    "pinnedFilters" | "pinnedGroups" | "pinnedPasswords" | "pinnedValues" | "loginHistory" | "daysLogin" | "duplicateDataTypesByID" | "duplicatePasswords" |
-    "current" | "safe" | "duplicateValues" | "emptyPasswordFilters" | "emptyValueFilters" | "duplicatePasswordFilters" | "duplicateValueFilters" | "emptyPasswordGroups" |
-    "emptyValueGroups" | "duplicatePasswordGroups" | "duplicateValueGroups" | "conditions" | "securityQuestions" | "pinnedDesktopDevices" | "pinnedMobileDevices" | "pinnedOrganizations" | "passwordsByDomain";
+export type KnownFieldedMappedFieldsType = PrimaryDataObjectCollection | SecondaryDataObjectCollection | "p" | "v" |
+    "t" |
+    "f" | "g" | "v" | "d" |
+    "current" | "safe" | "d" | "w" | "l" | "u" |
+    "c" | "q" | "d" | "m" |
+    "o" | "h";
 
 export type KnownUnfieldedMappedFieldsType = "membersByUserID" | "vaultIDsByVaultID";
 
-export const FieldedMapFields: Set<KnownFieldedMappedFieldsType> = new Set(["passwords", "values", "filters", "groups", "passwordsByID", "valuesByID",
-    "passwordFiltersByID", "valueFiltersByID", "passwordGroupsByID", "valueGroupsByID", "userColorPalettes", "pinnedDataTypes", "pinnedFilters",
-    "pinnedGroups", "pinnedPasswords", "pinnedValues", "loginHistory", "daysLogin", "duplicateDataTypesByID", "duplicatePasswords", "current",
-    "safe", "duplicateValues", "emptyPasswordFilters", "emptyValueFilters", "duplicatePasswordFilters", "duplicateValueFilters", "emptyPasswordGroups",
-    "emptyValueGroups", "duplicatePasswordGroups", "duplicateValueGroups", "conditions", "securityQuestions", "pinnedDesktopDevices", "pinnedMobileDevices", "pinnedOrganizations", "passwordsByDomain"
-]);
+export const FieldProxy =
+{
+    get(target: any, prop: any, receiver: any)
+    {
+        return target[prop];
+    },
+    set(obj: Field<any>, prop: string, newValue: any)
+    {
+        obj[prop] = newValue;
 
-export const UnfieldedMapFields: Set<KnownUnfieldedMappedFieldsType> = new Set(["membersByUserID", "vaultIDsByVaultID"])
+        if (prop == "value")
+        {
+            obj.updateAndBubble();
+        }
+
+        return true;
+    }
+};
 
 export class Field<T>
 {
+    [key: string]: any;
+
+    // isField. Only used to identify when parsing JSON, should never be edited. Setting to private causes a bunch of ts errors though
+    if: number;
+
+    // parentID
+    pID: string | undefined;
+
+    // parent
+    p: Field<any> | undefined;
+
     id: string;
     value: T;
-    lastModifiedTime: number;
-    forceUpdate: boolean;
 
-    constructor(value: T)
+    // last modified time
+    mt: number;
+
+    private constructor(value: T)
     {
+        this.if = 1;
         this.id = "";
         this.value = value;
-        this.lastModifiedTime = Date.now();
-        this.forceUpdate = false;
+        this.mt = Date.now();
+    }
+
+    static create<T>(value: T): Field<T>
+    {
+        const field = new Field<T>(value);
+        field.id = uniqueIDGenerator.generate();
+
+        return new Proxy(field, FieldProxy);
+    }
+
+    static fromJObject(obj: any): Field<any>
+    {
+        const field = new Field(obj.value);
+        Object.assign(field, obj);
+        return new Proxy(field, FieldProxy);
+    }
+
+    static fromJObjectMap(obj: any): Field<Map<any, any>>
+    {
+        const field = new Field(new Map());
+
+        const { isMap, ...objWithoutIsMap } = obj;
+        Object.assign(field, objWithoutIsMap);
+
+        field.value = new Map(obj.value);
+        return new Proxy(field, FieldProxy);
+    }
+
+    updateAndBubble()
+    {
+        this.mt = Date.now();
+        if (this.p)
+        {
+            this.p.updateAndBubble();
+        }
+    }
+
+    addMapValue(key: any, value: Field<any>)
+    {
+        if (this.value instanceof Map)
+        {
+            value.pID = this.id;
+            value.p = this;
+
+            this.value.set(key, value);
+            this.updateAndBubble();
+        }
+    }
+
+    removeMapValue(key: any)
+    {
+        if (this.value instanceof Map)
+        {
+            this.value.delete(key);
+            this.updateAndBubble();
+        }
     }
 }
 
@@ -98,4 +186,38 @@ export enum RandomValueType
 {
     Password = "Password",
     Passphrase = "Passphrase"
+}
+
+export class FieldTreeUtility
+{
+    static setupIDs<T extends { [key: string]: any }>(obj: T): T
+    {
+        const properties = Object.keys(obj);
+        for (let i = 0; i < properties.length; i++)
+        {
+            this.internalSetIDs(obj[properties[i]])
+        }
+
+        return obj;
+    }
+
+    private static internalSetIDs(obj: Field<any>, parent?: Field<any>)
+    {
+        if (parent)
+        {
+            obj.p = parent;
+            obj.pID = parent.id;
+        }
+
+        if (typeof obj.value === "object")
+        {
+            const manager: ObjectPropertyManager<any> = PropertyManagerConstructor.getFor(obj.value);
+            const keys = manager.keys(obj.value);
+
+            for (let i = 0; i < keys.length; i++)
+            {
+                this.internalSetIDs(manager.get(keys[i], obj.value), obj);
+            }
+        }
+    }
 }

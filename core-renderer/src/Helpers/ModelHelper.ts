@@ -1,28 +1,31 @@
-import { AtRiskModel, FieldedTableRowModel, GroupIconModel, TableRowModel } from "../Types/Models";
+import { AtRiskModel, GroupIconModel, TableRowModel } from "../Types/Models";
 import app from "../Objects/Stores/AppStore";
 import { ReactiveValue } from "../Objects/Stores/ReactiveValue";
 import { ReactivePassword } from "../Objects/Stores/ReactivePassword";
 import { DataType, AtRiskType, IPrimaryDataObject, ISecondaryDataObject, Group } from "../Types/DataTypes";
-import { Field, IIdentifiable } from "@vaultic/shared/Types/Fields";
+import { IIdentifiable } from "@vaultic/shared/Types/Fields";
+import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
-let filterGroupModelID = 0;
-export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(groupFilterType: DataType, passwordValueType: DataType, allValues: Field<T>[])
+export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(groupFilterType: DataType, passwordValueType: DataType, allValues: T[])
+    : [TableRowModel[], TableRowModel[]]
 {
-    let models: FieldedTableRowModel<Field<T>>[] = [];
+    let models: TableRowModel[] = [];
+    let pinnedModels: TableRowModel[] = [];
+
     if (groupFilterType == DataType.Groups && passwordValueType == DataType.Passwords && app.currentVault.groupStore.activeAtRiskPasswordGroupType != AtRiskType.None)
     {
         switch (app.currentVault.groupStore.activeAtRiskPasswordGroupType)
         {
             case AtRiskType.Empty:
-                app.currentVault.groupStore.emptyPasswordGroups.value.forEach((v, k, map) =>
+                OH.forEachKey(app.currentVault.groupStore.emptyPasswordGroups, k =>
                 {
-                    addAtRiskValues("There are no Passwords in this Group", app.currentVault.groupStore.passwordGroupsByID.value.get(k)!);
+                    addAtRiskValues("There are no Passwords in this Group", app.currentVault.groupStore.passwordGroupsByID[k]!);
                 });
                 break;
             case AtRiskType.Duplicate:
-                app.currentVault.groupStore.duplicatePasswordGroups.value.forEach((v, k, map) =>
+                OH.forEachKey(app.currentVault.groupStore.duplicatePasswordGroups, k =>
                 {
-                    addAtRiskValues("This Group has the same Passwords as another Group", app.currentVault.groupStore.passwordGroupsByID.value.get(k)!);
+                    addAtRiskValues("This Group has the same Passwords as another Group", app.currentVault.groupStore.passwordGroupsByID[k]!);
                 });
                 break;
         }
@@ -32,15 +35,15 @@ export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(gro
         switch (app.currentVault.groupStore.activeAtRiskValueGroupType)
         {
             case AtRiskType.Empty:
-                app.currentVault.groupStore.emptyValueGroups.value.forEach((v, k, map) =>
+                OH.forEachKey(app.currentVault.groupStore.emptyValueGroups, k =>
                 {
-                    addAtRiskValues("There are no Values in this Group", app.currentVault.groupStore.valueGroupsByID.value.get(k)!);
+                    addAtRiskValues("There are no Values in this Group", app.currentVault.groupStore.valueGroupsByID[k]!);
                 });
                 break;
             case AtRiskType.Duplicate:
-                app.currentVault.groupStore.duplicateValueGroups.value.forEach((v, k, map) =>
+                OH.forEachKey(app.currentVault.groupStore.duplicateValueGroups, (k) =>
                 {
-                    addAtRiskValues("This Group has the same Values as another Group", app.currentVault.groupStore.valueGroupsByID.value.get(k)!);
+                    addAtRiskValues("This Group has the same Values as another Group", app.currentVault.groupStore.valueGroupsByID[k]!);
                 });
                 break;
         }
@@ -50,15 +53,15 @@ export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(gro
         switch (app.currentVault.filterStore.activeAtRiskPasswordFilterType)
         {
             case AtRiskType.Empty:
-                app.currentVault.filterStore.emptyPasswordFilters.value.forEach((v, k, map) =>
+                OH.forEachKey(app.currentVault.filterStore.emptyPasswordFilters, (k) =>
                 {
-                    addAtRiskValues("There are no Passwords that apply to this Filter", app.currentVault.filterStore.passwordFiltersByID.value.get(k)!);
+                    addAtRiskValues("There are no Passwords that apply to this Filter", app.currentVault.filterStore.passwordFiltersByID[k]!);
                 });
                 break;
             case AtRiskType.Duplicate:
-                app.currentVault.filterStore.duplicatePasswordFilters.value.forEach((v, k, map) =>
+                OH.forEachKey(app.currentVault.filterStore.duplicatePasswordFilters, (k) =>
                 {
-                    addAtRiskValues("This Filter applies to the same Passwords as another Filter", app.currentVault.filterStore.passwordFiltersByID.value.get(k)!);
+                    addAtRiskValues("This Filter applies to the same Passwords as another Filter", app.currentVault.filterStore.passwordFiltersByID[k]!);
                 });
         }
     }
@@ -67,48 +70,81 @@ export function getFilterGroupTableRowModels<T extends ISecondaryDataObject>(gro
         switch (app.currentVault.filterStore.activeAtRiskValueFilterType)
         {
             case AtRiskType.Empty:
-                app.currentVault.filterStore.emptyValueFilters.value.forEach((v, k, map) =>
+                OH.forEachKey(app.currentVault.filterStore.emptyValueFilters, k =>
                 {
-                    addAtRiskValues("There are no Values that apply to this Filter", app.currentVault.filterStore.nameValuePairFiltersByID.value.get(k)!);
+                    addAtRiskValues("There are no Values that apply to this Filter", app.currentVault.filterStore.nameValuePairFiltersByID[k]!);
                 });
                 break;
             case AtRiskType.Duplicate:
-                app.currentVault.filterStore.duplicateValueFilters.value.forEach((v, k, map) =>
+                OH.forEachKey(app.currentVault.filterStore.duplicateValueFilters, k =>
                 {
-                    addAtRiskValues("This Filter applies to the same Values as another Filter", app.currentVault.filterStore.nameValuePairFiltersByID.value.get(k)!);
+                    addAtRiskValues("This Filter applies to the same Values as another Filter", app.currentVault.filterStore.nameValuePairFiltersByID[k]!);
                 });
         }
     }
     else
     {
-        models = allValues.map(v => buildModel(v));
+        allValues.map(v => buildModel(v));
+
     }
 
-    return models;
+    return [models, pinnedModels];
 
-    function addAtRiskValues<U extends IIdentifiable>(message: string, value: Field<U>)
+    function addAtRiskValues<U extends IIdentifiable>(message: string, value: U)
     {
-        models.push(buildModel(value as any as Field<T>, message));
+        buildModel(value as any as T, message);
     }
 
-    function buildModel(v: Field<T>, message?: string): FieldedTableRowModel<Field<T>>
+    function buildModel(v: T, message?: string)
     {
-        filterGroupModelID += 1;
-
         let atRiskModel: AtRiskModel | undefined = undefined;
         if (message)
         {
             atRiskModel = { message: message }
         }
 
-        return new FieldedTableRowModel(filterGroupModelID.toString(), undefined, atRiskModel, v);
+        if (groupFilterType == DataType.Filters)
+        {
+            if (OH.has(app.userPreferences.pinnedFilters, v.id))
+            {
+                pinnedModels.push(new TableRowModel(v.id, true, atRiskModel))
+            }
+            else
+            {
+                models.push(new TableRowModel(v.id, false, atRiskModel));
+            }
+        }
+        else if (groupFilterType == DataType.Groups)
+        {
+            const group: Group = v as unknown as Group;
+            const groupModels: GroupIconModel[] = [{
+                icon: group.i,
+                toolTipText: group.n,
+                color: group.c
+            }];
+
+            if (OH.has(app.userPreferences.pinnedGroups, v.id))
+            {
+                pinnedModels.push(new TableRowModel(v.id, true, atRiskModel, {
+                    groupModels: groupModels
+                }));
+            }
+            else
+            {
+                models.push(new TableRowModel(v.id, false, atRiskModel, {
+                    groupModels: groupModels
+                }));
+            }
+        }
     }
 }
 
-let passwordValueModelID = 0;
-export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(color: string, dataType: DataType, allValues: Field<T>[])
+export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(color: string, dataType: DataType, allValues: T[])
+    : [TableRowModel[], TableRowModel[]]
 {
-    const newModels: FieldedTableRowModel<Field<T>>[] = [];
+    const newModels: TableRowModel[] = [];
+    const pinnedModels: TableRowModel[] = [];
+
     if (dataType == DataType.Passwords && app.currentVault.passwordStore.activeAtRiskPasswordType != AtRiskType.None)
     {
         switch (app.currentVault.passwordStore.activeAtRiskPasswordType)
@@ -116,26 +152,26 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
             case AtRiskType.Old:
                 app.currentVault.passwordStore.oldPasswords.value.forEach(p =>
                 {
-                    addAtRiskValues(`This Password hasn't been updated in ${app.settings.value.oldPasswordDays.value} days`, app.currentVault.passwordStore.passwords.filter(pw => pw.value.id.value == p)[0]);
+                    addAtRiskValues(`This Password hasn't been updated in ${app.settings.o} days`, app.currentVault.passwordStore.passwords.filter(pw => pw.id == p)[0]);
                 });
                 break;
             case AtRiskType.Duplicate:
-                app.currentVault.passwordStore.duplicatePasswords.value.forEach((v, k, map) =>
+                OH.forEachKey(app.currentVault.passwordStore.duplicatePasswords, (k => 
                 {
-                    addAtRiskValues("This Password is used more than once. For best security, create unique Passwords.", app.currentVault.passwordStore.passwordsByID.value.get(k)!);
-                });
+                    addAtRiskValues("This Password is used more than once. For best security, create unique Passwords.", app.currentVault.passwordStore.passwordsByID[k]);
+                }));
                 break;
             case AtRiskType.Weak:
                 app.currentVault.passwordStore.weakPasswords.value.forEach(p =>
                 {
-                    const passwordStore: Field<ReactivePassword> = app.currentVault.passwordStore.passwords.filter(pw => pw.value.id.value == p)[0];
-                    addAtRiskValues(passwordStore.value.isWeakMessage.value, passwordStore);
+                    const passwordStore: ReactivePassword = app.currentVault.passwordStore.passwords.filter(pw => pw.id == p)[0];
+                    addAtRiskValues(getIsWeakMessage(passwordStore.m, "Password"), passwordStore);
                 });
                 break;
             case AtRiskType.ContainsLogin:
                 app.currentVault.passwordStore.containsLoginPasswords.value.forEach(p =>
                 {
-                    addAtRiskValues("This Password contains its Username, which makes it easier to guess. For best secuirty, create Passwords that are hard to guess.", app.currentVault.passwordStore.passwords.filter(pw => pw.value.id.value == p)[0]);
+                    addAtRiskValues("This Password contains its Username, which makes it easier to guess. For best secuirty, create Passwords that are hard to guess.", app.currentVault.passwordStore.passwords.filter(pw => pw.id == p)[0]);
                 });
                 break;
             case AtRiskType.Breached:
@@ -147,7 +183,7 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
                     };
 
                     addAtRiskValues("This domain had a data breach! Click here to learn more",
-                        app.currentVault.passwordStore.passwords.filter(pw => pw.value.id.value == p)[0], onClick);
+                        app.currentVault.passwordStore.passwords.filter(pw => pw.id == p)[0], onClick);
                 });
                 break;
         }
@@ -159,46 +195,44 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
             case AtRiskType.Old:
                 app.currentVault.valueStore.oldNameValuePairs.value.forEach(v =>
                 {
-                    addAtRiskValues(`This Value hasn't been updated in ${app.settings.value.oldPasswordDays.value} days`, app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.value.id.value == v)[0]);
+                    addAtRiskValues(`This Value hasn't been updated in ${app.settings.o} days`, app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
                 });
                 break;
             case AtRiskType.Duplicate:
-                app.currentVault.valueStore.duplicateNameValuePairs.value.forEach((v, k, map) =>
+                OH.forEachKey(app.currentVault.valueStore.duplicateNameValuePairs, (k) =>
                 {
-                    addAtRiskValues("This Value is used more than once", app.currentVault.valueStore.nameValuePairsByID.value.get(k)!);
+                    addAtRiskValues("This Value is used more than once", app.currentVault.valueStore.nameValuePairsByID[k]);
                 });
                 break;
             case AtRiskType.WeakPhrase:
                 app.currentVault.valueStore.weakPassphraseValues.value.forEach(v =>
                 {
-                    const valueStore: Field<ReactiveValue> = app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.value.id.value == v)[0];
-                    addAtRiskValues(valueStore.value.isWeakMessage.value, app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.value.id.value == v)[0]);
+                    const valueStore: ReactiveValue = app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0];
+                    addAtRiskValues(getIsWeakMessage(valueStore.m, "Value"), app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
                 });
                 break;
             case AtRiskType.Weak:
                 app.currentVault.valueStore.weakPasscodeValues.value.forEach(v =>
                 {
-                    const valueStore: Field<ReactiveValue> = app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.value.id.value == v)[0];
-                    addAtRiskValues(valueStore.value.isWeakMessage.value, app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.value.id.value == v)[0]);
+                    const valueStore: ReactiveValue = app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0];
+                    addAtRiskValues(getIsWeakMessage(valueStore.m, "Value"), app.currentVault.valueStore.nameValuePairs.filter(nvp => nvp.id == v)[0]);
                 });
         }
     }
     else
     {
-        newModels.push(...allValues.map(v => buildModel(v)));
+        allValues.map(v => buildModel(v));
     }
 
-    return newModels;
+    return [newModels, pinnedModels];
 
-    function addAtRiskValues<U extends IIdentifiable>(message: string, value: Field<U>, onClick?: () => void)
+    function addAtRiskValues<U extends IIdentifiable>(message: string, value: U, onClick?: () => void)
     {
-        newModels.push(buildModel(value as any as Field<T>, message, onClick))
+        buildModel(value as any as T, message, onClick);
     }
 
-    function buildModel(v: Field<T>, atRiskMessage?: string, onAtRiskClicked?: () => void): FieldedTableRowModel<Field<T>>
+    function buildModel(v: T, atRiskMessage?: string, onAtRiskClicked?: () => void)
     {
-        passwordValueModelID += 1;
-
         let atRiskModel: AtRiskModel | undefined = undefined;
         if (atRiskMessage)
         {
@@ -206,53 +240,80 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
         }
 
         const groupModels: GroupIconModel[] = [];
-        if (app.activePasswordValuesTable == DataType.Passwords)
+        if (dataType == DataType.Passwords)
         {
-            v.value.groups.value.forEach((v, k, map) => 
+            let added = 0;
+            OH.forEachKey(v.g, k => 
             {
-                const group = app.currentVault.groupStore.passwordGroupsByID.value.get(k);
+                const group = app.currentVault.groupStore.passwordGroupsByID[k];
                 if (!group)
                 {
                     return;
                 }
 
-                addToModels(groupModels, group);
+                added += 1;
+                addToModels(added, groupModels, group);
             });
+
+            if (OH.has(app.userPreferences.pinnedPasswords, v.id))
+            {
+                pinnedModels.push(new TableRowModel(v.id, true, atRiskModel, {
+                    groupModels: groupModels
+                }));
+            }
+            else
+            {
+                newModels.push(new TableRowModel(v.id, false, atRiskModel, {
+                    groupModels: groupModels
+                }));
+            }
         }
         else 
         {
-            v.value.groups.value.forEach((v, k, map) => 
+            let added = 0;
+            OH.forEachKey(v.g, k => 
             {
-                const group = app.currentVault.groupStore.valueGroupsByID.value.get(k);
+                const group = app.currentVault.groupStore.valueGroupsByID[k];
                 if (!group)
                 {
                     return;
                 }
 
-                addToModels(groupModels, group);
+                added += 1;
+                addToModels(added, groupModels, group);
             });
-        }
 
-        return new FieldedTableRowModel(passwordValueModelID.toString(), undefined, atRiskModel, v, {
-            groupMOdels: groupModels
-        });
+            if (OH.has(app.userPreferences.pinnedValues, v.id))
+            {
+                pinnedModels.push(new TableRowModel(v.id, true, atRiskModel, {
+                    groupModels: groupModels
+                }));
+            }
+            else
+            {
+                newModels.push(new TableRowModel(v.id, false, atRiskModel, {
+                    groupModels: groupModels
+                }));
+            }
+        }
     }
 
-    function addToModels(currentModels: GroupIconModel[], group: Field<Group>)
+    function addToModels(alreadyAdded: number, currentModels: GroupIconModel[], group: Group)
     {
-        if (currentModels.length < 4)
+        if (alreadyAdded < 5)
         {
             currentModels.push({
-                icon: group.value.icon.value,
-                toolTipText: group.value.name.value,
-                color: group.value.color.value
+                icon: group.i,
+                toolTipText: group.n,
+                color: group.c
             });
         }
         else
         {
-            currentModels[3].icon = `+${currentModels.length - 3}`;
-            currentModels[3].toolTipText += `, ${group.value.name.value}`;
-            currentModels[3].color = color
+            currentModels[3].icon = undefined;
+            currentModels[3].text = `+${alreadyAdded - 3}`;
+            currentModels[3].toolTipText += `, ${group.n}`;
+            currentModels[3].color = color;
         }
     }
 }
@@ -275,4 +336,30 @@ export function getObjectPopupEmptyTableMessage(emptyDataName: string, currentDa
     }
 
     return `You don't have any ${emptyDataName} to add to this ${currentDataName}`;
+}
+
+export function getIsWeakMessage(isWeakValue: number, type: string)
+{
+    if (isWeakValue === 0)
+    {
+        return type + ` is less than 16 characters. For best security, create ${type}s that are at least 16 characters long.`;
+    }
+    else if (isWeakValue === 1)
+    {
+        return type + " does not contain and uppercase and lowercase letter. For best security, add an uppercase and lowercase letter to your " + type;
+    }
+    else if (isWeakValue === 2)
+    {
+        return type + " does not contain any numbers. For best security, add at least one number to your " + type;
+    }
+    else if (isWeakValue === 3)
+    {
+        return type + " does not contain any special characters. For best security, add at least one special character to your " + type;
+    }
+    else if (isWeakValue === 4)
+    {
+        return `Passphrase is less than 16 characters. For best security, create Passphrases that are at least 16 characters long.`;
+    }
+
+    return "";
 }
