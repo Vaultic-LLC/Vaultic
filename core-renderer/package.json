@@ -24,7 +24,7 @@
         "typescript": "~5.4.0",
         "vue": "3.5",
         "vue-chartjs": "5.2.0",
-        "vue-tsc": "2.0.21"
+        "vue-tsc": "2.2.8"
     },
     "dependencies": {
         "quill": "2.0.2"

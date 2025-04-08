@@ -223,9 +223,9 @@ export class CoreCryptUtility implements ClientCryptUtility
                     return TypedMethodResponse.success(this.bytesToHex(ml_dsa87.sign(this.hexToBytes(vaulticKey.key), new TextEncoder().encode(message))));
             }
         }
-        catch (e)
+        catch (e) 
         {
-            console.log(e);
+            await environment.repositories.logs.log(undefined, "Signin Exception");
         }
 
         return TypedMethodResponse.fail();
@@ -243,8 +243,9 @@ export class CoreCryptUtility implements ClientCryptUtility
                         this.hexToBytes(signedVaultKey.signature)));
             }
         }
-        catch (e)
+        catch (e) 
         {
+            await environment.repositories.logs.log(undefined, "Verifying Exception");
         }
 
         return TypedMethodResponse.fail();

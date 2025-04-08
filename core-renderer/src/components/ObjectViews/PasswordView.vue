@@ -193,11 +193,9 @@ export default defineComponent({
                     passwordState.g[g.backingObject!.id] = true;
                 });
 
-                console.time('add password');
                 if (await app.currentVault.passwordStore.addPassword(key, passwordState, addedSecurityQuestions, 
                     pendingStoreState))
                 {
-                    console.timeEnd('add password');
                     reset()
                     handleSaveResponse(true);
 

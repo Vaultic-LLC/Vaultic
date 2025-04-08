@@ -80,7 +80,6 @@ class Environment
         }
         catch (e)
         {
-            console.log(e);
             this.internalFailedToInitalizeDatabase = true;
         }
     }

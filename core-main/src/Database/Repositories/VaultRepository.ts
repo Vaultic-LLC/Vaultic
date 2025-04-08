@@ -384,7 +384,6 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 return TypedMethodResponse.transactionFail();
             }
 
-            console.timeEnd('saving vault data');
             return TypedMethodResponse.success();
         }
     }
@@ -516,11 +515,10 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
         if (otherVaults.length > 0)
         {
-            console.time("12");
             const vaultIDs = otherVaults.filter(v => v.vaultID).map(v => v.vaultID!);
             const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(key, vaultIDs, environment.cache.currentUser.userID,
                 (repository) => userVaultQuery(repository, vaultIDs));
-            console.timeEnd("12");
+
             for (let i = 0; i < otherVaults.length; i++)
             {
                 const index = userVaults[0].findIndex(v => v.vault.vaultID == otherVaults[i].vaultID);
@@ -855,8 +853,6 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                     {
                         return TypedMethodResponse.fail(undefined, undefined, "Unable to clear current data");
                     }
-
-                    console.log(`Clearing succeeded`);
                 }
 
                 let currentSignatures: CurrentUserDataIdentifiersAndKeys = { identifiers: {}, keys: [] };
@@ -883,8 +879,6 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                     return TypedMethodResponse.fail(undefined, undefined, "Syncing Vaults");
                 }
 
-                console.log(`Server payload: ${JSON.stringify(result.userDataPayload)}`);
-
                 const decryptedResponse = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, result);
                 if (!decryptedResponse.success)
                 {
@@ -909,8 +903,6 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                     masterKeyVaulticKey = JSON.stringify(vaulticKey);
                 }
 
-                console.log(`Server Data: ${JSON.stringify(decryptedResponse.value.userDataPayload)}`);
-
                 const success = await checkMergeMissingData(masterKeyVaulticKey, email, currentSignatures.keys, currentSignatures.identifiers, decryptedResponse.value.userDataPayload,
                     undefined, undefined, reloadAllData);
 
@@ -933,7 +925,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             }
             catch (e)
             {
-                console.log(e);
+                await environment.repositories.logs.log(undefined, e?.toString());
             }
         }
     }
