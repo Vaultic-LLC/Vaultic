@@ -1,8 +1,8 @@
 import { dialog } from "electron";
 import axiosHelper from "../Core/Server/AxiosHelper";
-import { GetUserDeactivationKeyResponse } from "../Core/Types/Responses";
 import fs from "fs";
 import { VaulticHelper } from "@vaultic/shared/Types/Helpers";
+import { GetUserDeactivationKeyResponse } from "@vaultic/shared/Types/Responses";
 
 async function selectDirectory()
 {

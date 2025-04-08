@@ -151,7 +151,6 @@ export default defineComponent({
 
             if (onlineMode.value)
             {          
-                console.time('loggingIn');
                 const response = await api.helpers.server.logUserIn(masterKey.value, email.value, false, reloadAllData.value, mfaCode);
                 if (response.success && response.value!.Success)
                 {
@@ -168,7 +167,6 @@ export default defineComponent({
                             app.popups.hideLoadingIndicator();
                             app.syncVaults(response.value?.masterKey!, email.value, true, reloadAllData.value);
     
-                            console.timeEnd('loggingIn');
                             ctx.emit('onKeySuccess');
                         }
                     }
@@ -176,7 +174,6 @@ export default defineComponent({
                     {
                         if (await app.syncAndLoadUserData(masterKey.value, email.value, reloadAllData.value))
                         {
-                            console.timeEnd('loggingIn');
                             ctx.emit('onKeySuccess');
                         }   
                     } 

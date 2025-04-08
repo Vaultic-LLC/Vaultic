@@ -152,10 +152,6 @@ export async function getExportablePasswords(color: string, masterKey: string): 
             {
                 groups.push(group.n);
             }
-            else 
-            {
-                console.log(`No group found in export passwords`);
-            }
         });
 
         data.push([password.l, password.d, password.e, password.f, decryptedPasswordResponse.value!,
@@ -188,10 +184,6 @@ export async function getExportableValues(color: string, masterKey: string): Pro
             if (group)
             {
                 groups.push(group.n);
-            }
-            else 
-            {
-                console.log("no group for value when exporting");
             }
         });
 

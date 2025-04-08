@@ -35,7 +35,7 @@ export function generateRandomPasswordOrPassphrase(type: RandomValueType, length
 
 		if (includeNumbers && includeSpecialCharacters && length >= 16)
 		{
-			let _ = "";
+			let _ = -1;
 			let isWeak = true;
 
 			while (isWeak)
@@ -48,7 +48,7 @@ export function generateRandomPasswordOrPassphrase(type: RandomValueType, length
 				crypto.getRandomValues(randomValues);
 				randomValues.forEach(v => randomValue += possibleCharacters[v % possibleCharactersLength]);
 
-				[isWeak, _] = validationHelper.isWeak(randomValue, "");
+				[isWeak, _] = validationHelper.isWeak(randomValue);
 			}
 		}
 		else

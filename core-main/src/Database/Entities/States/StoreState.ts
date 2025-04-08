@@ -101,9 +101,7 @@ export class StoreState extends VaulticEntity implements IStoreState
             value = result.value;
         }
 
-        console.time('uncompress');
         const decompressed = await environment.utilities.data.uncompress(value!);
-        console.timeEnd('uncompress');
         if (!decompressed)
         {
             return TypedMethodResponse.fail();

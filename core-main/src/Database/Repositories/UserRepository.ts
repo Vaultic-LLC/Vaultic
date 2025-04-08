@@ -615,7 +615,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             }
             catch (e)
             {
-                console.log(e);
+                await environment.repositories.logs.log(undefined, e?.toString());
             }
         }
     }
@@ -711,14 +711,12 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
     {
         if (!User.isValid(user))
         {
-            console.log('invalid user')
             return false;
         }
 
         user.lastUsed = false;
         if (!await this.setMasterKey(masterKey, user, true))
         {
-            console.log(`unable to set master key: ${masterKey}`);
             return false;
         }
 

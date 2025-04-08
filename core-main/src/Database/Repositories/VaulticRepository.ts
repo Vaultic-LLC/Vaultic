@@ -78,9 +78,7 @@ export class VaulticRepository<T extends VaulticEntity>
                 continue;
             }
 
-            console.time('compress');
             entity[properties[i]] = await environment.utilities.data.compress(entity[properties[i]]);
-            console.timeEnd('compress');
         }
 
         return this.encryptUpdatedProperties(key, entity);
@@ -116,8 +114,6 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to insert entity: ${JSON.stringify(entity)}`)
-            console.log(e);
             await logRepository.log(undefined, `Failed to insert entity\n ${e}`);
             return false;
         }
@@ -137,8 +133,6 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to insert existing entity: ${JSON.stringify(entity)}`)
-            console.log(e);
             await logRepository.log(undefined, `Failed to insert existing entity\n ${e}`);
             return false;
         }
@@ -153,19 +147,15 @@ export class VaulticRepository<T extends VaulticEntity>
             return true;
         }
 
-        console.time("30");
         if (!(await this.prepDataForSave(key, entity)))
         {
             return false;
         }
-        console.timeEnd("30");
 
-        console.time("31");
         if (!(await this.checkAndSign(key, entity)))
         {
             return false;
         }
-        console.timeEnd("31");
 
         const repo = manager.withRepository(this.repository);
 
@@ -192,8 +182,6 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to update entity: ${JSON.stringify(entity)}`)
-            console.log(e);
             await logRepository.log(undefined, `Failed to update entity\n ${e}`);
         }
 
@@ -209,8 +197,6 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to override entity: ${JSON.stringify(entity)}`)
-            console.log(e);
             await logRepository.log(undefined, `Failed to override entity\n ${JSON.stringify(entity)}, \n${e}`);
             return false;
         }
@@ -244,8 +230,6 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to reset tracking entity: ${JSON.stringify(entity)}`)
-            console.log(e);
             await logRepository.log(undefined, `Failed to reset tracking\n ${e}`);
         }
 
@@ -263,8 +247,6 @@ export class VaulticRepository<T extends VaulticEntity>
         }
         catch (e)
         {
-            console.log(`Filed to delete entity: ${JSON.stringify(findBy)}`)
-            console.log(e);
             await logRepository.log(undefined, `Failed to delete entity\n ${e}`);
         }
 

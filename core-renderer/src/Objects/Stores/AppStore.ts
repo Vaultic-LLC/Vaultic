@@ -713,10 +713,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
                     document.execCommand("copy");
                     document.body.removeChild(tempElement)
                 }
-                catch (e)  
-                {
-                    console.log(e);
-                }
+                catch { }
             }, 15000);
         }
         catch { }
