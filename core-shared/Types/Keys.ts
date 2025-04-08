@@ -70,3 +70,12 @@ export interface KSFParams
     memory: number;
     parallelism: number;
 }
+
+export function defaultKSFParams(): KSFParams
+{
+    return {
+        iterations: 3,
+        memory: 65536,
+        parallelism: 4
+    }
+}

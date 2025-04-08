@@ -89,7 +89,13 @@ export class VaulticCache
         };
 
         this.internalSessionKey = JSON.stringify(sessionVaulticKey);
+        this.updateExportKey(exportKey);
 
+        await environment.sessionHandler.setSession(tokenHash);
+    }
+
+    updateExportKey(exportKey: string)
+    {
         const exportVaulticKey: VaulticKey =
         {
             algorithm: Algorithm.XCHACHA20_POLY1305,
@@ -97,8 +103,6 @@ export class VaulticCache
         };
 
         this.internalExportKey = JSON.stringify(exportVaulticKey);
-
-        await environment.sessionHandler.setSession(tokenHash);
     }
 
     async setMasterKey(masterKey: string): Promise<TypedMethodResponse<undefined>>

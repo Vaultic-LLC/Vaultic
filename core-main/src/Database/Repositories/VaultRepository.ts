@@ -877,18 +877,18 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                     }
                 }
 
-                console.log(`Local Identifiers: ${JSON.stringify(currentSignatures.identifiers)}`);
-
                 const result = await vaulticServer.vault.syncVaults(currentSignatures.identifiers);
                 if (!result.Success)
                 {
-                    return TypedMethodResponse.fail();
+                    return TypedMethodResponse.fail(undefined, undefined, "Syncing Vaults");
                 }
+
+                console.log(`Server payload: ${JSON.stringify(result.userDataPayload)}`);
 
                 const decryptedResponse = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, result);
                 if (!decryptedResponse.success)
                 {
-                    return TypedMethodResponse.fail();
+                    return decryptedResponse;
                 }
 
                 // We weren't passed a master key because we don't have a user, get it from the payload

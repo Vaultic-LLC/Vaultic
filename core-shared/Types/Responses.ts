@@ -160,6 +160,7 @@ export interface StartLoginResponse extends UnknownEmailResponse, PendingUserRes
 {
     StartServerLoginResponse?: string;
     FailedMFA?: boolean;
+    KSFParams?: string;
 }
 
 export interface UserDataPayloadResponse

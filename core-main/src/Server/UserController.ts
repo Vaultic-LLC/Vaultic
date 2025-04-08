@@ -1,4 +1,4 @@
-import { BackupResponse, BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetMFAKeyResponse, GetPublicKeysResponse, GetSettings, GetUserIDResponse, GetUserInfoResponse, RegisterDeviceResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse, VerifyEmailResponse } from "@vaultic/shared/Types/Responses";
+import { BackupResponse, BaseResponse, CreateCheckoutResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetMFAKeyResponse, GetPublicKeysResponse, GetSettings, GetUserIDResponse, GetUserInfoResponse, RegisterDeviceResponse, SearchForUsersResponse, StartRegistrationResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse, VerifyEmailResponse } from "@vaultic/shared/Types/Responses";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 import { AxiosHelper } from "./AxiosHelper";
 import { ClientUserController } from "@vaultic/shared/Types/Controllers";
@@ -11,6 +11,8 @@ export interface UserController extends ClientUserController
     getUserIDs: () => Promise<GetUserIDResponse>;
     backupData: (postData: { userDataPayload: UserDataPayload }) => Promise<BackupResponse>;
     getPublicKeys: (publicKeyType: PublicKeyType, userIDs: number[]) => Promise<GetPublicKeysResponse>;
+    startUpdateKSFParams: (registrationRequest: string) => Promise<StartRegistrationResponse>;
+    finishUpdateKSFParams: (registrationRecord: string, userDataPayload: UserDataPayload) => Promise<BaseResponse>;
 }
 
 export function createUserController(axiosHelper: AxiosHelper): UserController
@@ -151,6 +153,21 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         return axiosHelper.api.post('User/GetUserInfo');
     }
 
+    function startUpdateKSFParams(registrationRequest: string): Promise<StartRegistrationResponse>
+    {
+        return axiosHelper.api.post('User/StartUpdateKSFParams', {
+            StartClientRegistrationRequest: registrationRequest
+        });
+    }
+
+    function finishUpdateKSFParams(registrationResponse: string, userDataPayload: UserDataPayload): Promise<BaseResponse>
+    {
+        return axiosHelper.api.post('User/FinishUpdateKSFParams', {
+            FinishClientRegistrationRecord: registrationResponse,
+            UserDataPayload: userDataPayload,
+        });
+    }
+
     return {
         validateEmail,
         verifyEmail,
@@ -169,6 +186,8 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         searchForUsers,
         getPublicKeys,
         getMFAKey,
-        getUserInfo
+        getUserInfo,
+        startUpdateKSFParams,
+        finishUpdateKSFParams
     }
 }

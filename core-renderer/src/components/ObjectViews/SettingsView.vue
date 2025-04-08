@@ -13,11 +13,6 @@
                             fadeIn="true" :width="'10vw'" :maxWidth="'300px'" :minWidth="'190px'" :height="'4vh'" :minHeight="'35px'"
                             :disabled="readOnly" />
                     </div>                    
-                </VaulticAccordionContent>
-            </VaulticAccordionPanel>
-            <VaulticAccordionPanel :value="'1'">
-                <VaulticAccordionHeader :title="'Security'" />
-                <VaulticAccordionContent>
                     <div class="settingsView__inputSection">
                         <TextInputField class="settingsView__oldPasswordDays" :color="color" :label="'Old Password Days'"
                             v-model.number="reactiveAppSettings.o" :inputType="'number'" :width="'10vw'"
@@ -46,10 +41,6 @@
                     <div class="settingsView__inputSection">
                         <TextInputField :color="color" :label="'Passphrase Seperator'" v-model.number="reactiveAppSettings.e"
                             :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'" :minHeight="'35px'" :disabled="readOnly" />
-                        <EnumInputField v-if="isOnline" class="settingsView__multipleFilterBehavior" :label="'Require MFA On'"
-                            :color="color" v-model="requireMFAOn" :optionsEnum="DisplayRequireMFAOn" :hideClear="true"
-                            fadeIn="true" :width="'10vw'" :maxWidth="'300px'" :minWidth="'190px'" :height="'4vh'" :minHeight="'35px'"
-                            :disabled="readOnly || !isOnline || isLoadingSharedData" />
                     </div>
                     <div class="settingsView__inputSection">
                         <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
@@ -69,6 +60,31 @@
                         <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
                                 :label="'Include Special Characters in Random Password'" v-model="reactiveAppSettings.s" />
                     </div>               
+                </VaulticAccordionContent>
+            </VaulticAccordionPanel>
+            <VaulticAccordionPanel v-if="isOnline" :value="'1'">
+                <VaulticAccordionHeader :title="'Account'" />
+                <VaulticAccordionContent>
+                    <div class="settingsView__inputSection">
+                        <EnumInputField class="settingsView__multipleFilterBehavior" :label="'Require MFA On'"
+                            :color="color" v-model="requireMFAOn" :optionsEnum="DisplayRequireMFAOn" :hideClear="true"
+                            fadeIn="true" :width="'10vw'" :maxWidth="'300px'" :minWidth="'190px'" :height="'4vh'" :minHeight="'35px'"
+                            :disabled="readOnly || !isOnline || isLoadingSharedData" />
+                        <TextInputField :color="color" :label="'Argon2 Iterations'"
+                            v-model.number="ksfParams.iterations" :inputType="'number'" :width="'10vw'"
+                            :minWidth="'190px'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" 
+                            :additionalValidationFunction="enforceArgonIterations" />
+                    </div>
+                    <div class="settingsView__inputSection">
+                        <TextInputField :color="color" :label="'Argon2 Memory'"
+                            v-model.number="ksfParams.memory" :inputType="'number'" :width="'10vw'"
+                            :minWidth="'190px'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" 
+                            :additionalValidationFunction="enforceArgonMemory" />
+                        <TextInputField :color="color" :label="'Argon2 Parallelism'"
+                            v-model.number="ksfParams.parallelism" :inputType="'number'" :width="'10vw'"
+                            :minWidth="'190px'" :maxWidth="'300px'" :height="'4vh'" :minHeight="'35px'" 
+                            :additionalValidationFunction="enforceArgonParallelism" />
+                    </div>
                 </VaulticAccordionContent>
             </VaulticAccordionPanel>
             <VaulticAccordionPanel :value="'2'" :final="true">
@@ -122,6 +138,7 @@ import { InputComponent, MemberChanges, MemberTableComponent, ObjectViewComponen
 import { Member } from '@vaultic/shared/Types/DataTypes';
 import { DisplayRequireMFAOn, displayRequireMFAOnToRequireMFAOn, RequireMFAOn, reuireMFAOnToDisplay } from '@vaultic/shared/Types/Device';
 import { AutoLockTime, FilterStatus } from '@vaultic/shared/Types/Stores';
+import { KSFParams } from '@vaultic/shared/Types/Keys';
 
 export default defineComponent({
     name: "SettingsView",
@@ -175,6 +192,8 @@ export default defineComponent({
         const originalRequireMFAOnSetting: Ref<DisplayRequireMFAOn> = ref(DisplayRequireMFAOn.NoDevices);
         const requireMFAOn: Ref<DisplayRequireMFAOn> = ref(DisplayRequireMFAOn.NoDevices);
 
+        const ksfParams: Ref<KSFParams> = ref(JSON.parse(app.userInfo!.ksfParams!)); 
+
         let saveSucceeded: (value: boolean) => void;
         let saveFaield: (value: boolean) => void;
 
@@ -191,35 +210,52 @@ export default defineComponent({
         async function onAuthenticationSuccessful(masterKey: string)
         {
             app.popups.showLoadingIndicator(color.value, "Saving Settings");
-            
-            //check / save shared settinsg first in case username is already taken
-            if (!await checkUpdateSettings())
-            {
-                return false;
-            }
 
-            const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
-            if (JSON.stringify(originalAppSettings.value) != JSON.stringify(reactiveAppSettings))
+            app.runAsAsyncProcess(async() =>
             {
-                appStoreState.commitProxyObject('settings', reactiveAppSettings);
-                transaction.updateUserStore(app, appStoreState);
-
-                if (!(await transaction.commit(masterKey)))
+                //check / save shared settinsg first in case username is already taken
+                if (!await checkUpdateSettings())
                 {
+                    app.popups.hideLoadingIndicator();
+                    saveFaield(true);
+
                     return false;
                 }
-            }
+    
+                if (!await checkUpdateKSF())
+                {
+                    app.popups.hideLoadingIndicator();
+                    saveFaield(true);
 
-            // if (JSON.stringify(originalVaultSettings.value) != JSON.stringify(vaultSettings.value))
-            // {
-            //     const state = app.currentVault.cloneState();
-            //     state.settings.value = vaultSettings.value;
+                    return false;
+                }
+    
+                const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
+                if (JSON.stringify(originalAppSettings.value) != JSON.stringify(reactiveAppSettings))
+                {
+                    appStoreState.commitProxyObject('settings', reactiveAppSettings);
+                    transaction.updateUserStore(app, appStoreState);
+    
+                    if (!(await transaction.commit(masterKey)))
+                    {
+                        app.popups.hideLoadingIndicator();
+                        saveFaield(true);
 
-            //     transaction.updateVaultStore(app.currentVault, state);
-            // }
-
-            app.popups.hideLoadingIndicator();
-            saveSucceeded(true);
+                        return false;
+                    }
+                }
+    
+                // if (JSON.stringify(originalVaultSettings.value) != JSON.stringify(vaultSettings.value))
+                // {
+                //     const state = app.currentVault.cloneState();
+                //     state.settings.value = vaultSettings.value;
+    
+                //     transaction.updateVaultStore(app.currentVault, state);
+                // }
+    
+                app.popups.hideLoadingIndicator();
+                saveSucceeded(true);
+            });        
         }
 
         async function checkUpdateSettings(): Promise<boolean>
@@ -295,6 +331,26 @@ export default defineComponent({
 
             return true;
         } 
+
+        async function checkUpdateKSF(): Promise<boolean>
+        {
+            const originalParams: KSFParams = JSON.parse(app.userInfo!.ksfParams!);
+            if (ksfParams.value.iterations != originalParams.iterations || 
+                ksfParams.value.memory != originalParams.memory || 
+                ksfParams.value.parallelism != originalParams.parallelism)
+            {
+                const response = await api.helpers.server.updateKSFParams(JSON.stringify(ksfParams.value));
+                if (!response.success)
+                {
+                    defaultHandleFailedResponse(response);
+                    return false;
+                }
+
+                app.userInfo!.ksfParams = JSON.stringify(ksfParams.value);
+            }
+
+            return true;
+        }
 
         function onAuthenticationCanceled()
         {
@@ -378,6 +434,54 @@ export default defineComponent({
             }
 
             return [true, ""];
+        }
+
+        function enforceArgonIterations(input: string): [boolean, string]
+        {
+            const numb: number = Number.parseInt(input);
+            if (!numb)
+            {
+                return [false, "Not a valid number"];
+            }
+
+            if (numb < 1 || numb > 4294967295)
+            {
+                return [false, "Value must be between 1 and 4,294,967,295"];
+            }
+
+            return [true, ""];        
+        }
+
+        function enforceArgonMemory(input: string): [boolean, string]
+        {
+            const numb: number = Number.parseInt(input);
+            if (!numb)
+            {
+                return [false, "Not a valid number"];
+            }
+
+            if (numb < 1024 || numb > 2097151)
+            {
+                return [false, "Value must be between 1024 and 2,097,151"];
+            }
+
+            return [true, ""];        
+        }
+
+        function enforceArgonParallelism(input: string): [boolean, string]
+        {
+            const numb: number = Number.parseInt(input);
+            if (!numb)
+            {
+                return [false, "Not a valid number"];
+            }
+
+            if (numb < 1 || numb > 16777215)
+            {
+                return [false, "Value must be between 1 and 16,777,215"];
+            }
+
+            return [true, ""];        
         }
 
         watch(() => allowSharedVaultsFromOthers.value, (newValue, oldValue) =>
@@ -491,6 +595,7 @@ export default defineComponent({
             requireMFAOn,
             DisplayRequireMFAOn,
             reactiveAppSettings,
+            ksfParams,
             onSave,
             onAuthenticationSuccessful,
             enforceLoginRecordsPerDay,
@@ -498,7 +603,10 @@ export default defineComponent({
             enforceMinRandomPassphraseLength,
             enforceOldPasswordDays,
             enforcePercentMetricForPulse,
-            enforceDaysToStoreLoginRecords
+            enforceDaysToStoreLoginRecords,
+            enforceArgonIterations,
+            enforceArgonMemory,
+            enforceArgonParallelism
         };
     },
 })

@@ -6,6 +6,7 @@ import { DeviceInfo } from '@vaultic/shared/Types/Device';
 import { TypedMethodResponse } from '@vaultic/shared/Types/MethodResponse';
 import { BaseResponse, EncryptedResponse, InvalidSessionResponse } from '@vaultic/shared/Types/Responses';
 import { Algorithm, AsymmetricVaulticKey, MLKEM1024KeyResult, PublicPrivateKey } from '@vaultic/shared/Types/Keys';
+import errorCodes from '@vaultic/shared/Types/ErrorCodes';
 
 const APIKeyEncryptionKey = JSON.stringify({ algorithm: Algorithm.XCHACHA20_POLY1305, key: "12fasjkdF2owsnFvkwnvwe23dFSDfio2" });
 const apiKeyPrefix = "ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321-";
@@ -384,14 +385,14 @@ class APIAxiosWrapper extends AxiosWrapper
                     const response = await environment.utilities.crypt.symmetricDecrypt(environment.cache.exportKey, data[fieldTree.properties[i]]);
                     if (!response.success)
                     {
-                        return TypedMethodResponse.fail();
+                        return TypedMethodResponse.fail(undefined, undefined, `Failed to e2e decrypt: ${fieldTree.properties[i]}`);
                     }
 
                     data[fieldTree.properties[i]] = response.value!;
                 }
                 catch 
                 {
-                    return TypedMethodResponse.fail();
+                    return TypedMethodResponse.fail(errorCodes.E2E_DECRYPTION_FAILED, undefined, `Failed to e2e decrypt: ${fieldTree.properties[i]}`);
                 }
             }
         }

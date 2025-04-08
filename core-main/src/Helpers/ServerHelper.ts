@@ -5,8 +5,15 @@ import { safetifyMethod } from "../Helpers/RepositoryHelper";
 import { FinishRegistrationResponse, LogUserInResponse, StartRegistrationResponse } from "@vaultic/shared/Types/Responses";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { ServerHelper } from "@vaultic/shared/Types/Helpers";
-import { Algorithm, KSFParams, VaulticKey } from "@vaultic/shared/Types/Keys";
+import { Algorithm, defaultKSFParams, KSFParams, VaulticKey } from "@vaultic/shared/Types/Keys";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
+import Transaction from "../Database/Transaction";
+import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
+import { User } from "../Database/Entities/User";
+import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
+import { IUserVault } from "@vaultic/shared/Types/Entities";
+import axiosHelper from "../Server/AxiosHelper";
+import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 
 async function registerUser(masterKey: string, pendingUserToken: string, firstName: string, lastName: string): Promise<StartRegistrationResponse | FinishRegistrationResponse>
 {
@@ -82,11 +89,37 @@ async function logUserIn(masterKey: string, email: string,
             return TypedMethodResponse.failWithValue(startResponse);
         }
 
+        let params: KSFParams = defaultKSFParams();
+        if (!firstLogin)
+        {
+            if (!startResponse.KSFParams)
+            {
+                return TypedMethodResponse.fail(undefined, undefined, "no ksf params");
+            }
+
+            try
+            {
+                params = JSON.parse(startResponse.KSFParams);
+            }
+            catch (e)
+            {
+                return TypedMethodResponse.fail(undefined, undefined, "unable to parse ksf params");
+            }
+        }
+
         const loginResult = opaque.client.finishLogin({
             clientLoginState: environment.cache.clientLoginState,
             loginResponse: startResponse.StartServerLoginResponse,
             password: environment.cache.passwordHash,
-            keyStretching   // need to return from stsServer.login.start
+            keyStretching:
+            {
+                'argon2id-custom':
+                {
+                    iterations: params.iterations,
+                    memory: params.memory,
+                    parallelism: params.parallelism
+                }
+            }
         });
 
         if (!loginResult)
@@ -132,65 +165,155 @@ async function logUserIn(masterKey: string, email: string,
 
 async function updateKSFParams(newParams: string): Promise<TypedMethodResponse<any>>
 {
-    let masterKey: string | undefined = "";
-    let parsedNewParams: KSFParams | undefined;
+    const currentExportKey = environment.cache.exportKey;
+    return await safetifyMethod(this, internalUpdateKSFParsm, onFail);
 
-    try
+    // In case we fail after updating the export key
+    async function onFail()
     {
-        parsedNewParams = JSON.parse(newParams);
-    }
-    catch (e)
-    {
-        return TypedMethodResponse.fail(undefined, undefined, "Unable to parse params");
+        const vaulticExportKey: VaulticKey = JSON.parse(currentExportKey);
+        environment.cache.updateExportKey(vaulticExportKey.key);
     }
 
-    try
+    async function internalUpdateKSFParsm()
     {
-        const vaulticKey: VaulticKey = JSON.parse(environment.cache.masterKey);
-        masterKey = vaulticKey.key;
-    }
-    catch (e)
-    {
-        return TypedMethodResponse.fail(undefined, undefined, "Unable to parse master key");
-    }
+        const currentUser = await environment.repositories.users.getCurrentUser();
+        if (!currentUser)
+        {
+            return TypedMethodResponse.fail(undefined, undefined, "No current user");
+        }
 
-    const passwordHash = await environment.utilities.hash.hash(Algorithm.SHA_256, masterKey);
-    if (!passwordHash.success)
-    {
-        return TypedMethodResponse.fail(undefined, undefined, "Unable to get master key");
-    }
+        let masterKey: string | undefined = "";
+        let parsedNewParams: KSFParams | undefined;
 
-    const { clientRegistrationState, registrationRequest } =
-        opaque.client.startRegistration({
-            password: passwordHash.value
+        try
+        {
+            parsedNewParams = JSON.parse(newParams);
+        }
+        catch (e)
+        {
+            return TypedMethodResponse.fail(undefined, undefined, "Unable to parse params");
+        }
+
+        try
+        {
+            const vaulticKey: VaulticKey = JSON.parse(environment.cache.masterKey);
+            masterKey = vaulticKey.key;
+        }
+        catch (e)
+        {
+            return TypedMethodResponse.fail(undefined, undefined, "Unable to parse master key");
+        }
+
+        const passwordHash = await environment.utilities.hash.hash(Algorithm.SHA_256, masterKey);
+        if (!passwordHash.success)
+        {
+            return TypedMethodResponse.fail(undefined, undefined, "Unable to get master key");
+        }
+
+        const { clientRegistrationState, registrationRequest } =
+            opaque.client.startRegistration({
+                password: passwordHash.value
+            });
+
+        const startResponse = await vaulticServer.user.startUpdateKSFParams(registrationRequest);
+        if (!startResponse.Success)
+        {
+            return TypedMethodResponse.fail(undefined, undefined, "Start Update Failed");
+        }
+
+        const { registrationRecord, exportKey } = opaque.client.finishRegistration({
+            clientRegistrationState,
+            registrationResponse: startResponse.ServerRegistrationResponse!,
+            password: passwordHash.value,
+            keyStretching: {
+                "argon2id-custom": {
+                    iterations: parsedNewParams.iterations,
+                    memory: parsedNewParams.memory,
+                    parallelism: parsedNewParams.parallelism
+                }
+            }
         });
 
-    const startResponse = await vaulticServer.user.startUpdateKSFParams(registrationRequest);
-    if (!startResponse.Success)
-    {
-        return startResponse;
-    }
+        environment.cache.updateExportKey(exportKey);
+        currentUser.ksfParams = newParams;
 
-    const { registrationRecord } = opaque.client.finishRegistration({
-        clientRegistrationState,
-        registrationResponse: startResponse.ServerRegistrationResponse!,
-        password: passwordHash.value,
-        keyStretching: {
-            "argon2id-custom": {
-                iterations: parsedNewParams.iterations,
-                memory: parsedNewParams.memory,
-                parallelism: parsedNewParams.parallelism
-            }
+        // need to update the signature since we are update the ksfParams
+        if (!await currentUser.sign(environment.cache.masterKey))
+        {
+            return TypedMethodResponse.fail(undefined, undefined, "Signing user");
         }
-    });
 
-    const response = await stsServer.registration.finish(pendingUserToken, registrationRecord, firstName, lastName);
+        // we need to send everything that is currently e2e encrypted so that it can be re encrypted with the new export key
+        const userDataPayload: UserDataPayload = {};
+        userDataPayload.user =
+        {
+            userID: currentUser.userID,
+            ksfParams: currentUser.ksfParams,
+            currentSignature: currentUser.currentSignature,
+            privateSigningKey: currentUser.privateSigningKey,
+            privateEncryptingKey: currentUser.privateEncryptingKey,
+            appStoreState:
+            {
+                appStoreStateID: currentUser.appStoreState.appStoreStateID,
+                state: currentUser.appStoreState.state
+            },
+            userPreferencesStoreState:
+            {
+                userPreferencesStoreStateID: currentUser.userPreferencesStoreState.userPreferencesStoreStateID,
+                state: currentUser.userPreferencesStoreState.state
+            }
+        };
+
+        const userVaultsToPush = (await environment.repositories.userVaults.getVerifiedUserVaults(environment.cache.masterKey))[0].map(uv =>
+        {
+            const uvToPush: DeepPartial<IUserVault> =
+            {
+                userOrganizationID: uv.userOrganizationID,
+                userVaultID: uv.userVaultID,
+                vaultKey: uv.vaultKey,
+                vaultPreferencesStoreState:
+                {
+                    vaultPreferencesStoreStateID: uv.vaultPreferencesStoreState.vaultPreferencesStoreStateID,
+                    state: uv.vaultPreferencesStoreState.state
+                }
+            };
+
+            return uvToPush;
+        });
+
+        userDataPayload["userVaults"] = userVaultsToPush;
+
+        const encryptedPayload = await axiosHelper.api.endToEndEncryptPostData(userDataE2EEncryptedFieldTree, { userDataPayload: userDataPayload });
+        if (!encryptedPayload.success)
+        {
+            return TypedMethodResponse.fail(undefined, undefined, "e2e encrypt user data");
+        }
+
+        const finishResponse = await vaulticServer.user.finishUpdateKSFParams(registrationRecord, encryptedPayload.value.userDataPayload);
+        if (!finishResponse.Success)
+        {
+            return TypedMethodResponse.fail(undefined, undefined, "Finish update params");
+        }
+
+        const transaction = new Transaction();
+
+        const userUpdates: { [key: string]: any } = {};
+        userUpdates[nameof<User>("ksfParams")] = newParams;
+        userUpdates[nameof<User>("currentSignature")] = currentUser.currentSignature;
+
+        transaction.overrideEntity(currentUser.userID, userUpdates, () => environment.repositories.users);
+
+        await transaction.commit();
+        return TypedMethodResponse.success();
+    }
 }
 
 const serverHelper: ServerHelper =
 {
     registerUser,
     logUserIn,
+    updateKSFParams
 };
 
 export default serverHelper;

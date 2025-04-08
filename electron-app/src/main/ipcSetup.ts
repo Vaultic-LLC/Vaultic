@@ -73,6 +73,7 @@ export default function setupIPC()
 
 	ipcMain.handle('serverHelper:registerUser', (e, masterKey: string, pendingUserToken: string, firstName: string, lastName: string) => validateSender(e, () => serverHelper.registerUser(masterKey, pendingUserToken, firstName, lastName)));
 	ipcMain.handle('serverHelper:logUserIn', (e, masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean, mfaCode?: string) => validateSender(e, () => serverHelper.logUserIn(masterKey, email, firstLogin, reloadAllData, mfaCode)));
+	ipcMain.handle('serverHelper:updateKSFParams', (e, newParams: string) => validateSender(e, () => serverHelper.updateKSFParams(newParams)));
 
 	ipcMain.handle('repositoryHelper:backupData', (e, masterKey: string) => validateSender(e, () => safeBackupData(masterKey)));
 	ipcMain.handle('repositoryHelper:handleUserLogOut', (e) => validateSender(e, () => handleUserLogOut()));

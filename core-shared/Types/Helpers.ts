@@ -20,6 +20,7 @@ export interface ServerHelper
 {
     registerUser: (masterKey: string, pendingUserToken: string, firstName: string, lastName: string) => Promise<StartRegistrationResponse | FinishRegistrationResponse>;
     logUserIn: (masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean, mfaCode?: string) => Promise<TypedMethodResponse<LogUserInResponse | undefined>>;
+    updateKSFParams: (newParams: string) => Promise<TypedMethodResponse<any>>;
 };
 
 export interface RepositoryHelper 
