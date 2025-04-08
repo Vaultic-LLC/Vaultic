@@ -1,6 +1,6 @@
 import { Device, RequireMFAOn } from "./Device";
 import { ChartData, LicenseStatus, OrganizationInfo, ServerAllowSharingFrom, Session, UserDataPayload, UserDemographics, UserOrgInfo, VaultDataBreach } from "./ClientServerTypes";
-import { PublicKeys } from "./Keys";
+import { KSFParams, PublicKeys } from "./Keys";
 
 export interface EncryptedResponse
 {
@@ -160,6 +160,7 @@ export interface StartLoginResponse extends UnknownEmailResponse, PendingUserRes
 {
     StartServerLoginResponse?: string;
     FailedMFA?: boolean;
+    KSFParams?: string;
 }
 
 export interface UserDataPayloadResponse

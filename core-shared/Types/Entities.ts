@@ -1,5 +1,4 @@
 import { ServerPermissions } from "./ClientServerTypes"
-import { Field } from "./Fields";
 import { Algorithm, SignedVaultKey } from "./Keys";
 import { DoubleKeyedObject } from "./Stores";
 
@@ -35,6 +34,7 @@ export interface IUser extends IVaulticEntity
     publicEncryptingKey: string;
     privateEncryptingKey: string;
     lastLoadedChangeVersion: number;
+    ksfParams: string;
     appStoreState: IAppStoreState;
     userPreferencesStoreState: IUserPreferencesStoreState;
     userVaults: IUserVault[]

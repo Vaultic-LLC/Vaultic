@@ -46,8 +46,6 @@
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
 
-import TableSelector from '../TableSelector.vue';
-import TextAreaInputField from '../InputFields/TextAreaInputField.vue';
 import PopupButton from '../InputFields/PopupButton.vue';
 import ScrollView from "../ObjectViews/ScrollView.vue"
 
@@ -61,8 +59,6 @@ export default defineComponent({
     name: "WorkflowPopup",
     components:
     {
-        TableSelector,
-        TextAreaInputField,
         PopupButton,
         ScrollView,
     },
@@ -72,6 +68,7 @@ export default defineComponent({
         const primaryColor: Ref<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
         const disableButtons: Ref<boolean> = ref(app.currentVault.isReadOnly.value);
+        const isOnline: Ref<boolean> = ref(app.isOnline);
 
         const worflowsSelectorItem: ComputedRef<SingleSelectorItemModel> = computed(() =>
         {
@@ -156,13 +153,14 @@ export default defineComponent({
             scrollbarColor,
             primaryColor,
             disableButtons,
+            isOnline,
             defaultInputTextColor,
             worflowsSelectorItem,
             doImportPasswords,
             doImportValues,
             exportPasswords,
             exportValues,
-            doExportLogs
+            doExportLogs,
         }
     }
 })

@@ -41,7 +41,7 @@
 		"@noble/post-quantum": "0.4.0",
 		"@popperjs/core": "2.11.8",
 		"@primevue/themes": "4.2.3",
-		"@serenity-kit/opaque": "0.8.4",
+		"@serenity-kit/opaque": "0.9.0",
 		"@tweenjs/tween.js": "21.0.0",
 		"axios": "1.6.7",
 		"better-sqlite3": "9.6.0",

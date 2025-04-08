@@ -72,6 +72,9 @@ export class User extends VaulticEntity implements IUser
     @Column("integer")
     lastLoadedChangeVersion: number
 
+    @Column("text")
+    ksfParams: string
+
     @OneToOne(() => AppStoreState, (state: AppStoreState) => state.user, { eager: true })
     appStoreState: AppStoreState;
 
@@ -110,7 +113,8 @@ export class User extends VaulticEntity implements IUser
             nameof<User>("privateSigningKey"),
             nameof<User>("publicEncryptingKey"),
             nameof<User>("privateEncryptingKey"),
-            nameof<User>("lastLoadedChangeVersion")
+            nameof<User>("lastLoadedChangeVersion"),
+            nameof<User>("ksfParams")
         ];
     }
 
@@ -133,6 +137,7 @@ export class User extends VaulticEntity implements IUser
         properties.push(nameof<User>("privateSigningKey"));
         properties.push(nameof<User>("publicEncryptingKey"));
         properties.push(nameof<User>("privateEncryptingKey"));
+        properties.push(nameof<User>("ksfParams"));
 
         return properties;
     }
@@ -176,6 +181,8 @@ export class User extends VaulticEntity implements IUser
             !!user.privateEncryptingKey &&
             !!user.appStoreState &&
             !!user.userPreferencesStoreState &&
+            user.lastLoadedChangeVersion !== undefined && user.lastLoadedChangeVersion !== null &&
+            !!user.ksfParams &&
             AppStoreState.isValid(user.appStoreState) &&
             UserPreferencesStoreState.isValid(user.userPreferencesStoreState);
     }

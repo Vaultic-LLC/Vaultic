@@ -105,6 +105,7 @@ const serverHelper: ServerHelper =
 {
 	registerUser: (masterKey: string, pendingUserToken: string, firstName: string, lastName: string) => ipcRenderer.invoke('serverHelper:registerUser', masterKey, pendingUserToken, firstName, lastName),
 	logUserIn: (masterKey: string, email: string, firstLogin: boolean, reloadAllData: boolean, mfaCode?: string) => ipcRenderer.invoke('serverHelper:logUserIn', masterKey, email, firstLogin, reloadAllData, mfaCode),
+	updateKSFParams: (newParams: string) => ipcRenderer.invoke('serverHelper:updateKSFParams', newParams)
 };
 
 const repositoryHelepr: RepositoryHelper =

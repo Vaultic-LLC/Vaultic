@@ -19,6 +19,7 @@ class ErrorCodes
     get NESTED_OBJECT_DOES_NOT_EXIST() { return 11005; }
     get HASHES_DONT_MATCH() { return 11006; }
     get DECRYPTION_FAILED() { return 11007; }
+    get E2E_DECRYPTION_FAILED() { return 11008; }
 
     // Entity Creation Errors
     get FAILED_TO_GET_USER_IDS() { return 12000; }

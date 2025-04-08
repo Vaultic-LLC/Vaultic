@@ -15,6 +15,7 @@ const storeStateE2EEncryptableProperties = [
     nameof<StoreState>("state")
 ];
 
+// Keep in sync with the data that is sent in ServerHelper.updateKSFParams
 export const userDataE2EEncryptedFieldTree: FieldTree =
 {
     properties: [],
@@ -23,7 +24,7 @@ export const userDataE2EEncryptedFieldTree: FieldTree =
             properties: [],
             nestedProperties: {
                 user: {
-                    properties: [nameof<User>("masterKeyEncryptionAlgorithm"), nameof<User>("privateSigningKey"), nameof<User>("privateEncryptingKey")],
+                    properties: [nameof<User>("privateSigningKey"), nameof<User>("privateEncryptingKey")],
                     nestedProperties: {
                         appStoreState: {
                             properties: storeStateE2EEncryptableProperties,

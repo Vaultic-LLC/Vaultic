@@ -150,6 +150,7 @@ export class Vault extends VaulticEntity implements IVault
             !!vault.valueStoreState &&
             !!vault.filterStoreState &&
             !!vault.groupStoreState &&
+            vault.lastLoadedChangeVersion !== undefined && vault.lastLoadedChangeVersion !== null &&
             VaultStoreState.isValid(vault.vaultStoreState) &&
             PasswordStoreState.isValid(vault.passwordStoreState) &&
             ValueStoreState.isValid(vault.valueStoreState) &&
