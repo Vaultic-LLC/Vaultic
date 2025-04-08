@@ -40,11 +40,7 @@ async function registerUser(masterKey: string, pendingUserToken: string, firstNa
         registrationResponse: startResponse.ServerRegistrationResponse!,
         password: passwordHash.value,
         keyStretching: {
-            "argon2id-custom": {
-                iterations: 3,
-                memory: 65536,
-                parallelism: 4
-            }
+            "argon2id-custom": defaultKSFParams()
         }
     });
 
