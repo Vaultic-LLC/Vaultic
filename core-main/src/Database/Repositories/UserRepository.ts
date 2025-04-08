@@ -17,7 +17,7 @@ import { EntityState, getVaultType, IUser, UserData } from "@vaultic/shared/Type
 import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { IUserRepository } from "../../Types/Repositories";
 import { defaultAppStoreState, defaultUserPreferencesStoreState, SimplifiedPasswordStore, StoreType } from "@vaultic/shared/Types/Stores";
-import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
+import { Algorithm, KSFParams, VaulticKey } from "@vaultic/shared/Types/Keys";
 import { VerifyUserMasterKeyResponse } from "@vaultic/shared/Types/Repositories";
 import { ChangeTracking } from "../Entities/ChangeTracking";
 import { ClientChangeTrackingType, ClientUserChangeTrackings } from "@vaultic/shared/Types/ClientServerTypes";
@@ -266,6 +266,15 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             user.lastLoadedChangeVersion = 0;
             user.userVaults = [];
 
+            const ksfParams: KSFParams =
+            {
+                iterations: 3,
+                memory: 65536,
+                parallelism: 4
+            };
+
+            user.ksfParams = JSON.stringify(ksfParams);
+
             await this.setMasterKey(serializedMasterKey, user, false);
 
             const appStoreState = new AppStoreState().makeReactive();
@@ -503,6 +512,12 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 return TypedMethodResponse.fail(undefined, undefined, "Unable to get user preferences");
             }
 
+            const decryptedKSfParams = await environment.utilities.crypt.symmetricDecrypt(environment.cache.masterKey, currentUser.ksfParams);
+            if (!decryptedKSfParams.success)
+            {
+                return TypedMethodResponse.fail(undefined, undefined, "Unable to get ksf params");
+            }
+
             const userData: UserData =
             {
                 success: false,
@@ -510,7 +525,8 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 {
                     email: currentUser.email,
                     firstName: currentUser.firstName,
-                    lastName: currentUser.lastName
+                    lastName: currentUser.lastName,
+                    ksfParams: decryptedKSfParams.value!
                 },
                 appStoreState: decryptedAppStoreState.value!,
                 userPreferencesStoreState: usableUserPreferencesState.value,
@@ -784,6 +800,12 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         if (newUser.lastLoadedChangeVersion)
         {
             partialUser[nameof<User>("lastLoadedChangeVersion")] = newUser.lastLoadedChangeVersion;
+            updatedUser = true;
+        }
+
+        if (newUser.ksfParams)
+        {
+            partialUser[nameof<User>("ksfParams")] = newUser.ksfParams;
             updatedUser = true;
         }
 

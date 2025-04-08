@@ -144,6 +144,7 @@ export class UserVault extends VaulticEntity implements IUserVault
             !!userVault.vaultID &&
             !!userVault.vaultKey &&
             !!userVault.vaultPreferencesStoreState &&
+            userVault.lastLoadedChangeVersion !== undefined && userVault.lastLoadedChangeVersion !== null &&
             VaultPreferencesStoreState.isValid(userVault.vaultPreferencesStoreState);
     }
 }

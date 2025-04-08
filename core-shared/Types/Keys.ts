@@ -63,3 +63,10 @@ export interface AsymmetricVaulticKey extends VaulticKey
 {
     symmetricAlgorithm: Algorithm;
 }
+
+export interface KSFParams
+{
+    iterations: number;
+    memory: number;
+    parallelism: number;
+}

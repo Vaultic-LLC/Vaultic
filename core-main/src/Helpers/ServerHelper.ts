@@ -1,11 +1,11 @@
 import * as opaque from "@serenity-kit/opaque";
-import { stsServer } from "../Server/VaulticServer";
+import vaulticServer, { stsServer } from "../Server/VaulticServer";
 import { environment } from "../Environment";
 import { safetifyMethod } from "../Helpers/RepositoryHelper";
 import { FinishRegistrationResponse, LogUserInResponse, StartRegistrationResponse } from "@vaultic/shared/Types/Responses";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { ServerHelper } from "@vaultic/shared/Types/Helpers";
-import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
+import { Algorithm, KSFParams, VaulticKey } from "@vaultic/shared/Types/Keys";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 
 async function registerUser(masterKey: string, pendingUserToken: string, firstName: string, lastName: string): Promise<StartRegistrationResponse | FinishRegistrationResponse>
@@ -32,6 +32,13 @@ async function registerUser(masterKey: string, pendingUserToken: string, firstNa
         clientRegistrationState,
         registrationResponse: startResponse.ServerRegistrationResponse!,
         password: passwordHash.value,
+        keyStretching: {
+            "argon2id-custom": {
+                iterations: 3,
+                memory: 65536,
+                parallelism: 4
+            }
+        }
     });
 
     return await stsServer.registration.finish(pendingUserToken, registrationRecord, firstName, lastName);
@@ -79,6 +86,7 @@ async function logUserIn(masterKey: string, email: string,
             clientLoginState: environment.cache.clientLoginState,
             loginResponse: startResponse.StartServerLoginResponse,
             password: environment.cache.passwordHash,
+            keyStretching   // need to return from stsServer.login.start
         });
 
         if (!loginResult)
@@ -120,6 +128,63 @@ async function logUserIn(masterKey: string, email: string,
         finishResponse.masterKey = masterKeyVaulticKey;
         return TypedMethodResponse.success(finishResponse);
     }
+}
+
+async function updateKSFParams(newParams: string): Promise<TypedMethodResponse<any>>
+{
+    let masterKey: string | undefined = "";
+    let parsedNewParams: KSFParams | undefined;
+
+    try
+    {
+        parsedNewParams = JSON.parse(newParams);
+    }
+    catch (e)
+    {
+        return TypedMethodResponse.fail(undefined, undefined, "Unable to parse params");
+    }
+
+    try
+    {
+        const vaulticKey: VaulticKey = JSON.parse(environment.cache.masterKey);
+        masterKey = vaulticKey.key;
+    }
+    catch (e)
+    {
+        return TypedMethodResponse.fail(undefined, undefined, "Unable to parse master key");
+    }
+
+    const passwordHash = await environment.utilities.hash.hash(Algorithm.SHA_256, masterKey);
+    if (!passwordHash.success)
+    {
+        return TypedMethodResponse.fail(undefined, undefined, "Unable to get master key");
+    }
+
+    const { clientRegistrationState, registrationRequest } =
+        opaque.client.startRegistration({
+            password: passwordHash.value
+        });
+
+    const startResponse = await vaulticServer.user.startUpdateKSFParams(registrationRequest);
+    if (!startResponse.Success)
+    {
+        return startResponse;
+    }
+
+    const { registrationRecord } = opaque.client.finishRegistration({
+        clientRegistrationState,
+        registrationResponse: startResponse.ServerRegistrationResponse!,
+        password: passwordHash.value,
+        keyStretching: {
+            "argon2id-custom": {
+                iterations: parsedNewParams.iterations,
+                memory: parsedNewParams.memory,
+                parallelism: parsedNewParams.parallelism
+            }
+        }
+    });
+
+    const response = await stsServer.registration.finish(pendingUserToken, registrationRecord, firstName, lastName);
 }
 
 const serverHelper: ServerHelper =

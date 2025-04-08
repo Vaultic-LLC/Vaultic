@@ -3,44 +3,64 @@
         <h2>Workflows</h2>
     </div>
     <div class="workflowPopupContainer">
-        <ScrollView class="workflowPopupContainer__sections" :color="primaryColor">
-            <div class="workflowPopupContainer__section">
-                <h2 class="workflowPopupContainer__section__header">Import</h2>
-                <div class="workflowPopupContainer__section__text">
-                    Import Passwords or Values via an unencrypted CSV file
-                </div>
-                <div class="workflowPopupContainer__section__buttons">
-                    <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Passwords'" :width="'8vw'"
-                        :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
-                        :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="doImportPasswords" />
-                    <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Values'" :width="'8vw'"
-                        :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
-                        :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="doImportValues" />
-                </div>
-            </div>
-            <div class="workflowPopupContainer__section">
-                <h2 class="workflowPopupContainer__section__header">Export</h2>
-                <div class="workflowPopupContainer__section__text">
-                    Export unencrypted Passwords or Values into a CSV file
-                </div>
-                <div class="workflowPopupContainer__section__buttons">
-                    <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Passwords'" :width="'8vw'"
-                        :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
-                        :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="exportPasswords" />
-                    <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Values'" :width="'8vw'"
-                        :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
-                        :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="exportValues" />
-                </div>
-            </div>
-            <div class="workflowPopupContainer__section">
-                <h2 class="workflowPopupContainer__section__header">Export Logs</h2>
-                <div class="workflowPopupContainer__section__buttons">
-                    <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Export'" :width="'8vw'"
-                        :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
-                        :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="doExportLogs" />
-                </div>
-            </div>
-        </ScrollView>
+        <ObjectView :hideButtons="true" :color="primaryColor">
+            <VaulticAccordion :value="'0'">
+                <VaulticAccordionPanel :value="'0'">
+                    <VaulticAccordionHeader :title="'Exporting'" />
+                    <VaulticAccordionContent>
+                        <div class="workflowPopupContainer__section">
+                            <h2 class="workflowPopupContainer__section__header">Import / Export</h2>
+                            <div class="workflowPopupContainer__section__text">
+                                Import Passwords or Values via an unencrypted CSV file
+                            </div>
+                            <div class="workflowPopupContainer__section__buttons">
+                                <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Passwords'" :width="'8vw'"
+                                    :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
+                                    :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="doImportPasswords" />
+                                <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Values'" :width="'8vw'"
+                                    :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
+                                    :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="doImportValues" />
+                            </div>
+                        </div>
+                        <div class="workflowPopupContainer__section">
+                            <h2 class="workflowPopupContainer__section__header">Export</h2>
+                            <div class="workflowPopupContainer__section__text">
+                                Export unencrypted Passwords or Values into a CSV file
+                            </div>
+                            <div class="workflowPopupContainer__section__buttons">
+                                <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Passwords'" :width="'8vw'"
+                                    :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
+                                    :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="exportPasswords" />
+                                <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Values'" :width="'8vw'"
+                                    :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
+                                    :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="exportValues" />
+                            </div>
+                        </div>
+                        <div class="workflowPopupContainer__section">
+                            <h2 class="workflowPopupContainer__section__header">Export Logs</h2>
+                            <div class="workflowPopupContainer__section__buttons">
+                                <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Export'" :width="'8vw'"
+                                    :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
+                                    :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="doExportLogs" />
+                            </div>
+                        </div>
+                    </VaulticAccordionContent>
+                </VaulticAccordionPanel>
+                <VaulticAccordionPanel :value="'1'">
+                    <VaulticAccordionHeader :title="'Account'" />
+                    <VaulticAccordionContent>
+                        <div class="workflowPopupContainer__section">
+                            <h2 class="workflowPopupContainer__section__header">Update Argon2id Parameters</h2>
+                            <div class="workflowPopupContainer__section__buttons">
+                                <PopupButton :color="primaryColor" :disabled="disableButtons || !isOnline" :text="'Update'" :width="'8vw'"
+                                    :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'" :maxHeight="'45px'"
+                                    :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="updateKSFParams" />
+                            </div>
+                        </div>
+                    </VaulticAccordionContent>
+                </VaulticAccordionPanel>
+            </VaulticAccordion>
+        </ObjectView>
     </div>
 </template>
 <script lang="ts">
@@ -50,6 +70,11 @@ import TableSelector from '../TableSelector.vue';
 import TextAreaInputField from '../InputFields/TextAreaInputField.vue';
 import PopupButton from '../InputFields/PopupButton.vue';
 import ScrollView from "../ObjectViews/ScrollView.vue"
+import ObjectView from '../ObjectViews/ObjectView.vue';
+import VaulticAccordion from '../Accordion/VaulticAccordion.vue';
+import VaulticAccordionPanel from '../Accordion/VaulticAccordionPanel.vue';
+import VaulticAccordionHeader from '../Accordion/VaulticAccordionHeader.vue';
+import VaulticAccordionContent from '../Accordion/VaulticAccordionContent.vue';
 
 import { defaultInputTextColor } from '../../Types/Colors';
 import app from "../../Objects/Stores/AppStore";
@@ -65,6 +90,11 @@ export default defineComponent({
         TextAreaInputField,
         PopupButton,
         ScrollView,
+        ObjectView,
+        VaulticAccordion,
+        VaulticAccordionPanel,
+        VaulticAccordionHeader,
+        VaulticAccordionContent
     },
     setup()
     {
@@ -72,6 +102,7 @@ export default defineComponent({
         const primaryColor: Ref<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
         const disableButtons: Ref<boolean> = ref(app.currentVault.isReadOnly.value);
+        const isOnline: Ref<boolean> = ref(app.isOnline);
 
         const worflowsSelectorItem: ComputedRef<SingleSelectorItemModel> = computed(() =>
         {
@@ -152,17 +183,24 @@ export default defineComponent({
             await exportLogs(primaryColor.value);
         }
 
+        function updateKSFParams()
+        {
+
+        }
+
         return {
             scrollbarColor,
             primaryColor,
             disableButtons,
+            isOnline,
             defaultInputTextColor,
             worflowsSelectorItem,
             doImportPasswords,
             doImportValues,
             exportPasswords,
             exportValues,
-            doExportLogs
+            doExportLogs,
+            updateKSFParams
         }
     }
 })

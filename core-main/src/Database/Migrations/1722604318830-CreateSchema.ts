@@ -90,6 +90,10 @@ export class CreateSchema1722604318830 implements MigrationInterface
                     name: "privateEncryptingKey",
                     type: "text"
                 },
+                {
+                    name: "ksfParams",
+                    type: "text"
+                },
                 ...ledgerProperties
             ]
         }));
