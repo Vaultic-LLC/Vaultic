@@ -180,11 +180,21 @@ export class ArrayPropertyManager extends ObjectPropertyManager<Array<any>>
 
     set(key: any, value: any, obj: Array<any>)
     {
+        if (!key)
+        {
+            obj.push(value);
+        }
+
         obj[key] = value;
     }
 
     delete(key: any, obj: Array<any>)
     {
+        if (!key)
+        {
+            obj.splice(0, 1);
+        }
+
         obj.splice(key, 1);
     }
 }

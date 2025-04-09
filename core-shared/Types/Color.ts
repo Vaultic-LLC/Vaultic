@@ -34,6 +34,26 @@ export interface ColorPalette
 }
 
 export const defaultColorPalettes: Map<string, ColorPalette> = new Map([
+    ["m84ezgwm7", {
+        id: "m84ezgwm7",
+        a: true,
+        i: true,
+        e: false,
+        p: {
+            p: "#f06e32",
+            o: "#ac40de",
+            t: "#c72525",
+        },
+        v: {
+            p: "#d64e70",
+            o: "#d84040",
+            t: "#a712ec",
+        },
+        f: "#d94545",
+        g: "#c74a93",
+        r: "#ef4444",
+        s: "#45d741"
+    }],
     ["m84ezgwm3", {
         id: "m84ezgwm3",
         a: false,
@@ -51,26 +71,6 @@ export const defaultColorPalettes: Map<string, ColorPalette> = new Map([
         },
         f: "#7752FE",
         g: "#19A7CE",
-        r: "#ef4444",
-        s: "#45d741"
-    }],
-    ["m84ezgwm7", {
-        id: "m84ezgwm7",
-        a: true,
-        i: true,
-        e: false,
-        p: {
-            p: "#9A031E",
-            o: "#a712ec",
-            t: "#530101",
-        },
-        v: {
-            p: "#BF3131",
-            o: "#5d0ca6",
-            t: "#a712ec",
-        },
-        f: "#FB8B24",
-        g: "#E36414",
         r: "#ef4444",
         s: "#45d741"
     }],

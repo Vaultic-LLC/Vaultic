@@ -41,6 +41,9 @@
                     <div class="settingsView__inputSection">
                         <TextInputField :color="color" :label="'Passphrase Seperator'" v-model.number="reactiveAppSettings.e"
                             :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'" :minHeight="'35px'" :disabled="readOnly" />
+                        <TextInputField :color="color" :label="'Seconds After Copy to Clear'" v-model.number="reactiveAppSettings.y"
+                            :width="'10vw'" :minWidth="'190px'" :height="'4vh'" :maxWidth="'300px'" :minHeight="'35px'" :disabled="readOnly"
+                            :additionalValidationFunction="enforceSecondsAfterCopy" />
                     </div>
                     <div class="settingsView__inputSection">
                         <CheckboxInputField :color="color" :height="'1.75vh'" :minHeight="'12.5px'" :disabled="readOnly"
@@ -484,6 +487,22 @@ export default defineComponent({
             return [true, ""];        
         }
 
+        function enforceSecondsAfterCopy(input: string): [boolean, string]
+        {
+            const numb: number = Number.parseInt(input);
+            if (!numb)
+            {
+                return [false, "Not a valid number"];
+            }
+
+            if (numb < 0)
+            {
+                return [false, "Value must be greater than 0"];
+            }
+
+            return [true, ""];    
+        }
+
         watch(() => allowSharedVaultsFromOthers.value, (newValue, oldValue) =>
         {
             if (isLoadingSharedData.value)
@@ -606,7 +625,8 @@ export default defineComponent({
             enforceDaysToStoreLoginRecords,
             enforceArgonIterations,
             enforceArgonMemory,
-            enforceArgonParallelism
+            enforceArgonParallelism,
+            enforceSecondsAfterCopy
         };
     },
 })

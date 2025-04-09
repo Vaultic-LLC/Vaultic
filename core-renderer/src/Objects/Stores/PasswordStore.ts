@@ -463,8 +463,8 @@ export class ReactivePasswordStore extends PasswordStore
         this.internalWeakPasswords = computed(() => OH.mapWhere(this.state.p, (_, v) => v.w, (k, _) => k));
         this.internalContainsLoginPasswords = computed(() => OH.mapWhere(this.state.p, (_, v) => v.c, (k, _) => k));
 
-        this.internalCurrentAndSafePasswordsCurrent = computed(() => this.state.c.c.map((k, v) => v));
-        this.internalCurrentAndSafePasswordsSafe = computed(() => this.state.c.s.map((k, v) => v));
+        this.internalCurrentAndSafePasswordsCurrent = computed(() => this.state.c.c);
+        this.internalCurrentAndSafePasswordsSafe = computed(() => this.state.c.s);
 
         this.internalActiveAtRiskPasswordType = ref(AtRiskType.None);
 
