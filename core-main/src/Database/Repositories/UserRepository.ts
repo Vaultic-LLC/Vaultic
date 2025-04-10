@@ -329,9 +329,9 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             environment.cache.setCurrentUser(user);
 
             const backupResponse = await backupData(serializedMasterKey);
-            if (!backupResponse)
+            if (!backupResponse.success)
             {
-                return TypedMethodResponse.backupFail();
+                return backupResponse;
             }
 
             return TypedMethodResponse.success(serializedMasterKey);
@@ -707,24 +707,24 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         return true;
     }
 
-    public async addFromServer(masterKey: string, user: DeepPartial<User>, transaction: Transaction): Promise<boolean>
+    public async addFromServer(masterKey: string, user: DeepPartial<User>, transaction: Transaction): Promise<TypedMethodResponse<any>>
     {
         if (!User.isValid(user))
         {
-            return false;
+            return TypedMethodResponse.fail(undefined, undefined, "Invalid User");
         }
 
         user.lastUsed = false;
         if (!await this.setMasterKey(masterKey, user, true))
         {
-            return false;
+            return TypedMethodResponse.fail(undefined, undefined, "Unable to set master key");
         }
 
         transaction.insertExistingEntity(user, () => this);
         transaction.insertExistingEntity(user.appStoreState!, () => environment.repositories.appStoreStates);
         transaction.insertExistingEntity(user.userPreferencesStoreState!, () => environment.repositories.userPreferencesStoreStates);
 
-        return true;
+        return TypedMethodResponse.success();
     }
 
     public async updateFromServer(

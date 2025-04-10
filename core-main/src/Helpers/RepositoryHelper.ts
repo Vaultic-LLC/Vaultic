@@ -110,26 +110,26 @@ export async function getCurrentUserDataIdentifiersAndKeys(masterKey: string, us
     return { identifiers: userData, keys: userVaults[1] };
 }
 
-export async function backupData(masterKey: string, dataToBackup?: UserDataPayload, reloadingAllData?: boolean)
+export async function backupData(masterKey: string, dataToBackup?: UserDataPayload, reloadingAllData?: boolean): Promise<TypedMethodResponse<any>>
 {
     const postData: { userDataPayload: UserDataPayload } = { userDataPayload: (dataToBackup ?? {}) };
     const userToBackup = await environment.repositories.users.getEntityThatNeedsToBeBackedUp(masterKey);
 
     if (!userToBackup.success)
     {
-        return false;
+        return userToBackup;
     }
 
     const userVaultsToBackup = await environment.repositories.userVaults.getEntitiesThatNeedToBeBackedUp(masterKey);
     if (!userVaultsToBackup.success)
     {
-        return false;
+        return userVaultsToBackup;
     }
 
     const vaultsToBackup = await environment.repositories.vaults.getEntitiesThatNeedToBeBackedUp(masterKey);
     if (!vaultsToBackup.success)
     {
-        return false;
+        return vaultsToBackup;
     }
 
     if (userToBackup.value)
@@ -172,11 +172,11 @@ export async function backupData(masterKey: string, dataToBackup?: UserDataPaylo
 
         if (!await transaction.commit())
         {
-            return false;
+            return TypedMethodResponse.fail(undefined, undefined, "Failed to commit post backup transaction");
         }
     }
 
-    return true;
+    return TypedMethodResponse.success();
 }
 
 export async function safeBackupData(masterKey: string): Promise<TypedMethodResponse<boolean | undefined>>
@@ -185,10 +185,10 @@ export async function safeBackupData(masterKey: string): Promise<TypedMethodResp
 
     async function internalDoBackupData(this: any): Promise<TypedMethodResponse<boolean>>
     {
-        const success = await backupData(masterKey);
-        if (!success)
+        const backupResponse = await backupData(masterKey);
+        if (!backupResponse.success)
         {
-            return TypedMethodResponse.fail();
+            return backupResponse;
         }
 
         return TypedMethodResponse.success(true);
@@ -208,7 +208,7 @@ export async function checkMergeMissingData(
     serverUserDataPayload: UserDataPayload,
     transaction?: Transaction,
     backingUpData?: UserDataPayload,
-    reloadingAllData?: boolean): Promise<boolean>
+    reloadingAllData?: boolean): Promise<TypedMethodResponse<any>>
 {
     transaction = transaction ?? new Transaction();
 
@@ -234,12 +234,13 @@ export async function checkMergeMissingData(
             // The user was never successfully created
             if (!User.isValid(serverUserDataPayload.user))
             {
-                return (await environment.repositories.users.createUser(masterKey, email, serverUserDataPayload.user.firstName!, serverUserDataPayload.user.lastName!, transaction)).success;
+                return (await environment.repositories.users.createUser(masterKey, email, serverUserDataPayload.user.firstName!, serverUserDataPayload.user.lastName!, transaction));
             }
 
-            if (!(await environment.repositories.users.addFromServer(masterKey, serverUserDataPayload.user, transaction)))
+            const addResult = await environment.repositories.users.addFromServer(masterKey, serverUserDataPayload.user, transaction);
+            if (!addResult.success)
             {
-                return false;
+                return addResult;
             }
         }
         else
@@ -631,7 +632,7 @@ export async function checkMergeMissingData(
     environment.repositories.changeTrackings.clearChangeTrackings(transaction);
     if (!(await transaction.commit()))
     {
-        return false;
+        return TypedMethodResponse.fail(undefined, undefined, "Failed to commit Merge Data Transaction");
     }
 
     if (needsToRePushData)
@@ -639,7 +640,7 @@ export async function checkMergeMissingData(
         return await backupData(masterKey, dataToBackup, reloadingAllData);
     }
 
-    return true;
+    return TypedMethodResponse.success();
 }
 
 export async function handleUserLogOut()

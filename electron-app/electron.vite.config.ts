@@ -1,6 +1,21 @@
 import { resolve } from 'path'
 import { defineConfig, externalizeDepsPlugin, bytecodePlugin } from 'electron-vite'
 import vue from '@vitejs/plugin-vue'
+import babel from 'vite-plugin-babel';
+
+const babelConfig =
+{
+	babelConfig:
+	{
+		babelrc: false,
+		configFile: false,
+		plugins: [
+			'@babel/plugin-transform-classes',
+			"@babel/plugin-proposal-class-properties",
+			'@babel/plugin-transform-object-rest-spread'
+		]
+	}
+};
 
 export default defineConfig({
 	main: {

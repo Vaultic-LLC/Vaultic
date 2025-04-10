@@ -197,9 +197,9 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             }
 
             const backupResponse = await backupData(masterKey, environment.cache.currentUser);
-            if (!backupResponse)
+            if (!backupResponse.success)
             {
-                return TypedMethodResponse.backupFail();
+                return backupResponse;
             }
 
             if (parsedUpdatedVaultData.setAsActive)
@@ -903,12 +903,12 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                     masterKeyVaulticKey = JSON.stringify(vaulticKey);
                 }
 
-                const success = await checkMergeMissingData(masterKeyVaulticKey, email, currentSignatures.keys, currentSignatures.identifiers, decryptedResponse.value.userDataPayload,
+                const mergeDataResponse = await checkMergeMissingData(masterKeyVaulticKey, email, currentSignatures.keys, currentSignatures.identifiers, decryptedResponse.value.userDataPayload,
                     undefined, undefined, reloadAllData);
 
-                if (!success)
+                if (!mergeDataResponse.success)
                 {
-                    return TypedMethodResponse.fail();
+                    return mergeDataResponse;
                 }
 
                 if (!environment.cache.currentUser)
