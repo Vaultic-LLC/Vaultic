@@ -20,7 +20,7 @@ export class CoreHashUtility implements ClientHashUtility
         }
         catch (e: any)
         {
-            await environment.repositories.logs.log(undefined, e.toString());
+            await environment.repositories.logs.log(undefined, e.toString(), "Hash");
         }
 
         return TypedMethodResponse.fail();

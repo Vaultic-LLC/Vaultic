@@ -57,11 +57,11 @@ export function createVaultController(axiosHelper: AxiosHelper)
         });
     }
 
-    function getMembers(userOrganizationID: number, userVaultID: number): Promise<GetVaultMembersResponse>
+    function getMembers(userOrganizationID: number, vaultID: number): Promise<GetVaultMembersResponse>
     {
         return axiosHelper.api.post('Vault/GetMembers', {
             UserOrganizationID: userOrganizationID,
-            UserVaultID: userVaultID
+            VaultID: vaultID
         });
     }
 

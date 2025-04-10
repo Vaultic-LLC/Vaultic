@@ -204,7 +204,7 @@ export default defineComponent({
             if (app.isOnline)
             {
                 const response = await api.server.vault.getMembers(
-                    vaultState.value.userOrganizationID, vaultState.value.userVaultID);
+                    vaultState.value.userOrganizationID, vaultState.value.vaultID);
     
                 if (response.Success)
                 {

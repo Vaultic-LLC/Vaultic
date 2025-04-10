@@ -39,7 +39,7 @@ export default function setupIPC()
 	ipcMain.handle('userController:getMFAKey', (e) => validateSender(e, () => vaulticServer.user.getMFAKey()));
 	ipcMain.handle('userController:getUserInfo', (e) => validateSender(e, () => vaulticServer.user.getUserInfo()));
 
-	ipcMain.handle('vaultController:getMembers', (e, userOrganizationID: number, userVaultID: number) => validateSender(e, () => vaulticServer.vault.getMembers(userOrganizationID, userVaultID)));
+	ipcMain.handle('vaultController:getMembers', (e, userOrganizationID: number, vaultID: number) => validateSender(e, () => vaulticServer.vault.getMembers(userOrganizationID, vaultID)));
 	ipcMain.handle('vaultController:getVaultDataBreaches', (e, getVaultDataBreachesData: string) => validateSender(e, () => vaulticServer.vault.getVaultDataBreaches(getVaultDataBreachesData)));
 	ipcMain.handle('vaultController:checkPasswordsForBreach', (e, checkPasswordForBreachData: string) => validateSender(e, () => vaulticServer.vault.checkPasswordsForBreach(checkPasswordForBreachData)));
 	ipcMain.handle('vaultController:dismissVaultDataBreach', (e, userOrganizaitonID: number, vaultID: number, vaultDataBreachID: number) => validateSender(e, () => vaulticServer.vault.dismissVaultDataBreach(userOrganizaitonID, vaultID, vaultDataBreachID)));

@@ -110,7 +110,6 @@ export async function getCurrentUserDataIdentifiersAndKeys(masterKey: string, us
     return { identifiers: userData, keys: userVaults[1] };
 }
 
-// Only call within a method wrapped in safetifyMethod
 export async function backupData(masterKey: string, dataToBackup?: UserDataPayload, reloadingAllData?: boolean)
 {
     const postData: { userDataPayload: UserDataPayload } = { userDataPayload: (dataToBackup ?? {}) };
@@ -170,9 +169,6 @@ export async function backupData(masterKey: string, dataToBackup?: UserDataPaylo
         {
             await environment.repositories.vaults.postBackupEntitiesUpdates(masterKey, vaultsToBackup.value.vaults, transaction);
         }
-
-        // all data succesfully backed up, no need for change trackings anymore
-        environment.repositories.changeTrackings.clearChangeTrackings(transaction);
 
         if (!await transaction.commit())
         {

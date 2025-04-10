@@ -757,7 +757,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
                         return;
                     }
 
-                    await api.server.app.log(error.message, error.stack ?? "ErrorHandler");
+                    await api.server.app.log(error.message, error.stack += "\nRunAsAsyncProcess");
                 }
                 catch { }
             }

@@ -27,6 +27,8 @@ class LogRepository
         log.message = message ?? "";
         log.callStack = Error().stack + '\n' + callStack;
 
+        console.log(`Logging: ${JSON.stringify(log)}`);
+
         try 
         {
             await this.repository.insert(log);
