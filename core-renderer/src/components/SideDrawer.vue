@@ -170,10 +170,12 @@ export default defineComponent({
             app.popups.showRequestAuthentication(primaryColor.value, onKeySuccess, () => { }, true);
             async function onKeySuccess(key: string)
             {
+                app.popups.showLoadingIndicator(primaryColor.value);
                 if (!(await app.runAsAsyncProcess(() => app.updateArchiveStatus(key, data['userVaultID'], false))))
                 {
                     app.popups.showToast('Failed to unarchive vault', false);
                 }
+                app.popups.hideLoadingIndicator();
             }
         }
 
@@ -206,6 +208,7 @@ export default defineComponent({
                     app.popups.showRequestAuthentication(primaryColor.value, onKeySuccess, () => { }, true);
                     async function onKeySuccess(key: string)
                     {
+                        app.popups.showLoadingIndicator(primaryColor.value);
                         if (archive)
                         {
                             if (!(await app.runAsAsyncProcess(() => app.updateArchiveStatus(key, data['userVaultID'], true))))
@@ -220,6 +223,8 @@ export default defineComponent({
                                 app.popups.showToast('Failed to delete vault', false);
                             }
                         }
+
+                        app.popups.hideLoadingIndicator();
                     }
                 },
                 reject: () => { }
@@ -250,7 +255,7 @@ export default defineComponent({
             const addedVault = newValue.filter(v => !oldValue.find(o => o.userVaultID == v.userVaultID));
             const removedVault = oldValue.filter(o => !newValue.find(v => v.userVaultID == o.userVaultID));
 
-            addedVault.forEach(v => 
+            addedVault.forEach(v =>
             {
                 const selected = v.userVaultID == app.currentVault.userVaultID;
                 manager.addLeaf(parentNodeId, v.name, selected,
@@ -262,7 +267,7 @@ export default defineComponent({
                 }
             });
 
-            removedVault.forEach(v => 
+            removedVault.forEach(v =>
             {
                 const node = manager.findNode((n) => n.data["userVaultID"] == v.userVaultID);
                 if (node)
@@ -274,26 +279,28 @@ export default defineComponent({
             allNodes.value = manager.buildList();
         }
 
-        function addRemoveArchiveButton(newValue: DisplayVault[], oldValue: DisplayVault[])
+        function addRemoveArchiveButtonFromExistingNodes(newValue: DisplayVault[], oldValue: DisplayVault[])
         {
             if (!app.isOnline)
             {
                 return;
             }
 
+            const allUserVaults = app.privateVaults.value.length + app.sharedWithOthersVaults.value.length;
+
             // Add Archive button as we now have 2 vaults
-            if (oldValue.length == 1)
+            if (oldValue.length == 1 && allUserVaults > 1)
             {
                 manager.updateNode(
-                    (node) => node.data["userVaultID"] == oldValue[0].userVaultID,
+                    (node) => node.data["userVaultID"] == oldValue[0].userVaultID && node.buttons.length == 1,
                     (node) => node.buttons.push(treeNodeArchiveButton));
             }
 
             // Remove Archive button since we only have 1 vault
-            if (newValue.length == 1)
+            if (newValue.length == 1 && allUserVaults == 1)
             {
                 manager.updateNode(
-                    (node) => node.data["userVaultID"] == newValue[0].userVaultID,
+                    (node) => node.data["userVaultID"] == newValue[0].userVaultID && node.buttons.length > 1,
                     (node) => node.buttons.splice(1, 1));
             }
         }
@@ -319,7 +326,7 @@ export default defineComponent({
 
         watch(() => app.privateVaults.value, (newValue, oldValue) => 
         {
-            addRemoveArchiveButton(newValue, oldValue);
+            addRemoveArchiveButtonFromExistingNodes(newValue, oldValue);
 
             const buttons: TreeNodeButton[] = [];
             if (app.isOnline)
@@ -336,7 +343,7 @@ export default defineComponent({
 
         watch(() => app.sharedWithOthersVaults.value, (newValue, oldValue) => 
         {
-            addRemoveArchiveButton(newValue, oldValue);
+            addRemoveArchiveButtonFromExistingNodes(newValue, oldValue);
 
             const buttons: TreeNodeButton[] = [];
             if (app.isOnline)

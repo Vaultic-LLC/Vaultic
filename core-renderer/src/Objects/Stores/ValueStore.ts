@@ -292,8 +292,8 @@ export class ReactiveValueStore extends ValueStore
 
         this.internalActiveAtRiskValueType = ref(AtRiskType.None);
 
-        this.internalCurrentAndSafeValuesCurrent = computed(() => this.state.c.c.map((k, v) => v));
-        this.internalCurrentAndSaveValuesSafe = computed(() => this.state.c.s.map((k, v) => v));
+        this.internalCurrentAndSafeValuesCurrent = computed(() => this.state.c.c);
+        this.internalCurrentAndSaveValuesSafe = computed(() => this.state.c.s);
     }
 
     protected preAssignState(state: ValueStoreState): void 

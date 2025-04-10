@@ -236,7 +236,8 @@ export default defineComponent({
     font-size: var(--input-label-active-font-size) !important;
 }
 
-:deep(.p-floatlabel:has(input:focus) .objectMultiSelectContainer__label) {
+:deep(.p-floatlabel:has(input:focus) .objectMultiSelectContainer__label),
+:deep(.p-floatlabel:has(.p-inputwrapper-focus) label.objectMultiSelectContainer__label) {
     color: v-bind(color) !important;
 }
 

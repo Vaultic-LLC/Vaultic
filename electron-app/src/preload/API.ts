@@ -51,7 +51,7 @@ const userController: ClientUserController =
 
 const vaultController: ClientVaultController =
 {
-	getMembers: (userOrganizationID: number, userVaultID: number) => ipcRenderer.invoke('vaultController:getMembers', userOrganizationID, userVaultID),
+	getMembers: (userOrganizationID: number, vaultID: number) => ipcRenderer.invoke('vaultController:getMembers', userOrganizationID, vaultID),
 	getVaultDataBreaches: (getVaultDataBreachesData: string) => ipcRenderer.invoke('vaultController:getVaultDataBreaches', getVaultDataBreachesData),
 	checkPasswordsForBreach: (checkPasswordForBreachData: string) => ipcRenderer.invoke('vaultController:checkPasswordsForBreach', checkPasswordForBreachData),
 	dismissVaultDataBreach: (userOrganizaitonID: number, vaultID: number, vaultDataBreachID: number) => ipcRenderer.invoke('vaultController:dismissVaultDataBreach', userOrganizaitonID, vaultID, vaultDataBreachID),

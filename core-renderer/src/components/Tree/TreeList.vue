@@ -174,15 +174,25 @@ export default defineComponent({
 
         watch(() => treeNodes.value, (newNodes, oldNodes) => 
         {
+            const selectableTreeNodes = treeNodes.value.filter(n => !n.isParent && n.selected);
+
             // Adding a new leaf, deselect the current one
-            if (newNodes.length > oldNodes.length && selectedLeafNode.value)
+            if (newNodes.length > oldNodes.length && selectedLeafNode.value && selectableTreeNodes.length > 1)
             {
                 selectedLeafNode.value.selected = false;
             }
 
             currentTreeNodes.value = treeNodes.value;
             models.value = buildTreeNodeModels(currentTreeNodes.value);
-            selectedLeafNode.value = treeNodes.value.filter(n => !n.isParent && n.selected)?.[0]
+
+            if (selectedLeafNode.value && selectableTreeNodes.length > 1)
+            {
+                selectedLeafNode.value = selectableTreeNodes.filter(n => n.id != selectedLeafNode.value!.id)[0];
+            }
+            else
+            {
+                selectedLeafNode.value = treeNodes.value.filter(n => !n.isParent && n.selected)?.[0];
+            }
         });
 
         watch(() => searchText.value.value, (newValue) => 

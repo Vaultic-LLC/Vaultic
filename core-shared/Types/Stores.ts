@@ -329,7 +329,8 @@ export function defaultAppStoreState()
             m: true,
             e: '-',
             t: true,
-            q: false
+            q: false,
+            y: 15
         }
     };
 }
@@ -338,7 +339,7 @@ export function defaultUserPreferencesStoreState()
 {
     return {
         version: 0,
-        c: { p: defaultColorPalettes.get('m84ezgwm3')! },
+        c: { p: defaultColorPalettes.get('m84ezgwm7')! },
         t: {},
         o: {},
         a: {}

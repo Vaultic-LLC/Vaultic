@@ -122,7 +122,7 @@ export class CoreCryptUtility implements ClientCryptUtility
         }
         catch (e: any)
         {
-            await environment.repositories.logs.log(undefined, e.toString());
+            await environment.repositories.logs.log(undefined, e.toString(), "Symmetric Encrypt");
         }
 
         return TypedMethodResponse.fail();
@@ -147,7 +147,7 @@ export class CoreCryptUtility implements ClientCryptUtility
         }
         catch (e: any)
         {
-            await environment.repositories.logs.log(undefined, e.toString());
+            await environment.repositories.logs.log(undefined, e.toString(), "Symmetric Decrypt");
         }
 
         // Failed to decrypt. Most of the time this should never happen unless the cipher was tampered with.

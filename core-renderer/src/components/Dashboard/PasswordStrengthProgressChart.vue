@@ -352,8 +352,7 @@ export default defineComponent({
                 // no need to send the request since we don't have enough data anyways
                 if (app.currentVault.passwordStore.currentAndSafePasswordsCurrent.length < 2)
                 {
-                    // make sure there isn't any old data in the way of the message
-                    chartOneArray.value = [];
+                    setNotEnoughDataMessage();
                     updateData();
 
                     return;
@@ -373,8 +372,7 @@ export default defineComponent({
                 // no need to send the request since we don't have enough data anyways
                 if (app.currentVault.valueStore.currentAndSafeValuesCurrent.length < 2)
                 {
-                    // make sure there isn't any old data in the way of the message
-                    chartOneArray.value = [];
+                    setNotEnoughDataMessage();
                     updateData();
 
                     return;
@@ -443,10 +441,31 @@ export default defineComponent({
                 return;
             }
 
+            const newColor = app.activePasswordValuesTable == DataType.Passwords ? app.userPreferences.currentColorPalette.p.p :
+                app.userPreferences.currentColorPalette.v.p;
+
+            showStatusMessage.value = false;
+
             lableArray.value = chartData.Y;
             chartOneArray.value = chartData.DataX;
             target.value = chartData.TargetX;
-            max.value = chartData.Max; 
+            max.value = chartData.Max;
+
+            setTimeout(() =>
+            {
+                setChartColorsAndUpdate(newColor, newColor, newColor);
+                color.value = newColor;
+
+                updateData();
+            }, 1);        
+        }
+
+        function setNotEnoughDataMessage()
+        {
+            // make sure there isn't any old data in the way of the message
+            chartOneArray.value = [];
+            showStatusMessage.value = true;
+            statusMessage.value = `Not enough data. Add at least 2 ${app.activePasswordValuesTable == DataType.Passwords ? "Passwords" : "Values"} to get started.`; 
         }
 
         watch(() => app.activePasswordValuesTable, () =>
@@ -498,8 +517,7 @@ export default defineComponent({
         {
             if (newValue <= 1)
             {
-                showStatusMessage.value = true;
-                statusMessage.value = `Not enough data. Add at least 2 ${app.activePasswordValuesTable == DataType.Passwords ? "Passwords" : "Values"} to get started.`;
+                setNotEnoughDataMessage();
             }
         });
 
@@ -546,6 +564,7 @@ export default defineComponent({
             statusMessage,
             refreshKey,
             loading,
+            failedToLoad,
             updateData,
             reset
         }

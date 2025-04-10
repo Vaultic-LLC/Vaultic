@@ -56,7 +56,7 @@ window.addEventListener('error', (e: ErrorEvent) =>
 				return;
 			}
 
-			window.api.server.app.log(error.message, error.stack ?? "ErrorHandler");
+			window.api.server.app.log(error.message, error.stack + "\nErrorHandler");
 		}
 		catch { }
 	}
@@ -77,7 +77,7 @@ window.addEventListener('unhandledrejection', (e) =>
 				return;
 			}
 
-			window.api.server.app.log(error.message, error.stack ?? "UnhandlerRejectionHandler");
+			window.api.server.app.log(error.message, error.stack + "\nUnhandlerRejectionHandler");
 		}
 		catch { }
 	}

@@ -37,7 +37,7 @@ export interface ClientUserController
 
 export interface ClientVaultController 
 {
-    getMembers: (userOrganizationID: number, userVaultID: number) => Promise<GetVaultMembersResponse>;
+    getMembers: (userOrganizationID: number, vaultID: number) => Promise<GetVaultMembersResponse>;
     getVaultDataBreaches: (getVaultDataBreachData: string) => Promise<GetVaultDataBreachesResponse>;
     checkPasswordsForBreach: (checkPasswordForBreachData: string) => Promise<GetVaultDataBreachesResponse>;
     dismissVaultDataBreach: (userOrganizaitonID: number, vaultID: number, vaultDataBreachID: number) => Promise<BaseResponse>;

@@ -127,9 +127,11 @@ async function logUserIn(masterKey: string, email: string,
         const { finishLoginRequest, sessionKey, exportKey } = loginResult;
 
         let masterKeyVaulticKey: string | undefined;
+        let currentUser: User | undefined;
+
         if (!firstLogin && !reloadAllData)
         {
-            const currentUser = await environment.repositories.users.findByEmail(masterKey, email, false);
+            currentUser = await environment.repositories.users.findByEmail(masterKey, email, false);
             if (currentUser)
             {
                 const vaulticKey: VaulticKey =
@@ -147,7 +149,7 @@ async function logUserIn(masterKey: string, email: string,
         {
             await environment.cache.setSessionInfo(sessionKey, exportKey, finishResponse.Session?.Hash!);
 
-            if (!firstLogin && !reloadAllData)
+            if (!firstLogin && !reloadAllData && currentUser)
             {
                 await environment.repositories.users.setCurrentUser(masterKeyVaulticKey, email);
             }

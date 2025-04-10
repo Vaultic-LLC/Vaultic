@@ -51,6 +51,8 @@ export interface AppSettings
     e: string;
     /** Require master key to view or update sensitive information */
     q: boolean;
+    /** Seconds after copy to clear clipboard */
+    y: number;
 }
 
 export interface IAppStoreState extends StoreState
@@ -684,7 +686,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
         }
 
         const response = await api.server.user.getUserInfo();
-        if (!response.success)
+        if (!response.Success)
         {
             return false;
         }
@@ -714,7 +716,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
                     document.body.removeChild(tempElement)
                 }
                 catch { }
-            }, 15000);
+            }, (app.state.s.y * 1000));
         }
         catch { }
     }
@@ -755,7 +757,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
                         return;
                     }
 
-                    await api.server.app.log(error.message, error.stack ?? "ErrorHandler");
+                    await api.server.app.log(error.message, error.stack += "\nRunAsAsyncProcess");
                 }
                 catch { }
             }

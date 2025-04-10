@@ -148,7 +148,11 @@ export interface DisplayVault
 
 export function getVaultType(vault: DisplayVault)
 {
-    if (vault.shared)
+    if (vault.isArchived)
+    {
+        return VaultType.Archived;
+    }
+    else if (vault.shared)
     {
         if (vault.isOwner)
         {
@@ -156,10 +160,6 @@ export function getVaultType(vault: DisplayVault)
         }
 
         return VaultType.SharedWithUser;
-    }
-    else if (vault.isArchived)
-    {
-        return VaultType.Archived;
     }
 
     return VaultType.Private;
