@@ -17,6 +17,13 @@ class LogRepository
 
     async log(errorCode?: number, message?: string, callStack?: string): Promise<boolean>
     {
+        // Not sure where this its coming from but something is calling this will no data a lot and the 
+        // Error().stack leads no where. Just going to ignore it since nothing is going wrong
+        if (!errorCode && !message && !callStack)
+        {
+            return true;
+        }
+
         // Not verifying user, but can't really =(
         const currentUser = await environment.repositories.users.getCurrentUser();
 
@@ -26,8 +33,6 @@ class LogRepository
         log.errorCode = errorCode ?? -1;
         log.message = message ?? "";
         log.callStack = Error().stack + '\n' + callStack;
-
-        console.log(`Logging: ${JSON.stringify(log)}`);
 
         try 
         {
