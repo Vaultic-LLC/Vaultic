@@ -112,13 +112,16 @@ export default function setupIPC()
 	ipcMain.handle('cache:clearMasterKey', (e) => validateSender(e, () => environment.cache.clearMasterKey()));
 }
 
-function validateSender(event: Electron.IpcMainInvokeEvent, onSuccess: () => any): any
+async function validateSender(event: Electron.IpcMainInvokeEvent, onSuccess: () => any): Promise<any>
 {
+	const host = (new URL(event.senderFrame.url)).host;
+	await environment.repositories.logs.log(undefined, `Host: ${host}`);
+	return onSuccess();
 	// only allow requests from ourselves
-	if ((new URL(event.senderFrame.url)).host === 'localhost:33633')
-	{
-		return onSuccess();
-	}
+	// if ((new URL(event.senderFrame.url)).host === 'localhost:33633')
+	// {
+	// 	return onSuccess();
+	// }
 
-	return undefined;
+	// return undefined;
 }

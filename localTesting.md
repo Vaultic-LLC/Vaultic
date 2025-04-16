@@ -7,7 +7,9 @@
 ### Setup
 1) Run the `startLocalDatabase.bat` file located in the root of the VaulticServer repo
 2) Open up 2 instances of the VaulticServer repo Visual Studio and run the API and STS projects, each in their own Visual Studio instance
-3) Open up the Vaultic Client App in Visual Studio Code and navigate to the `electron-app-test` project
+3) Open up the Vaultic Client App in Visual Studio Code
+4) Change "main" in electron-app/package.json to `"./out/main/index.js"`
+5) navigate to the `electron-app-test` project
 4) Run `npm run test`
 
 ### Unit Tests
@@ -24,3 +26,6 @@ Server Credentials:
 - Name: VaulticTest
 - Host name / address: host.docker.internal
 - Password: root
+
+### Packaging
+1) Change "main" in electron-app/package.json to `./dist`

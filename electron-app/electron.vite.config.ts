@@ -10,8 +10,8 @@ const babelConfig =
 		babelrc: false,
 		configFile: false,
 		plugins: [
+			'@babel/plugin-transform-class-properties',
 			'@babel/plugin-transform-classes',
-			"@babel/plugin-proposal-class-properties",
 			'@babel/plugin-transform-object-rest-spread'
 		]
 	}
@@ -19,22 +19,14 @@ const babelConfig =
 
 export default defineConfig({
 	main: {
-		plugins: [externalizeDepsPlugin(), bytecodePlugin()],
+		plugins: [babel(babelConfig), externalizeDepsPlugin()],
 		server: {
 			port: 33633,
 			strictPort: true
 		}
 	},
 	preload: {
-		plugins: [externalizeDepsPlugin(), bytecodePlugin(
-			{
-				protectedStrings:
-					[
-						'12fasjkdF2owsnFvkwnvwe23dFSDfio2',	// API Encryption Key
-						'ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321',
-						'a;lfasl;fjklavnaklsfhsadkfhsaklfsaflasdknvasdklfwefhw;IFKSNVKLASDJNVH234]21O51[2[2112[24215'
-					]
-			})],
+		plugins: [babel(babelConfig), externalizeDepsPlugin()],
 		server: {
 			port: 33633,
 			strictPort: true
@@ -47,6 +39,7 @@ export default defineConfig({
 			}
 		},
 		plugins: [
+			babel(babelConfig),
 			vue({
 				template: {
 					compilerOptions: {
