@@ -75,7 +75,7 @@ else
 		mainWindow.on('ready-to-show', () =>
 		{
 			mainWindow.maximize();
-			mainWindow.show()
+			mainWindow.show();
 		});
 
 		mainWindow.webContents.setWindowOpenHandler((details) =>

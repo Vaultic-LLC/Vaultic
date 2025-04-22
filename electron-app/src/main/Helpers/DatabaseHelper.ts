@@ -17,14 +17,26 @@ import { FilterStoreState } from "../Core/Database/Entities/States/FilterStoreSt
 import { GroupStoreState } from "../Core/Database/Entities/States/GroupStoreState";
 import { Log } from "../Core/Database/Entities/Log";
 import { ChangeTracking } from "../Core/Database/Entities/ChangeTracking";
+import { app } from "electron";
 
 let database: Database;
 
-function getDirectory(isTest: boolean)
-{
-	let directory = electronAPI.process.env.APPDATA || (electronAPI.process.platform == 'darwin' ? electronAPI.process.env.HOME + '/Library/Preferences' : electronAPI.process.env.HOME + "/.local/share");
-	directory += isTest ? "\\Vaultic\\VTest" : "\\Vaultic\\VCustom";
-
+export function getDirectory(isTest: boolean)
+{	
+	let directory: string = "";
+	switch (electronAPI.process.platform)
+	{
+		case "win32":
+			directory = (electronAPI.process.env.APPDATA! + (isTest ? "\\Vaultic\\VTest" : "\\Vaultic\\VCustom"))
+			break;
+		case "darwin":
+			directory = (app.getPath("userData") + (isTest ? "/VTest" : "/VCustom"));
+			break;
+		case "linux":
+			directory = electronAPI.process.env.HOME + "/.local/share" + isTest ? "/Vaultic/VTest" : "/Vaultic/VCustom";
+			break;
+	}
+	
 	return directory;
 }
 
@@ -36,8 +48,24 @@ function checkMakeDirectory(directory: string): void
 		{
 			fs.mkdirSync(directory);
 		}
-		catch { }
+		catch (e) { console.log(e) }
 	}
+}
+
+function databaseFilePath()
+{
+	switch (electronAPI.process.platform)
+	{
+		case "win32":
+			return "\\vaultic.db";
+			break;
+		case "darwin":
+		case "linux":
+			return "/vaultic.db";
+			break;
+	}
+
+	return "";
 }
 
 export function createDataSource(isTest: boolean)
@@ -45,7 +73,7 @@ export function createDataSource(isTest: boolean)
 	const directory = getDirectory(isTest);
 	checkMakeDirectory(directory);
 
-	const databaseDirectory = directory + "\\vaultic.db";
+	let databaseDirectory = directory + databaseFilePath();
 
 	// create the database if it doesn't already exist
 	if (isTest)
@@ -85,7 +113,7 @@ export function deleteDatabase(isTest: boolean)
 	database?.close();
 	return new Promise<boolean>((resolve) =>
 	{
-		fs.unlink(getDirectory(isTest) + "\\vaultic.db", (err) =>
+		fs.unlink(getDirectory(isTest) + databaseFilePath(), (err) =>
 		{
 			resolve(!err);
 		});
