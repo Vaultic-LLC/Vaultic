@@ -28,4 +28,4 @@ Server Credentials:
 - Password: root
 
 ### Packaging
-1) Change "main" in electron-app/package.json to `./dist`
+1) Change "main" in electron-app/package.json to `./dist/main/index.js`

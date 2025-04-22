@@ -329,24 +329,24 @@ export default defineComponent({
             if (addedIndex >= 0)
             {
                 addedSecurityQuestions.splice(addedIndex, 1);
-
-                // Don't want to count this as a delete since it was never offically added
-                return;
             }
-
-            const dirtyQuestionIndex = dirtySecurityQuestionQuestions.findIndex(q => q.id == securityQuestion.id);
-            if (dirtyQuestionIndex >= 0)
+            // Don't want to count this as a delete since it was never offically added
+            else
             {
-                dirtySecurityQuestionQuestions.splice(dirtyQuestionIndex, 1);
+                const dirtyQuestionIndex = dirtySecurityQuestionQuestions.findIndex(q => q.id == securityQuestion.id);
+                if (dirtyQuestionIndex >= 0)
+                {
+                    dirtySecurityQuestionQuestions.splice(dirtyQuestionIndex, 1);
+                }
+    
+                const dirtyAnswerIndex = dirtySecurityQuestionAnswers.findIndex(q => q.id == securityQuestion.id);
+                if (dirtyAnswerIndex >= 0)
+                {
+                    dirtySecurityQuestionAnswers.splice(dirtyAnswerIndex, 1);
+                }
+    
+                removedSecurityQuestions.push(securityQuestion.id);
             }
-
-            const dirtyAnswerIndex = dirtySecurityQuestionAnswers.findIndex(q => q.id == securityQuestion.id);
-            if (dirtyAnswerIndex >= 0)
-            {
-                dirtySecurityQuestionAnswers.splice(dirtyAnswerIndex, 1);
-            }
-
-            removedSecurityQuestions.push(securityQuestion.id);
 
             securityQuestions.remove(securityQuestion.id);
             setTimeout(() => tableRef.value?.calcScrollbarColor(), 1);

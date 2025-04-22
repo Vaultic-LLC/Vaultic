@@ -163,7 +163,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 return TypedMethodResponse.fail(errorCodes.NO_USER);
             }
 
-            const parsedUpdatedVaultData: UpdateVaultData = JSON.parse(updateVaultData);
+            const parsedUpdatedVaultData: UpdateVaultData = JSON.vaulticParse(updateVaultData);
 
             const vaultData = await this.createNewVault(masterKey, parsedUpdatedVaultData.name, parsedUpdatedVaultData.shared, environment.cache.currentUser,
                 parsedUpdatedVaultData.addedOrganizations, parsedUpdatedVaultData.addedMembers);
@@ -254,7 +254,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 return TypedMethodResponse.failWithValue(false);
             }
 
-            const parsedUpdateVaultData: UpdateVaultData = JSON.parse(updateVaultData);
+            const parsedUpdateVaultData: UpdateVaultData = JSON.vaulticParse(updateVaultData);
             const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(masterKey, [parsedUpdateVaultData.userVaultID]);
 
             if (userVaults[0].length != 1)

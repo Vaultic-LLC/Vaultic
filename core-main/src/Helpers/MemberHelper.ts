@@ -2,24 +2,30 @@ import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { environment } from "../Environment";
 import vaulticServer from "../Server/VaulticServer";
 import { AddedOrgInfo, AddedVaultInfo, AddedVaultMembersInfo, ModifiedOrgMember, OrgAndUserKeys, UserIDAndKey } from "@vaultic/shared/Types/ClientServerTypes";
-import { PublicKeyType } from "@vaultic/shared/Types/Keys";
+import { PublicKeys, PublicKeyType } from "@vaultic/shared/Types/Keys";
 import vaultHelper from "./VaultHelper";
 
 export async function vaultAddedOrgsToAddedOrgInfo(senderUserID: number, vaultKey: string, addedOrgs:
     Organization[]): Promise<AddedOrgInfo>
 {
     const users: Set<number> = new Set();
-    addedOrgs.forEach(o => 
+    addedOrgs.forEach(o =>
     {
         o.membersByUserID.forEach((v, k, map) => users.add(k));
     });
 
     const allMembers = Array.from(users);
 
-    const getPublicKeyResponse = await vaulticServer.user.getPublicKeys(PublicKeyType.Encrypting, allMembers);
-    if (!getPublicKeyResponse.Success)
+    let usersAndPublicKeys: { [key: number]: PublicKeys } = {};
+    if (allMembers.length > 0)
     {
-        return;
+        const getPublicKeyResponse = await vaulticServer.user.getPublicKeys(PublicKeyType.Encrypting, allMembers);
+        if (!getPublicKeyResponse.Success)
+        {
+            return;
+        }
+
+        usersAndPublicKeys = getPublicKeyResponse.UsersAndPublicKeys;
     }
 
     const orgsAndUserKeys: { [key: number]: OrgAndUserKeys } = {};
@@ -28,7 +34,7 @@ export async function vaultAddedOrgsToAddedOrgInfo(senderUserID: number, vaultKe
         const userIDsAndKeys: UserIDAndKey[] = [];
         for (const [key, _] of addedOrgs[i].membersByUserID.entries()) 
         {
-            const recipientPublicKey = getPublicKeyResponse.UsersAndPublicKeys[key];
+            const recipientPublicKey = usersAndPublicKeys[key];
             if (!recipientPublicKey || !recipientPublicKey.PublicEncryptingKey)
             {
                 continue;

@@ -348,7 +348,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
             addedMembers
         };
 
-        const result = await api.repositories.vaults.createNewVaultForUser(masterKey, JSON.stringify(updateVaultData));
+        const result = await api.repositories.vaults.createNewVaultForUser(masterKey, JSON.vaulticStringify(updateVaultData));
         if (!result.success)
         {
             defaultHandleFailedResponse(result);
@@ -356,7 +356,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
         }
 
         const vaultData = result.value!;
-        this.organizations.updateOrgsForVault(vaultData.userVaultID, addedOrganizations, []);
+        this.organizations.updateOrgsForVault(vaultData.vaultID, addedOrganizations, []);
 
         if (setAsActive)
         {
@@ -405,7 +405,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
             removedMembers: removedMembers,
         };
 
-        const success = await api.repositories.vaults.updateVault(masterKey, JSON.stringify(updateVaultData));
+        const success = await api.repositories.vaults.updateVault(masterKey, JSON.vaulticStringify(updateVaultData));
         if (!success)
         {
             return false;

@@ -20,6 +20,8 @@ import { DataUtility } from "./Utilities/DataUtility";
 import { handleUserLogOut } from "./Core/Helpers/RepositoryHelper";
 
 let tray: Tray | null = null;
+let mainWindow: BrowserWindow | null = null;
+
 if (require('electron-squirrel-startup'))
 {
 	app.quit();
@@ -34,10 +36,10 @@ else
 		tray = new Tray(trayicon.resize({ width: 16 }));
 		const contextMenu = Menu.buildFromTemplate([
 			{
-				label: 'Open App',
+				label: 'Open Vaultic',
 				click: () =>
 				{
-					createWindow()
+					showOrCreateWindow()
 				}
 			},
 			{
@@ -60,7 +62,7 @@ else
 		}
 
 		// Create the browser window.
-		const mainWindow = new BrowserWindow({
+		mainWindow = new BrowserWindow({
 			show: false,
 			autoHideMenuBar: true,
 			...(process.platform === 'linux' ? { icon } : {}),
@@ -74,8 +76,8 @@ else
 
 		mainWindow.on('ready-to-show', () =>
 		{
-			mainWindow.maximize();
-			mainWindow.show()
+			mainWindow?.maximize();
+			mainWindow?.show()
 		});
 
 		mainWindow.webContents.setWindowOpenHandler((details) =>
@@ -93,6 +95,38 @@ else
 		else
 		{
 			mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+		}
+	}
+
+	// We only want to allow one instance of the application at a time
+	const instanceLock = app.requestSingleInstanceLock()
+	if (!instanceLock)
+	{
+		app.quit()
+	}
+	else
+	{
+		app.on('second-instance', (event, commandLine, workingDirectory) =>
+		{
+			showOrCreateWindow();
+		})
+	}
+
+	function showOrCreateWindow()
+	{
+		// Someone tried to run a second instance, we should focus our window.
+		if (mainWindow)
+		{
+			if (mainWindow.isMinimized())
+			{
+				mainWindow.restore();
+			}
+
+			mainWindow.focus()
+		}
+		else
+		{
+			createWindow();
 		}
 	}
 
@@ -127,8 +161,10 @@ else
 
 		createWindow()
 
-		app.on('activate', function ()
+		app.on('activate', async function ()
 		{
+			//await environment.repositories.logs.log(undefined, `Activate. Tray: ${!!tray}, Windows: ${BrowserWindow.getAllWindows().length}`);
+
 			// On macOS it's common to re-create a window in the app when the
 			// dock icon is clicked and there are no other windows open.
 			if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -137,6 +173,8 @@ else
 
 	app.on('window-all-closed', async () =>
 	{
+		mainWindow = null;
+
 		// don't call app.quit() since we want to back up the users data if possible
 		app.dock?.hide(); // for macOS
 		await handleUserLogOut();

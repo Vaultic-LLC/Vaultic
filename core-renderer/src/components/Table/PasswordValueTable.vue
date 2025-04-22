@@ -492,6 +492,7 @@ export default defineComponent({
 
         onMounted(() =>
         {
+            init();
             app.vaultDataBreaches.addEvent('onBreachDismissed', initPasswords);
         });
 

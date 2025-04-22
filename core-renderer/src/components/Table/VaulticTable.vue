@@ -439,17 +439,18 @@ export default defineComponent({
             reSetRowValues();
         }
 
-        let lastSearch = 0;
+        let searchTimeout: NodeJS.Timeout | undefined;
+        let searchValue: string | undefined = undefined;
+
         function onSearch(value: string | undefined)
         {
-            const now = Date.now();
-            if (now - lastSearch <= 100)
+            searchValue = value;
+            if (searchTimeout)
             {
-                return;
+                clearTimeout(searchTimeout);
             }
 
-            lastSearch = now;
-            activeTableDataSource.collection.search(value ?? "");
+            searchTimeout = setTimeout(() => activeTableDataSource.collection.search(searchValue ?? ""), 100);
         }
 
         function reSetRowValues()

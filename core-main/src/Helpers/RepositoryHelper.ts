@@ -41,7 +41,7 @@ export async function safetifyMethod<T>(calle: any, method: () => Promise<TypedM
         }
 
         const callStack = `${method.name}\n${Error().stack}`;
-        await environment.repositories.logs.log(undefined, `Exception: ${JSON.stringify(e)}`, callStack);
+        await environment.repositories.logs.log(undefined, `Exception: ${e}`, callStack);
     }
 
     await onFail?.();
