@@ -223,7 +223,7 @@ export default defineComponent({
     },
     props: ['color', 'dataSources', 'pinnedValues', 'columns', 'scrollbarSize', 'border', 'emptyMessage', 'backgroundColor',
         'headerTabs', 'allowSearching', 'allowPinning', 'onPin', 'onEdit', 'onDelete', 'searchBarSizeModel', 'loading', 'hidePaginator',
-        'smallRows'],
+        'smallRows', 'maxCellWidth'],
     setup(props)
     {
         const tableContainerID = ref(useId());
@@ -236,6 +236,7 @@ export default defineComponent({
         const applyBorder: ComputedRef<boolean> = computed(() => props.border == true);
         const backgroundColor: ComputedRef<string> = computed(() => props.backgroundColor ? props.backgroundColor : widgetBackgroundHexString());
         const scrollbarClass: ComputedRef<string> = computed(() => props.scrollbarSize == 0 ? "small" : props.scrollbarSize == 1 ? "medium" : "");
+        const maxCellWidth: ComputedRef<string> = computed(() => props.maxCellWidth ?? "none");
 
         const showSearchBar: ComputedRef<boolean> = computed(() => props.allowSearching != undefined ? props.allowSearching : true);
         const tableDataSources: TableDataSources = props.dataSources;    
@@ -590,6 +591,7 @@ export default defineComponent({
             defaultSortField,
             defaultSortOrder,
             scrollbarClass,
+            maxCellWidth,
             onTextClick,
             checkScrollHeight,
             scrollToTop,
@@ -667,7 +669,8 @@ export default defineComponent({
 } */
 
 :deep(.vaulticTableContainer__ControlsHeaderCell) {
-    width: 10px !important;
+    width: auto !important;
+    max-width: none !important;
     cursor:auto;
 }
 
@@ -688,6 +691,7 @@ export default defineComponent({
     font-size: clamp(12px, 1vw, 16px);
     padding: 0 !important;
     height: inherit;
+    max-width: v-bind(maxCellWidth)
 }
 
 :deep(.vaulticTableContainer__sortIcon) {

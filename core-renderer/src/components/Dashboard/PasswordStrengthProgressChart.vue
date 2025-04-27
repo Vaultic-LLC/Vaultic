@@ -110,7 +110,7 @@ export default defineComponent({
 
             lineChart.value.chart.data.labels = toRaw(lableArray.value);
             lineChart.value.chart.data.datasets[0].data = chartOneArray.value;
-            lineChart.value.chart.data.datasets[0].label = 'Secure ' + table.value;
+            lineChart.value.chart.data.datasets[0].label = 'Secure';
 
             lineChart.value.chart.data.datasets[1].data = target.value;
 
@@ -248,7 +248,7 @@ export default defineComponent({
         {
             return [
                 {
-                    label: 'Secure ' + table.value,
+                    label: 'Secure',
                     data: [],
                     backgroundColor: function (context: any)
                     {
@@ -538,6 +538,11 @@ export default defineComponent({
             if (chartContainer.value)
             {
                 resizeObserver.observe(chartContainer.value)
+            }
+
+            if (app.loadedUser.value)
+            {
+                refetchData();
             }
 
             app.currentVault.passwordStore.addEvent("onChanged", onDataChange);

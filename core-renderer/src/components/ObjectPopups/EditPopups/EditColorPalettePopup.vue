@@ -78,7 +78,8 @@ export default defineComponent({
 
 .cloneFromColorPalettesContainer {
     position: absolute;
-    right: 15%;
+    right: 11%;
+    top: 9%;
     display: flex;
     justify-content: center;
     align-items: center;

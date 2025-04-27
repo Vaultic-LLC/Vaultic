@@ -178,7 +178,9 @@ export default defineComponent({
 
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const currentView: Ref<number> = ref(props.currentView ? props.currentView : 0);
-        const readOnly: Ref<boolean> = ref(app.currentVault.isReadOnly.value);
+
+        // no setting are currently vault specific and as such shouldn't be read only
+        const readOnly: Ref<boolean> = ref(false);
 
         const originalAllowSharedVaultsFromOthers: Ref<boolean> = ref(false);
         const originalUsername: Ref<string> = ref('');

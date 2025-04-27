@@ -3,7 +3,7 @@
         <VaulticTable ref="tableRef" id="passwordValueTable" :color="color" :columns="tableColumns" 
             :headerTabs="headerTabs" :emptyMessage="emptyTableMessage" :dataSources="tableDataSources"
             :searchBarSizeModel="searchBarSizeModel" :allowPinning="!readOnly" :onPin="onPin" :onEdit="onEdit" 
-            :onDelete="onDelete">
+            :onDelete="onDelete" :maxCellWidth="'10vw'">
             <template #tableControls>
                 <Transition name="fade" mode="out-in">
                     <AddDataTableItemButton v-if="!readOnly" :color="color" :initalActiveContentOnClick="activeTable" />
@@ -114,13 +114,13 @@ export default defineComponent({
             const models: TableColumnModel[] = []
             if (app.activePasswordValuesTable == DataType.Passwords)
             {
-                models.push(new TableColumnModel("Groups", "g").setIsGroupIconCell(true).setData({ 'color': color }).setStartingWidth('105px'));
+                models.push(new TableColumnModel("Groups", "g").setIsGroupIconCell(true).setData({ 'color': color }).setStartingWidth('clamp(70px, 4.5vw, 105px)'));
                 models.push(new TableColumnModel("Password For", "f"));
                 models.push(new TableColumnModel("Username", "l"));
             }
             else
             {
-                models.push(new TableColumnModel("Groups", "g").setIsGroupIconCell(true).setData({ 'color': color }).setStartingWidth('105px'));
+                models.push(new TableColumnModel("Groups", "g").setIsGroupIconCell(true).setData({ 'color': color }).setStartingWidth('clamp(70px, 4.5vw, 105px)'));
                 models.push(new TableColumnModel("Name", "n"));
                 models.push(new TableColumnModel("Type", "y"));
             }

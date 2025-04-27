@@ -4,7 +4,7 @@
         <TextInputField :label="'Name'" :color="groupColor" v-model="groupState.n"
             :width="'50%'" :maxWidth="''" />
         <ColorPickerInputField :label="'Color'" :color="groupColor" v-model="groupState.c"
-            :width="'50%'" :minHeight="''" :minWidth="'125px'" :maxWidth="''" />
+            :width="'50%'" :minWidth="'125px'" :maxWidth="''" />
         <ObjectSingleSelect :label="'Icon'" :color="groupColor" v-model="selectedIcon"
             :options="allIcons" :width="'50%'" :minWidth="'125px'" :maxWidth="''" @update:model-value="onIconSelected" />
         <ObjectMultiSelect :label="selectLabel" :color="groupColor" v-model="selectedDataObjectOptions" :options="allDataObjectsOptions" 

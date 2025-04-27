@@ -119,8 +119,10 @@ async function validateSender(event: Electron.IpcMainInvokeEvent, onSuccess: () 
 	let splitCharacter = electronAPI.process.platform === "win32" ? "\\" : "/";
 	let pathParts = url.pathname?.split(splitCharacter);
 
+	await environment.repositories.logs.log(undefined, `Doesn't have host: ${!url.host}, Path Parts: ${JSON.stringify(pathParts)}`);
+
 	//only allow requests from ourselves
-	if (url.host === 'localhost:33633' || 
+	if (url.host === 'localhost:33633' ||
 		(!url.host && pathParts.length > 0 && pathParts[pathParts.length - 1] === "index.html"))
 	{
 		return onSuccess();

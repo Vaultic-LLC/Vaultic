@@ -1,6 +1,6 @@
 <template>
     <div class="filterValueSelectorCell">
-        <TextInputField v-if="inputType == 0" :label="'Value'" :color="color"
+        <TextInputField v-if="inputType == 0 || inputType == 2" :label="'Value'" :color="color"
             v-model="modelField" :fadeIn="false" :isOnWidget="true" :width="''"
             :minWidth="'100px'" :maxWidth="''" />
         <EnumInputField v-if="inputType == 1" :label="'Value'" :color="color"

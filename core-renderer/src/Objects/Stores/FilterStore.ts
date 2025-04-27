@@ -508,7 +508,7 @@ export class ReactiveFilterStore extends FilterStore
         this.internalActivePasswordFilters = computed(() => this.internalPasswordFilters.value.filter(f => app.userPreferences.activeFilters[f.id]) ?? []);
 
         this.internalNameValuePairFilters = computed(() => Object.values(this.state.v));
-        this.internalActiveNameValuePairFilters = computed(() => this.internalNameValuePairFilters.value.filter(f => f.a) ?? []);
+        this.internalActiveNameValuePairFilters = computed(() => this.internalNameValuePairFilters.value.filter(f => app.userPreferences.activeFilters[f.id]) ?? []);
 
         this.internalActiveAtRiskPasswordFilterType = ref(AtRiskType.None);
         this.internalActiveAtRiskValueFilterType = ref(AtRiskType.None);

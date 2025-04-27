@@ -19,10 +19,10 @@
                 </div>
             </Transition>
         </div>
-        <Transition name="fade">
+        <Transition name="fade" mode="out-in">
             <PasswordValueGauges v-if="isVaultView" />
         </Transition>
-        <Transition name="fade">
+        <Transition name="fade" mode="out-in">
             <FilterGroupGauges v-if="isVaultView" />
         </Transition>
         <Transition name="fade" mode="out-in">

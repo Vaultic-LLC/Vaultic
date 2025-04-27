@@ -183,7 +183,7 @@ export default defineComponent({
 .smallMetricContainer {
     position: relative;
     width: clamp(67px, 6vw, 150px);
-    aspect-ratio: 1 / 1;
+    height: clamp(67px, 6vw, 150px);
     display: flex;
     justify-content: center;
     align-items: center;
