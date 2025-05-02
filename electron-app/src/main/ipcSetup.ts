@@ -13,7 +13,6 @@ import { BreachRequestVault } from "@vaultic/shared/Types/DataTypes";
 import { RandomValueType } from "@vaultic/shared/Types/Fields";
 import { RequireMFAOn, RequiresMFA } from "@vaultic/shared/Types/Device";
 import { Algorithm } from "@vaultic/shared/Types/Keys";
-import { electronAPI } from "@electron-toolkit/preload";
 
 export default function setupIPC()
 {
@@ -116,10 +115,7 @@ export default function setupIPC()
 async function validateSender(event: Electron.IpcMainInvokeEvent, onSuccess: () => any): Promise<any>
 {
 	const url = (new URL(event.senderFrame.url));
-	let splitCharacter = electronAPI.process.platform === "win32" ? "\\" : "/";
-	let pathParts = url.pathname?.split(splitCharacter);
-
-	await environment.repositories.logs.log(undefined, `Doesn't have host: ${!url.host}, Path Parts: ${JSON.stringify(pathParts)}`);
+	let pathParts = url.pathname?.split("/");
 
 	//only allow requests from ourselves
 	if (url.host === 'localhost:33633' ||

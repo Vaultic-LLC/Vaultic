@@ -24,7 +24,6 @@ import ColorPaletteView from '../../../components/ObjectViews/ColorPaletteView.v
 import ColorPalettePill from "../../ColorPalette/ColorPalettePill.vue"
 
 import app from "../../../Objects/Stores/AppStore";
-import { Field } from '@vaultic/shared/Types/Fields';
 import { ColorPalette } from '@vaultic/shared/Types/Color';
 
 export default defineComponent({
