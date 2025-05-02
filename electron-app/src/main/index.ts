@@ -70,7 +70,7 @@ else
 				contextIsolation: true,
 				preload: join(__dirname, '../preload/index.js'),
 				backgroundThrottling: false,
-				devTools: true
+				devTools: !app.isPackaged
 			}
 		});
 
@@ -176,7 +176,6 @@ else
 		mainWindow = null;
 
 		// don't call app.quit() since we want to back up the users data if possible
-		app.dock?.hide(); // for macOS
 		await handleUserLogOut();
 	});
 
