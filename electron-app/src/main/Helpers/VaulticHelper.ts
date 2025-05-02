@@ -3,6 +3,21 @@ import axiosHelper from "../Core/Server/AxiosHelper";
 import fs from "fs";
 import { VaulticHelper } from "@vaultic/shared/Types/Helpers";
 import { GetUserDeactivationKeyResponse } from "@vaultic/shared/Types/Responses";
+import { electronAPI } from "@electron-toolkit/preload";
+
+function getFilePathSeperator()
+{
+	switch (electronAPI.process.platform)
+	{
+		case "win32":
+			return "\\";
+		case "darwin":
+		case "linux":
+			return "/";
+	}
+
+	return "";
+}
 
 async function selectDirectory()
 {
@@ -37,7 +52,7 @@ export async function downloadDeactivationKey()
 
 	try
 	{
-		await writeFile(filePath + "\\Vaultic-Deactivation-Key.txt", response.DeactivationKey!);
+		await writeFile(filePath + `${getFilePathSeperator()}Vaultic-Deactivation-Key.txt`, response.DeactivationKey!);
 		return response;
 	}
 	catch { }
@@ -83,7 +98,7 @@ async function writeCSV(fileName: string, data: string): Promise<boolean>
 		return false;
 	}
 
-	await writeFile(`${filePath}\\${fileName}.csv`, data);
+	await writeFile(`${filePath}${getFilePathSeperator()}${fileName}.csv`, data);
 	return true;
 }
 

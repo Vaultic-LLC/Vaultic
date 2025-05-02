@@ -22,7 +22,7 @@ import { app } from "electron";
 let database: Database;
 
 export function getDirectory(isTest: boolean)
-{	
+{
 	let directory: string = "";
 	switch (electronAPI.process.platform)
 	{
@@ -36,7 +36,7 @@ export function getDirectory(isTest: boolean)
 			directory = electronAPI.process.env.HOME + "/.local/share" + isTest ? "/Vaultic/VTest" : "/Vaultic/VCustom";
 			break;
 	}
-	
+
 	return directory;
 }
 
@@ -58,11 +58,9 @@ function databaseFilePath()
 	{
 		case "win32":
 			return "\\vaultic.db";
-			break;
 		case "darwin":
 		case "linux":
 			return "/vaultic.db";
-			break;
 	}
 
 	return "";
