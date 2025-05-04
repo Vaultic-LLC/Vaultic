@@ -14,7 +14,7 @@ export default defineComponent({
     {
         const primaryColor: ComputedRef<string> = computed(() => props.selectorButtonModel.color.value);
         const width: ComputedRef<string> = computed(() => props.width ?? 'clamp(14px, 1.1vw, 30px)');
-        const borderWidth: ComputedRef<string> = computed(() => props.borderWidth ?? '0.12vw');
+        const borderWidth: ComputedRef<string> = computed(() => props.borderWidth ?? 'clamp(1px, 0.12vw, 3px)');
 
         return {
             primaryColor,

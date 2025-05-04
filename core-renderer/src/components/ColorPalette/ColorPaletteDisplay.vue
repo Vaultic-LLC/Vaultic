@@ -228,7 +228,7 @@ export default defineComponent({
 .colorPaletteContainer .addColorIconContainer {
     margin-right: clamp(15px, 1.6vw, 48px);
     width: clamp(14px, 1.1vw, 30px);
-    aspect-ratio: 1 /1;
+    height: clamp(14px, 1.1vw, 30px);
     display: flex;
     justify-content: center;
     align-items: center;
