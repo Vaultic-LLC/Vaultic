@@ -38,7 +38,7 @@ export default defineComponent({
 	flex-direction: column;
 	background-color: var(--widget-background-color);
 	border-radius: 20px;
-	padding-bottom: clamp(5px, 4vh, 60px);
+	padding-bottom: clamp(10px, 4vh, 60px);
     justify-content: center;
     align-items: center;
 }
