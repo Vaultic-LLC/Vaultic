@@ -7,7 +7,7 @@ import { ValueStoreState } from "./States/ValueStoreState";
 import { FilterStoreState } from "./States/FilterStoreState";
 import { GroupStoreState } from "./States/GroupStoreState";
 import { IVault } from "@vaultic/shared/Types/Entities";
-import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
+import { DeepPartial, hasValue, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 
 @Entity({ name: "vaults" })
 export class Vault extends VaulticEntity implements IVault
@@ -91,9 +91,9 @@ export class Vault extends VaulticEntity implements IVault
     public backupableProperties(): string[]
     {
         const properties = super.backupableProperties();
-        properties.push("vaultID");
-        properties.push("name");
-        properties.push("shared");
+        properties.push(nameof<Vault>("vaultID"));
+        properties.push(nameof<Vault>("name"));
+        properties.push(nameof<Vault>("shared"));
         properties.push(nameof<Vault>("isArchived"));
 
         return properties;
@@ -140,17 +140,17 @@ export class Vault extends VaulticEntity implements IVault
 
     public static isValid(vault: DeepPartial<Vault>): boolean
     {
-        return !!vault.currentSignature &&
-            !!vault.vaultID &&
-            !!vault.name &&
-            (vault.shared === true || vault.shared === false) &&
-            (vault.isArchived === true || vault.isArchived === false) &&
+        return hasValue(vault.currentSignature) &&
+            hasValue(vault.vaultID) &&
+            hasValue(vault.name) &&
+            hasValue(vault.shared) &&
+            hasValue(vault.isArchived) &&
+            hasValue(vault.lastLoadedChangeVersion) &&
             !!vault.vaultStoreState &&
             !!vault.passwordStoreState &&
             !!vault.valueStoreState &&
             !!vault.filterStoreState &&
             !!vault.groupStoreState &&
-            vault.lastLoadedChangeVersion !== undefined && vault.lastLoadedChangeVersion !== null &&
             VaultStoreState.isValid(vault.vaultStoreState) &&
             PasswordStoreState.isValid(vault.passwordStoreState) &&
             ValueStoreState.isValid(vault.valueStoreState) &&

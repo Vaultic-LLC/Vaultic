@@ -4,7 +4,7 @@ import { Vault } from "./Vault"
 import { VaulticEntity } from "./VaulticEntity"
 import { VaultPreferencesStoreState } from "./States/VaultPreferencesStoreState"
 import { CondensedVaultData, IUserVault } from "@vaultic/shared/Types/Entities"
-import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper"
+import { DeepPartial, hasValue, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper"
 import { ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
 
 @Entity({ name: "userVaults" })
@@ -137,14 +137,14 @@ export class UserVault extends VaulticEntity implements IUserVault
 
     public static isValid(userVault: DeepPartial<UserVault>): boolean
     {
-        return !!userVault.currentSignature &&
-            !!userVault.userID &&
-            !!userVault.userVaultID &&
-            !!userVault.userOrganizationID &&
-            !!userVault.vaultID &&
-            !!userVault.vaultKey &&
+        return hasValue(userVault.currentSignature) &&
+            hasValue(userVault.userID) &&
+            hasValue(userVault.userVaultID) &&
+            hasValue(userVault.userOrganizationID) &&
+            hasValue(userVault.vaultID) &&
+            hasValue(userVault.vaultKey) &&
+            hasValue(userVault.lastLoadedChangeVersion) &&
             !!userVault.vaultPreferencesStoreState &&
-            userVault.lastLoadedChangeVersion !== undefined && userVault.lastLoadedChangeVersion !== null &&
             VaultPreferencesStoreState.isValid(userVault.vaultPreferencesStoreState);
     }
 }

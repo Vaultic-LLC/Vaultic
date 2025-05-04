@@ -88,18 +88,18 @@ async function logUserIn(masterKey: string, email: string,
         let params: KSFParams = defaultKSFParams();
         if (!firstLogin)
         {
-            if (!startResponse.KSFParams)
+            // Don't return if we dont' have ksfParams as if there is an error when creating an account the user won't have loaded data but 
+            // may still be able to sign in after. They won't have ksf params on the server yet though
+            if (startResponse.KSFParams)
             {
-                return TypedMethodResponse.fail(undefined, undefined, "no ksf params");
-            }
-
-            try
-            {
-                params = JSON.parse(startResponse.KSFParams);
-            }
-            catch (e)
-            {
-                return TypedMethodResponse.fail(undefined, undefined, "unable to parse ksf params");
+                try
+                {
+                    params = JSON.parse(startResponse.KSFParams);
+                }
+                catch (e)
+                {
+                    return TypedMethodResponse.fail(undefined, undefined, "unable to parse ksf params");
+                }
             }
         }
 

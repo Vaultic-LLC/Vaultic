@@ -4,7 +4,7 @@ import { VaulticEntity } from "./VaulticEntity"
 import { AppStoreState } from "./States/AppStoreState"
 import { UserPreferencesStoreState } from "./States/UserPreferencesStoreState"
 import { IUser } from "@vaultic/shared/Types/Entities"
-import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper"
+import { DeepPartial, hasValue, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper"
 import { Algorithm } from "@vaultic/shared/Types/Keys"
 
 @Entity({ name: "users" })
@@ -169,20 +169,20 @@ export class User extends VaulticEntity implements IUser
 
     public static isValid(user: DeepPartial<User>): boolean
     {
-        return !!user.currentSignature &&
-            !!user.userID &&
-            !!user.email &&
-            !!user.firstName &&
-            !!user.lastName &&
-            user.masterKeyEncryptionAlgorithm !== undefined && user.masterKeyEncryptionAlgorithm !== null &&
-            !!user.publicSigningKey &&
-            !!user.privateSigningKey &&
-            !!user.publicEncryptingKey &&
-            !!user.privateEncryptingKey &&
-            !!user.appStoreState &&
+        return hasValue(user.currentSignature) &&
+            hasValue(user.userID) &&
+            hasValue(user.email) &&
+            hasValue(user.firstName) &&
+            hasValue(user.lastName) &&
+            hasValue(user.masterKeyEncryptionAlgorithm) &&
+            hasValue(user.publicSigningKey) &&
+            hasValue(user.privateSigningKey) &&
+            hasValue(user.publicEncryptingKey) &&
+            hasValue(user.privateEncryptingKey) &&
+            hasValue(user.lastLoadedChangeVersion) &&
+            hasValue(user.ksfParams) &&
+            user.appStoreState &&
             !!user.userPreferencesStoreState &&
-            user.lastLoadedChangeVersion !== undefined && user.lastLoadedChangeVersion !== null &&
-            !!user.ksfParams &&
             AppStoreState.isValid(user.appStoreState) &&
             UserPreferencesStoreState.isValid(user.userPreferencesStoreState);
     }

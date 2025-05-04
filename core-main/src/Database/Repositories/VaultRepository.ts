@@ -18,7 +18,7 @@ import { safetifyMethod } from "../../Helpers/RepositoryHelper";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 import { CondensedVaultData, EntityState } from "@vaultic/shared/Types/Entities";
-import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
+import { DeepPartial, hasValue, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { IVaultRepository } from "../../Types/Repositories";
 import { ChangeTracking } from "../Entities/ChangeTracking";
 import { CurrentUserDataIdentifiersAndKeys, VaultsAndKeys } from "../../Types/Responses";
@@ -196,7 +196,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 return TypedMethodResponse.transactionFail();
             }
 
-            const backupResponse = await backupData(masterKey, environment.cache.currentUser);
+            const backupResponse = await backupData(masterKey);
             if (!backupResponse.success)
             {
                 return backupResponse;
@@ -348,7 +348,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                     return TypedMethodResponse.fail();
                 }
 
-                await backupData(masterKey, environment.cache.currentUser);
+                await backupData(masterKey);
             }
 
             return TypedMethodResponse.success();
@@ -645,31 +645,31 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         const partialVault = {}
         let updatedVault = false;
 
-        if (newVault.currentSignature)
+        if (hasValue(newVault.currentSignature))
         {
             partialVault[nameof<Vault>("currentSignature")] = newVault.currentSignature;
             updatedVault = true;
         }
 
-        if (newVault.name)
+        if (hasValue(newVault.name))
         {
             partialVault[nameof<Vault>("name")] = newVault.name;
             updatedVault = true;
         }
 
-        if (newVault.shared)
+        if (hasValue(newVault.shared))
         {
             partialVault[nameof<Vault>("shared")] = newVault.shared;
             updatedVault = true;
         }
 
-        if (newVault.isArchived)
+        if (hasValue(newVault.isArchived))
         {
             partialVault[nameof<Vault>("isArchived")] = newVault.isArchived;
             updatedVault = true;
         }
 
-        if (newVault.lastLoadedChangeVersion)
+        if (hasValue(newVault.lastLoadedChangeVersion))
         {
             partialVault[nameof<Vault>("lastLoadedChangeVersion")] = newVault.lastLoadedChangeVersion;
             updatedVault = true;

@@ -2,7 +2,7 @@ import { Entity, OneToOne, PrimaryColumn, Column, JoinColumn } from "typeorm";
 import { StoreState } from "./StoreState";
 import { UserVault } from "../UserVault";
 import { IVaultPreferencesStoreState } from "@vaultic/shared/Types/Entities";
-import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
+import { DeepPartial, hasValue, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 
 @Entity({ name: "vaultPreferencesStoreStates" })
 export class VaultPreferencesStoreState extends StoreState implements IVaultPreferencesStoreState
@@ -59,10 +59,10 @@ export class VaultPreferencesStoreState extends StoreState implements IVaultPref
 
     public static isValid(vaultPreferncesStoreState: DeepPartial<VaultPreferencesStoreState>): boolean
     {
-        return !!vaultPreferncesStoreState.currentSignature &&
-            !!vaultPreferncesStoreState.previousSignature &&
-            !!vaultPreferncesStoreState.state &&
-            !!vaultPreferncesStoreState.vaultPreferencesStoreStateID &&
-            !!vaultPreferncesStoreState.userVaultID;
+        return hasValue(vaultPreferncesStoreState.currentSignature) &&
+            hasValue(vaultPreferncesStoreState.previousSignature) &&
+            hasValue(vaultPreferncesStoreState.state) &&
+            hasValue(vaultPreferncesStoreState.vaultPreferencesStoreStateID) &&
+            hasValue(vaultPreferncesStoreState.userVaultID);
     }
 }

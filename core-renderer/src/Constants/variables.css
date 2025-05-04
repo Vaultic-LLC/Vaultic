@@ -31,7 +31,7 @@
     --scrollbar-width-small: 5px;
     --scrollbar-width-medium: clamp(7px, 0.7vw, 10px);
 
-    --input-font-size: clamp(10px, 0.7vw, 16px);
+    --input-font-size: clamp(12px, 0.7vw, 16px);
     --input-label-active-top: clamp(1%, 0.5vw, 10px);
     --input-label-active-font-size: clamp(8px, 0.5vw, 13px);
     --input-padding-block-start: clamp(20px, 1vw, 25px);
