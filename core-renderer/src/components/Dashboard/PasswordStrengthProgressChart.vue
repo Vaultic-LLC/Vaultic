@@ -5,7 +5,9 @@
                 Reset
             </div>
             <div class="strengthGraphContainer__title">
-                <h2>Security Over Time</h2>
+                <Transition name="fade" mode="out-in">
+                    <h2 :key="titleKey">{{ widgetTitle }}</h2>
+                </Transition>
             </div>
         </div>
         <div v-if="!canLoadWidget" class="strengthGraphContainer__chart">
@@ -67,6 +69,8 @@ export default defineComponent({
         const failedToLoad: Ref<boolean> = ref(false);
         const canLoadWidget: ComputedRef<boolean> = computed(() => app.canShowSubscriptionWidgets.value);
 
+        const widgetTitle: ComputedRef<string> = computed(() => `Secure ${app.activePasswordValuesTable == DataType.Passwords ? "Passwords" : "Values"}`);
+        const titleKey: Ref<string> = ref('');
         const loading: Ref<boolean> = ref(false);
         const refreshKey: Ref<string> = ref('');
         const key: Ref<string> = ref('');
@@ -492,6 +496,8 @@ export default defineComponent({
                     setCurrentChartData(valueChartData.value);
                 }
             }
+
+            titleKey.value = Date.now().toString();
         });
 
         watch(() => app.userPreferences.currentColorPalette, (newValue, oldValue) =>
@@ -558,6 +564,8 @@ export default defineComponent({
         setOptions(1000);
 
         return {
+            widgetTitle,
+            titleKey,
             canLoadWidget,
             lineChart,
             chartContainer,
