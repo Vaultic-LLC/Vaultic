@@ -531,6 +531,14 @@ export default defineComponent({
             }
         });
 
+        watch(() => requireMFAOn.value, (newValue) =>
+        {
+            if (originalRequireMFAOnSetting.value == DisplayRequireMFAOn.NoDevices && newValue != DisplayRequireMFAOn.NoDevices)
+            {
+                objectView.value?.addWarning("This will enable Multifactor Authentication on your devices. If you have not setup your MFA Key within an authenticator app yet you will not be able to log in. Please see the 'Multifactor Authentication' section within the about popup for how to setup MFA before changing this setting.");          
+            }
+        });
+
         onMounted(async () => 
         {
             if (isOnline.value)

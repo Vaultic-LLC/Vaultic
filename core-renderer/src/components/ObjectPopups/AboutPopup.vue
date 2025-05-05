@@ -65,6 +65,22 @@
                             </div>
                         </VaulticAccordionContent>
                     </VaulticAccordionPanel>
+                    <VaulticAccordionPanel :value="'3'">
+                        <VaulticAccordionHeader :title="'Multifactor Authentication'" />
+                        <VaulticAccordionContent>
+                            <div class="aboutPopupContainer__section">
+                                <h2 class="aboutPopupContainer__section__header">Setup</h2>
+                                <div class="aboutPopupContainer__section__text">
+                                    Before enabling Multifactor Authentication, you must first add your key into an Authenticator App on your mobile phone. 
+                                    To do this, open up your phone's app store, search for 'Microsoft Authenticator', and download the first result. 
+                                    Once it is done downloading, hit the '+' icon in the top right, and then click 'Other' for the type of account. The app should
+                                    now be looking to scan a QR code. To find this code, simpily click on the 'User' section in the toggle on the bottom left of your 
+                                    Vaultic Password Manager's dashboard, and then click on 'Show' in the 'MFA Key' section of your account widget, which is located in 
+                                    the center of your dashboard. Now just scan the QR code you see on screen and done!
+                                </div>
+                            </div>
+                        </VaulticAccordionContent>
+                    </VaulticAccordionPanel>
                 </VaulticAccordion>
             </ObjectView>
             <ObjectView v-else :color="primaryColor" :hideButtons="true">
