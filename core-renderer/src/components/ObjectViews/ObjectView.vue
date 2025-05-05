@@ -2,7 +2,10 @@
     <div class="objectView">
         <div class="objectViewContainer__warnings">
             <Message v-for="(message) in warnings" severity="warn" :closable="true" 
-                :icon="'pi pi-exclamation-triangle'" >{{ message }}</Message>
+                :icon="'pi pi-exclamation-triangle'"
+                :pt="{
+                    text: 'objectViewContainer__warningText'
+                }" >{{ message }}</Message>
         </div>
         <div class="objectViewContainer">
             <div class="objectViewContainer__form">
@@ -213,6 +216,11 @@ export default defineComponent({
     display: flex;
     flex-direction: column;
     row-gap: 10px;
+    margin-top: 10px;
+}
+
+.objectViewContainer__warningText {
+    font-size: clamp(10px, 0.7vw, 15px) !important;
 }
 
 .objectViewContainer {

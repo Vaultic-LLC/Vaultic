@@ -4,7 +4,7 @@
         <h2 v-else>Edit Device</h2>
     </div>
     <div class="deviceView__content">
-        <ObjectView :title="'Device'" :buttonText="buttonText" :color="color" :creating="false" :defaultSave="onSave" :key="refreshKey"
+        <ObjectView ref="objectView" :title="'Device'" :buttonText="buttonText" :color="color" :creating="false" :defaultSave="onSave" :key="refreshKey"
             :skipOnSaveFunctionality="true">
             <VaulticFieldset :centered="true">
                 <TextInputField :color="color" :label="'Name'"
