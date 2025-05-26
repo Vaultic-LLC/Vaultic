@@ -19,7 +19,7 @@
                 <CreateAccountView v-else-if="accountSetupModel.currentView == AccountSetupView.CreateAccount"
                     :color="primaryColor" :account="account" @onSuccess="onCreateAccoutViewSucceeded" />
                 <VerifyEmailView v-else-if="accountSetupModel.currentView == AccountSetupView.VerifyEmail"
-                    :color="primaryColor" :account="account" @onSuccess="onVerifyEmailSuccess"
+                    :creating="true" :color="primaryColor" :account="account" @onSuccess="onVerifyEmailSuccess"
                     @onInvalidPendingUser="onInvalidPendingUser" />
                 <CreateMasterKeyView v-else-if="accountSetupModel.currentView == AccountSetupView.CreateMasterKey"
                     :color="primaryColor" :account="account" @onSuccess="onCreateMasterKeySuccess"

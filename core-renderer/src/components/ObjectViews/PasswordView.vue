@@ -18,7 +18,7 @@
                 :toolTipSize="'clamp(15px, 1vw, 28px)'" :width="'50%'" :maxWidth="''" :maxHeight="''" />
         </VaulticFieldset>
         <VaulticFieldset>
-            <TextInputField class="passwordView__email" :color="color" :label="'Email'" v-model="passwordState.e"
+            <TextInputField ref="emailField" class="passwordView__email" :color="color" :label="'Email'" v-model="passwordState.e"
                 :width="'50%'" :isEmailField="true" :maxWidth="''" :maxHeight="''" />
             <ObjectMultiSelect :label="'Groups'" :color="color" v-model="selectedGroups" :options="groupOptions" :width="'50%'" 
                 :maxWidth="''" :maxHeight="''" />
@@ -60,10 +60,11 @@ import { GridDefinition, HeaderTabModel, InputColorModel, ObjectSelectOptionMode
 import { getEmptyTableMessage } from '../../Helpers/ModelHelper';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import app from "../../Objects/Stores/AppStore";
-import { EncryptedInputFieldComponent, TableTemplateComponent } from '../../Types/Components';
+import { EncryptedInputFieldComponent, InputComponent, TableTemplateComponent } from '../../Types/Components';
 import { uniqueIDGenerator } from '@vaultic/shared/Utilities/UniqueIDGenerator';
 import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
 import { DictionaryAsList } from '@vaultic/shared/Types/Stores';
+import { UpdatePasswordResponse } from '../../Objects/Stores/PasswordStore';
 
 export default defineComponent({
     name: "PasswordView",
@@ -82,6 +83,7 @@ export default defineComponent({
     setup(props)
     {
         const passwordInputField: Ref<EncryptedInputFieldComponent | null> = ref(null);
+        const emailField: Ref<InputComponent | null> = ref(null);
 
         let pendingStoreState = app.currentVault.passwordStore.getPendingState()!;
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
@@ -214,15 +216,19 @@ export default defineComponent({
                     newGroups[g.backingObject!.id] = true;
                 });
 
-                if (await app.currentVault.passwordStore.updatePassword(key,
+                const result = await app.currentVault.passwordStore.updatePassword(key,
                     passwordState, passwordIsDirty.value, addedSecurityQuestions, dirtySecurityQuestionQuestions,
-                    dirtySecurityQuestionAnswers, removedSecurityQuestions, newGroups, pendingStoreState))
-                {
-                    handleSaveResponse(true);
-                    return;
-                }
+                    dirtySecurityQuestionAnswers, removedSecurityQuestions, newGroups, pendingStoreState);
 
-                handleSaveResponse(false);
+                if (result == UpdatePasswordResponse.EmailIsTaken)
+                {
+                    emailField.value?.invalidate("Email is already in use");
+                    app.popups.hideLoadingIndicator();
+                }
+                else
+                {
+                    handleSaveResponse(result == UpdatePasswordResponse.Success);
+                }
             }
         }
 
@@ -397,6 +403,7 @@ export default defineComponent({
 
         return {
             passwordInputField,
+            emailField,
             color,
             passwordState,
             refreshKey,

@@ -14,6 +14,7 @@ import { GroupStoreState } from "./GroupStore";
 import { CurrentAndSafeStructure, defaultPasswordStoreState, DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 import { isOld } from "../../Helpers/DataTypeHelper";
+import { start } from "repl";
 
 export interface IPasswordStoreState extends StoreState
 {
@@ -27,6 +28,13 @@ export interface IPasswordStoreState extends StoreState
     c: CurrentAndSafeStructure;
     /** Passwords By Hash */
     h: DoubleKeyedObject;
+};
+
+export enum UpdatePasswordResponse
+{
+    Success,
+    EmailIsTaken,
+    Failed
 };
 
 export interface PasswordStoreStateKeys extends PrimarydataTypeStoreStateKeys
@@ -169,94 +177,130 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         updatedSecurityQuestionAnswers: SecurityQuestion[],
         deletedSecurityQuestions: string[],
         groups: DictionaryAsList,
-        pendingPasswordState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>): Promise<boolean>
+        pendingPasswordState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>): Promise<UpdatePasswordResponse>
     {
         const currentPassword: ReactivePassword | undefined = pendingPasswordState.getObject('dataTypesByID.dataType', updatingPassword.id);
         if (!currentPassword)
         {
             await api.repositories.logs.log(undefined, `No Password`, "PasswordStore.Update")
-            return false;
+            return UpdatePasswordResponse.Failed;
         }
 
-        // TODO: Check update email on sever if isVaultic. Need to update it in my database, for stripe, and locally. Would 
-        // preferably have this be the only way to update email, and not via a webhook but Idk if thats possible to prevent. Wil
-        // need to look into
-        if (updatingPassword.v && !app.isOnline && currentPassword.e != updatingPassword.e)
+        const finishUpdatePassword = async () => 
         {
-            return false;
-        }
+            // retrieve these before updating
+            const changedGroups = this.getRelatedDataTypeChanges(currentPassword.g, groups);
 
-        // retrieve these before updating
-        const changedGroups = this.getRelatedDataTypeChanges(currentPassword.g, groups);
-
-        if (passwordWasUpdated)
-        {
-            // Don't support updating the master key at this time, set our 'new' password to our old one
-            if (updatingPassword.v)
+            if (passwordWasUpdated)
             {
-                updatingPassword.p = currentPassword.p;
+                // Don't support updating the master key at this time, set our 'new' password to our old one
+                if (updatingPassword.v)
+                {
+                    updatingPassword.p = currentPassword.p;
+                }
+
+                await this.updateValuesByHash(pendingPasswordState, "p", updatingPassword, currentPassword);
+
+                // do this before re encrypting the password
+                await this.checkUpdateDuplicatePrimaryObjects(masterKey, updatingPassword, "p", pendingPasswordState);
+
+                if (!(await this.setPasswordProperties(masterKey, updatingPassword)))
+                {
+                    return UpdatePasswordResponse.Failed;
+                }
+            }
+            else if (!updatingPassword.v)
+            {
+                // need to check to see if the password contains their potentially updated username
+                const decryptResponse = await cryptHelper.decrypt(masterKey, updatingPassword.p);
+                if (!decryptResponse.success)
+                {
+                    return UpdatePasswordResponse.Failed;
+                }
+
+                if (decryptResponse.value?.includes(updatingPassword.l))
+                {
+                    updatingPassword.c = true;
+                }
             }
 
-            await this.updateValuesByHash(pendingPasswordState, "p", updatingPassword, currentPassword);
+            await this.updateSecurityQuestions(masterKey, updatingPassword, addedSecurityQuestions, updatedSecurityQuestionQuestions,
+                updatedSecurityQuestionAnswers, deletedSecurityQuestions, pendingPasswordState);
 
-            // do this before re encrypting the password
-            await this.checkUpdateDuplicatePrimaryObjects(masterKey, updatingPassword, "p", pendingPasswordState);
+            this.updatePasswordsByDomain(pendingPasswordState, currentPassword.id, updatingPassword.d, currentPassword.d);
 
-            if (!(await this.setPasswordProperties(masterKey, updatingPassword)))
+            pendingPasswordState.commitProxyObject("dataTypesByID.dataType", updatingPassword, updatingPassword.id);
+
+            await this.incrementCurrentAndSafe(pendingPasswordState, this.passwordIsSafe);
+            this.syncGroupsForPrimaryObject(updatingPassword.id, changedGroups, pendingPasswordState);
+
+            const pendingGroupState = this.vault.groupStore.getPendingState()!;
+            this.vault.groupStore.syncGroupsForPasswords(updatingPassword.id, changedGroups, pendingGroupState);
+
+            const pendingFilterState = this.vault.filterStore.getPendingState()!;
+            this.vault.filterStore.syncFiltersForPasswords([currentPassword], pendingPasswordState, pendingGroupState.state.p, pendingFilterState);
+
+            const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
+
+            transaction.updateVaultStore(this, pendingPasswordState);
+            transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
+            transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
+
+            if (!(await transaction.commit(masterKey)))
             {
-                return false;
+                return UpdatePasswordResponse.Failed;
             }
-        }
-        else if (!updatingPassword.v)
-        {
-            // need to check to see if the password contains their potentially updated username
-            const decryptResponse = await cryptHelper.decrypt(masterKey, updatingPassword.p);
-            if (!decryptResponse.success)
+
+            app.currentVault.passwordsByDomain = this.state.o;
+
+            if (app.isOnline)
             {
-                return false;
+                this.emit("onCheckPasswordBreach", currentPassword);
             }
 
-            if (decryptResponse.value?.includes(updatingPassword.l))
+            return UpdatePasswordResponse.Success;
+        }
+
+        if (updatingPassword.v && currentPassword.e != updatingPassword.e)
+        {
+            if (!app.isOnline)
             {
-                updatingPassword.c = true;
+                app.popups.showAlert("Unable to edit email", "Unable to edit your Vaultic email while offline. Please log into online mode to update your email", false);
+                return UpdatePasswordResponse.Failed;
             }
+
+            const startVerificationResponse = await api.server.user.startEmailVerification(updatingPassword.e);
+            if (startVerificationResponse.EmailIsTaken)
+            {
+                return UpdatePasswordResponse.EmailIsTaken;
+            }
+            else if (!startVerificationResponse.Success)
+            {
+                return UpdatePasswordResponse.Failed;
+            }
+
+            const updatedEmailOnServer = await new Promise<boolean>((resolve) =>
+            {
+                app.popups.showVerifyEmailPopup(app.userPreferences.currentPrimaryColor.value, () => { resolve(false) }, () => { resolve(true) })
+            });
+
+            if (!updatedEmailOnServer)
+            {
+                return UpdatePasswordResponse.Failed;
+            }
+
+            const updateEmailLocallyResponse = await api.repositories.users.updateUserEmail(updatingPassword.e);
+            if (!updateEmailLocallyResponse.success)
+            {
+                return UpdatePasswordResponse.Failed;
+            }
+
+            return finishUpdatePassword();
         }
-
-        await this.updateSecurityQuestions(masterKey, updatingPassword, addedSecurityQuestions, updatedSecurityQuestionQuestions,
-            updatedSecurityQuestionAnswers, deletedSecurityQuestions, pendingPasswordState);
-
-        this.updatePasswordsByDomain(pendingPasswordState, currentPassword.id, updatingPassword.d, currentPassword.d);
-
-        pendingPasswordState.commitProxyObject("dataTypesByID.dataType", updatingPassword, updatingPassword.id);
-
-        await this.incrementCurrentAndSafe(pendingPasswordState, this.passwordIsSafe);
-        this.syncGroupsForPrimaryObject(updatingPassword.id, changedGroups, pendingPasswordState);
-
-        const pendingGroupState = this.vault.groupStore.getPendingState()!;
-        this.vault.groupStore.syncGroupsForPasswords(updatingPassword.id, changedGroups, pendingGroupState);
-
-        const pendingFilterState = this.vault.filterStore.getPendingState()!;
-        this.vault.filterStore.syncFiltersForPasswords([currentPassword], pendingPasswordState, pendingGroupState.state.p, pendingFilterState);
-
-        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
-
-        transaction.updateVaultStore(this, pendingPasswordState);
-        transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
-        transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
-
-        if (!(await transaction.commit(masterKey)))
+        else
         {
-            return false;
+            return finishUpdatePassword();
         }
-
-        app.currentVault.passwordsByDomain = this.state.o;
-
-        if (app.isOnline)
-        {
-            this.emit("onCheckPasswordBreach", currentPassword);
-        }
-
-        return true;
     }
 
     async deletePassword(

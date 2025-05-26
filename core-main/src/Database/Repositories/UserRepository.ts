@@ -44,7 +44,6 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         }
         catch { }
 
-        // TODO: switch to Argon2id
         const hash = await environment.utilities.hash.hash(Algorithm.SHA_256, keyToUse, salt);
         if (!hash.success)
         {
@@ -400,7 +399,6 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                     return TypedMethodResponse.fail(undefined, undefined, "Salt");
                 }
 
-                // TODO: switch to Argon2id
                 const hash = await environment.utilities.hash.hash(Algorithm.SHA_256, keyToUse, decryptedSaltResponse.value!);
                 if (!hash.success)
                 {
@@ -617,6 +615,40 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             {
                 await environment.repositories.logs.log(undefined, e?.toString());
             }
+        }
+    }
+
+    public async updateUserEmail(email: string): Promise<TypedMethodResponse<undefined>>
+    {
+        return await safetifyMethod(this, internalUpdateUserEmail);
+
+        async function internalUpdateUserEmail(this: UserRepository): Promise<TypedMethodResponse<undefined>>
+        {
+            const currentUser = await this.getCurrentUser();
+            if (!currentUser || !environment.cache.masterKey)
+            {
+                return TypedMethodResponse.fail(errorCodes.NO_USER);
+            }
+
+            currentUser.email = email;
+
+            const transaction = new Transaction();
+            transaction.updateEntity(currentUser, environment.cache.masterKey, () => this);
+
+            if (!(await transaction.commit()))
+            {
+                return TypedMethodResponse.fail(errorCodes.TRANSACTION_FAILED);
+            }
+
+            environment.cache.currentUser.email = email;
+
+            const backupResponse = await backupData(environment.cache.masterKey);
+            if (!backupResponse.success)
+            {
+                return TypedMethodResponse.fail(errorCodes.BACKUP_FAILED);
+            }
+
+            return TypedMethodResponse.success();
         }
     }
 

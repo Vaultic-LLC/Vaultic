@@ -8,6 +8,18 @@
             <ObjectView v-if="activeSection == 0" :color="primaryColor" :hideButtons="true">
                 <VaulticAccordion :value="'0'">
                     <VaulticAccordionPanel :value="'0'">
+                        <VaulticAccordionHeader :title="'Account'" />
+                        <VaulticAccordionContent>
+                            <div class="aboutPopupContainer__section">
+                                <h2 class="aboutPopupContainer__section__header">Update Email</h2>
+                                <div class="aboutPopupContainer__section__text">
+                                    To update your email, simply update the email for the 'Vaultic Password Manager' password in your password table. Note, you can
+                                    only do this while online.
+                                </div>
+                            </div>
+                        </VaulticAccordionContent>
+                    </VaulticAccordionPanel>
+                    <VaulticAccordionPanel :value="'1'">
                         <VaulticAccordionHeader :title="'Shortcuts'" />
                         <VaulticAccordionContent>
                             <div class="aboutPopupContainer__section">
@@ -18,7 +30,7 @@
                             </div>
                         </VaulticAccordionContent>
                     </VaulticAccordionPanel>
-                    <VaulticAccordionPanel :value="'1'">
+                    <VaulticAccordionPanel :value="'2'">
                         <VaulticAccordionHeader :title="'Widgets'" />
                         <VaulticAccordionContent>
                             <div class="aboutPopupContainer__section">
@@ -46,7 +58,7 @@
                             </div>
                         </VaulticAccordionContent>
                     </VaulticAccordionPanel>
-                    <VaulticAccordionPanel :value="'2'" :final="true">
+                    <VaulticAccordionPanel :value="'3'" :final="true">
                         <VaulticAccordionHeader :title="'Sharing'" />
                         <VaulticAccordionContent>
                             <div class="aboutPopupContainer__section">
@@ -65,7 +77,7 @@
                             </div>
                         </VaulticAccordionContent>
                     </VaulticAccordionPanel>
-                    <VaulticAccordionPanel :value="'3'">
+                    <VaulticAccordionPanel :value="'4'">
                         <VaulticAccordionHeader :title="'Multifactor Authentication'" />
                         <VaulticAccordionContent>
                             <div class="aboutPopupContainer__section">

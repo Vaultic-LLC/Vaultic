@@ -14,6 +14,7 @@ export type PopupStore = ReturnType<typeof createPopupStore>
 
 export enum PopupNames 
 {
+    VerifyEmail = "verifyEmail",
     Loading = "loading",
     Alert = "alert",
     DevicePopup = "devicePopup",
@@ -42,6 +43,7 @@ export const popups: Popups =
 {
     "loading": { zIndex: 2000 },
     "alert": { zIndex: 1990, enterOrder: 0 },
+    "verifyEmail": { zIndex: 1500, enterOrder: 0 },
     "devicePopup": { zIndex: 161 },
     "enterMFACode": { zIndex: 1600, enterOrder: 1 },
     "toast": { zIndex: 1700 },
@@ -115,6 +117,10 @@ export function createPopupStore()
 
     const syncingPopupIsShowing: Ref<boolean> = ref(false);
     const syncingPopupIsFinished: Ref<boolean> = ref(false);
+
+    const verifyEmailPopupIsShowing: Ref<boolean> = ref(false);
+    const onVerifyEmailPopupClose: Ref<() => void> = ref(() => { });
+    const onVerifyEmailPopupSuccess: Ref<() => void> = ref(() => { });
 
     function addOnEnterHandler(index: number, callback: () => void)
     {
@@ -407,6 +413,24 @@ export function createPopupStore()
         setTimeout(() => syncingPopupIsFinished.value = false, 100);
     }
 
+    function showVerifyEmailPopup(popupColor: string, onClose: () => void, onSuccess: () => void)
+    {
+        color.value = popupColor;
+        onVerifyEmailPopupClose.value = () =>
+        {
+            verifyEmailPopupIsShowing.value = false;
+            onClose();
+        };
+
+        onVerifyEmailPopupSuccess.value = () =>
+        {
+            verifyEmailPopupIsShowing.value = false;
+            onSuccess();
+        };
+
+        verifyEmailPopupIsShowing.value = true;
+    }
+
     return {
         get color() { return color.value },
         get loadingIndicatorIsShowing() { return loadingIndicatorIsShowing.value },
@@ -450,6 +474,9 @@ export function createPopupStore()
         get deviceModel() { return deviceModel.value; },
         get syncingPopupIsShowing() { return syncingPopupIsShowing.value },
         get syncingPopupIsFinished() { return syncingPopupIsFinished },
+        get verifyEmailPopupIsShowing() { return verifyEmailPopupIsShowing.value },
+        get onVerifyEmailPopupClose() { return onVerifyEmailPopupClose.value },
+        get onVerifyEmailPopupSuccess() { return onVerifyEmailPopupSuccess.value },
         closeAllPopupsOnLock,
         addOnEnterHandler,
         removeOnEnterHandler,
@@ -484,6 +511,7 @@ export function createPopupStore()
         hideDevicePopup,
         showSyncingPopup,
         finishSyncingPopup,
-        hideSyncingPopup
+        hideSyncingPopup,
+        showVerifyEmailPopup
     }
 }

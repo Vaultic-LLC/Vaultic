@@ -104,7 +104,7 @@ export default defineComponent({
 
         function updateData(newColor?: string, oldColor?: string)
         {
-            if (!lineChart.value)
+            if (!lineChart.value?.chart)
             {
                 return;
             }
@@ -132,7 +132,7 @@ export default defineComponent({
 
         function updateColors(newColor: string, oldColor: string, length: number)
         {
-            if (!lineChart.value)
+            if (!lineChart.value?.chart)
             {
                 return;
             }
@@ -162,7 +162,7 @@ export default defineComponent({
 
         function setChartColorsAndUpdate(chartOneBorderColor: string, chartTwoBorderColor: string, backgroundColor: string)
         {
-            if (!lineChart.value)
+            if (!lineChart.value?.chart)
             {
                 return;
             }

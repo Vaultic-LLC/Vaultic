@@ -8,9 +8,6 @@ import { BaseResponse, EncryptedResponse, InvalidSessionResponse } from '@vaulti
 import { Algorithm, AsymmetricVaulticKey, MLKEM1024KeyResult, PublicPrivateKey } from '@vaultic/shared/Types/Keys';
 import errorCodes from '@vaultic/shared/Types/ErrorCodes';
 
-const APIKeyEncryptionKey = JSON.stringify({ algorithm: Algorithm.XCHACHA20_POLY1305, key: "12fasjkdF2owsnFvkwnvwe23dFSDfio2" });
-const apiKeyPrefix = "ThisIsTheStartOfTheAPIKey!!!Yahooooooooooooo1234444321-";
-
 let vaulticServerPublicKey: string;
 let salt: string;
 
@@ -72,16 +69,6 @@ class AxiosWrapper
 
         this.initalized = true;
         this.url = url;
-    }
-
-    // just a little step to make it harder to hit the server from outsite of my apps
-    protected async getAPIKey()
-    {
-        const date = new Date();
-        const string = `${apiKeyPrefix}${date.getUTCMonth() + 1}/${date.getUTCDate()}/${date.getUTCFullYear()} ${date.getUTCHours()}:${date.getUTCMinutes()}`;
-
-        const encrypt = await environment.utilities.crypt.symmetricEncrypt(APIKeyEncryptionKey, string);
-        return encrypt.value ?? "";
     }
 
     async post<T extends BaseResponse>(serverPath: string, data?: any): Promise<T | BaseResponse> 
@@ -187,7 +174,6 @@ class AxiosWrapper
             }
         }
 
-        newData.APIKey = await this.getAPIKey();
         newData.MacAddress = deviceInfo.mac;
         newData.DeviceName = deviceInfo.deviceName;
         newData.Model = deviceInfo.model;

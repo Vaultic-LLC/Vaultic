@@ -1,6 +1,6 @@
 <template>
     <div class="verifyEmailContainer">
-        <AccountSetupView :color="color" :title="'Verify Email'" :buttonText="'Verify'" :titleMargin="'3%'"
+        <AccountSetupView :color="color" :title="title" :buttonText="'Verify'" :titleMargin="'3%'"
             :titleMarginTop="'1.5%'" @onSubmit="verify">
             <div class="verifyEmailContainer__message">
                 A verification code has been sent to your email. Please enter the code below and then click Verify
@@ -11,12 +11,14 @@
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, ref, Ref } from 'vue';
+import { computed, ComputedRef, defineComponent, onMounted, ref, Ref } from 'vue';
 
 import AccountSetupView from './AccountSetupView.vue';
 import VaulticOTP from './VaulticOTP.vue';
 import { api } from '../../API';
 import { Account } from '../../Types/Models';
+import { VerifyEmailResponse } from '@vaultic/shared/Types/Responses';
+import app from '../../Objects/Stores/AppStore';
 
 export default defineComponent({
     name: "CreateAccountView",
@@ -26,22 +28,36 @@ export default defineComponent({
         VaulticOTP
     },
     emits: ['onSuccess', 'onInvalidPendingUser'],
-    props: ['color', 'account'],
+    props: ['creating', 'color', 'account'],
     setup(props, ctx)
     {
         const otpModel: Ref<string> = ref('');
         const otp: Ref<any> = ref();
 
         const account: ComputedRef<Account> = computed(() => props.account);
+        const title: ComputedRef<string> = computed(() => props.creating ? 'Verify Email' : 'Verify New Email');
             
         async function verify()
         {
+            app.popups.showLoadingIndicator(props.color, "Verifying");
             if (!otpModel.value)
             {
+                app.popups.hideLoadingIndicator();
                 otp.value.invalidate('Please enter a valid code');
+                
+                return;
             }
 
-            const response = await api.server.user.verifyEmail(account.value.pendingUserToken!, otpModel.value);
+            let response: VerifyEmailResponse | undefined;
+            if (props.creating)
+            {
+                response = await api.server.user.verifyEmail(account.value.pendingUserToken!, otpModel.value);
+            }
+            else
+            {
+                response = await api.server.user.finishEmailVerification(otpModel.value);
+            }
+
             if (response.Success)
             {
                 ctx.emit('onSuccess');
@@ -57,11 +73,19 @@ export default defineComponent({
                     ctx.emit('onInvalidPendingUser');
                 }
             }
+
+            app.popups.hideLoadingIndicator();
         }
+
+        onMounted(() =>
+        {
+            app.popups.hideLoadingIndicator();
+        });
 
         return {
             otp,
             otpModel,
+            title,
             verify,
         };
     }

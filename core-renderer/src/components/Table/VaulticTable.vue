@@ -104,7 +104,6 @@
                             @click.right.stop="!column.isGroupIconCell && !column.component ? 
                                 onTextClick(column, (slotProps.data as TableRowModel).id) : undefined">
                         <div class="vaulticTableContainer__cell">
-                            <!-- TODO this doesn't show tooltip anymroe -->
                             <div v-if="column.isGroupIconCell" class="vaulticTableContainer__groupIconCell">
                                 <div v-for="model in (slotProps.data as TableRowModel).state['groupModels']" class="vaulticTableContainer__groupIconContainer" 
                                     :style="{ background: `color-mix(in srgb, ${model.color}, transparent 84%)`}" @mouseenter="(e) => showGroupTooltip(e, model)"

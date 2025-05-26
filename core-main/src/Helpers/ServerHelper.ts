@@ -17,7 +17,6 @@ import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 
 async function registerUser(masterKey: string, pendingUserToken: string, firstName: string, lastName: string): Promise<StartRegistrationResponse | FinishRegistrationResponse>
 {
-    // TODO: switch to argon2 hash
     const passwordHash = await environment.utilities.hash.hash(Algorithm.SHA_256, masterKey);
     if (!passwordHash.success)
     {

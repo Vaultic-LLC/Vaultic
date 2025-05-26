@@ -927,6 +927,8 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             {
                 await environment.repositories.logs.log(undefined, JSON.stringify(e));
             }
+
+            return TypedMethodResponse.fail();
         }
     }
 

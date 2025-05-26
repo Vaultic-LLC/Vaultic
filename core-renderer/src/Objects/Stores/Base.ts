@@ -142,7 +142,6 @@ export class Store<T extends KnownMappedFields<StoreState>, K extends StateKeys,
 
     protected async getIdentifyingHash(value: string): Promise<string | undefined>
     {
-        // TODO: switch to argon
         const response = await api.utilities.hash.hash(Algorithm.SHA_256, value);
         if (!response.success || !response.value)
         {

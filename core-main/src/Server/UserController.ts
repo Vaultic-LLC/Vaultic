@@ -165,6 +165,20 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         });
     }
 
+    function startEmailVerification(email: string)
+    {
+        return axiosHelper.api.post('User/StartEmailVerification', {
+            Email: email,
+        });
+    }
+
+    function finishEmailVerification(code: string)
+    {
+        return axiosHelper.api.post('User/FinishEmailVerification', {
+            VerificationCode: code,
+        });
+    }
+
     return {
         validateEmail,
         verifyEmail,
@@ -185,6 +199,8 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         getMFAKey,
         getUserInfo,
         startUpdateKSFParams,
-        finishUpdateKSFParams
+        finishUpdateKSFParams,
+        startEmailVerification,
+        finishEmailVerification
     }
 }
