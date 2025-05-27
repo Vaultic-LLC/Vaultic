@@ -279,18 +279,20 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
                 return UpdatePasswordResponse.Failed;
             }
 
-            const updatedEmailOnServer = await new Promise<boolean>((resolve) =>
+            const verifyEmailResponse = await new Promise<boolean>((resolve) =>
             {
                 app.popups.showVerifyEmailPopup(app.userPreferences.currentPrimaryColor.value, () => { resolve(false) }, () => { resolve(true) })
             });
 
-            if (!updatedEmailOnServer)
+            app.popups.showLoadingIndicator(app.userPreferences.currentPrimaryColor.value, "Saving Password");
+
+            if (!verifyEmailResponse)
             {
                 return UpdatePasswordResponse.Failed;
             }
 
-            const updateEmailLocallyResponse = await api.repositories.users.updateUserEmail(updatingPassword.e);
-            if (!updateEmailLocallyResponse.success)
+            const updateEmailResponse = await api.repositories.users.updateUserEmail(updatingPassword.e);
+            if (!updateEmailResponse.success)
             {
                 return UpdatePasswordResponse.Failed;
             }
