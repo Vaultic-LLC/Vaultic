@@ -302,6 +302,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
             if (this.internalProcessIsRunning)
             {
                 this.autoLockTimeoutID = undefined;
+                return;
             }
 
             this.lock();

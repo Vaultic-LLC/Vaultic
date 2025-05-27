@@ -211,24 +211,27 @@ export default defineComponent({
                 // we want to pass the current selection instead of setting them so change tracking
                 // can add them properly
                 const newGroups: DictionaryAsList = {};
-                selectedGroups.value.forEach(g => 
+                selectedGroups.value.forEach(g =>
                 {
                     newGroups[g.backingObject!.id] = true;
                 });
 
-                const result = await app.currentVault.passwordStore.updatePassword(key,
-                    passwordState, passwordIsDirty.value, addedSecurityQuestions, dirtySecurityQuestionQuestions,
-                    dirtySecurityQuestionAnswers, removedSecurityQuestions, newGroups, pendingStoreState);
-
-                if (result == UpdatePasswordResponse.EmailIsTaken)
+                app.runAsAsyncProcess(async () =>
                 {
-                    emailField.value?.invalidate("Email is already in use");
-                    app.popups.hideLoadingIndicator();
-                }
-                else
-                {
-                    handleSaveResponse(result == UpdatePasswordResponse.Success);
-                }
+                    const result = await app.currentVault.passwordStore.updatePassword(key,
+                        passwordState, passwordIsDirty.value, addedSecurityQuestions, dirtySecurityQuestionQuestions,
+                        dirtySecurityQuestionAnswers, removedSecurityQuestions, newGroups, pendingStoreState);
+    
+                    if (result == UpdatePasswordResponse.EmailIsTaken)
+                    {
+                        emailField.value?.invalidate("Email is already in use");
+                        app.popups.hideLoadingIndicator();
+                    }
+                    else
+                    {
+                        handleSaveResponse(result == UpdatePasswordResponse.Success);
+                    }              
+                });
             }
         }
 
