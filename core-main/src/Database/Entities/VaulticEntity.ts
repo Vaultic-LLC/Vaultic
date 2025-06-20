@@ -333,7 +333,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         const selfVerification = await this.internalVerify(key);
         if (!selfVerification.success)
         {
-            selfVerification.addToCallStack(`Verifying ${this.entityName()}`);
+            selfVerification.addToCallStack(`Verifying ${this.entityName()}: ${this.identifier()}`);
             throw selfVerification;
         }
 

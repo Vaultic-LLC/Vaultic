@@ -17,7 +17,6 @@ import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 
 async function registerUser(masterKey: string, pendingUserToken: string, firstName: string, lastName: string): Promise<StartRegistrationResponse | FinishRegistrationResponse>
 {
-    // TODO: switch to argon2 hash
     const passwordHash = await environment.utilities.hash.hash(Algorithm.SHA_256, masterKey);
     if (!passwordHash.success)
     {
@@ -88,18 +87,18 @@ async function logUserIn(masterKey: string, email: string,
         let params: KSFParams = defaultKSFParams();
         if (!firstLogin)
         {
-            if (!startResponse.KSFParams)
+            // Don't return if we dont' have ksfParams as if there is an error when creating an account the user won't have loaded data but 
+            // may still be able to sign in after. They won't have ksf params on the server yet though
+            if (startResponse.KSFParams)
             {
-                return TypedMethodResponse.fail(undefined, undefined, "no ksf params");
-            }
-
-            try
-            {
-                params = JSON.parse(startResponse.KSFParams);
-            }
-            catch (e)
-            {
-                return TypedMethodResponse.fail(undefined, undefined, "unable to parse ksf params");
+                try
+                {
+                    params = JSON.parse(startResponse.KSFParams);
+                }
+                catch (e)
+                {
+                    return TypedMethodResponse.fail(undefined, undefined, "unable to parse ksf params");
+                }
             }
         }
 

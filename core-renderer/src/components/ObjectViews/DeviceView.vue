@@ -4,7 +4,7 @@
         <h2 v-else>Edit Device</h2>
     </div>
     <div class="deviceView__content">
-        <ObjectView :title="'Device'" :buttonText="buttonText" :color="color" :creating="false" :defaultSave="onSave" :key="refreshKey"
+        <ObjectView ref="objectView" :title="'Device'" :buttonText="buttonText" :color="color" :creating="false" :defaultSave="onSave" :key="refreshKey"
             :skipOnSaveFunctionality="true">
             <VaulticFieldset :centered="true">
                 <TextInputField :color="color" :label="'Name'"
@@ -26,7 +26,7 @@
     </div>
 </template>
 <script lang="ts">
-import { defineComponent, ComputedRef, computed, Ref, ref, onMounted, inject } from 'vue';
+import { defineComponent, ComputedRef, computed, Ref, ref, onMounted, inject, watch } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
@@ -34,8 +34,9 @@ import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
 import EnumInputField from '../InputFields/EnumInputField.vue';
 
 import app from "../../Objects/Stores/AppStore";
-import { DisplayRequiresMFA, ClientDevice, requiresMFAToDisplay, displayRequiresMFAToRequiresMFA, defaultClientDevice } from '@vaultic/shared/Types/Device';
+import { DisplayRequiresMFA, ClientDevice, requiresMFAToDisplay, displayRequiresMFAToRequiresMFA, defaultClientDevice, DisplayRequireMFAOn, RequireMFAOn, RequiresMFA } from '@vaultic/shared/Types/Device';
 import { ClosePopupFuncctionKey } from '../../Constants/Keys';
+import { ObjectViewComponent } from '../../Types/Components';
 
 export default defineComponent({
     name: "PasswordView",
@@ -48,6 +49,7 @@ export default defineComponent({
     props: ['creating', 'model'],
     setup(props)
     {
+        const objectView: Ref<ObjectViewComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref("");
         const deviceState: Ref<ClientDevice> = ref(props.model ? JSON.parse(JSON.stringify(props.model)) : defaultClientDevice());
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.p.p);
@@ -92,6 +94,14 @@ export default defineComponent({
             app.popups.hideLoadingIndicator();
         }
 
+        watch(() => requiresMFA.value, (newValue) =>
+        {
+            if (deviceState.value.RequiresMFA != RequiresMFA.True && newValue != DisplayRequiresMFA.False)
+            {
+                objectView.value?.addWarning("This will enable Multifactor Authentication on this devices. If you have not setup your MFA Key within an authenticator app yet you will not be able to log in. Please see the 'Multifactor Authentication' section within the about popup for how to setup MFA before changing this setting.");          
+            }
+        });
+
         onMounted(async() =>
         {
             if (props.creating)
@@ -112,6 +122,7 @@ export default defineComponent({
         });
 
         return {
+            objectView,
             color,
             deviceState,
             refreshKey,

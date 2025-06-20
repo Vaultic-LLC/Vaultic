@@ -218,6 +218,7 @@ export default defineComponent({
     height: 100%;
     font-size: var(--input-font-size);
     background: v-bind(background) !important;
+    padding-block-start: var(--input-padding-block-start) !important;
 }
 
 :deep(.textInputFieldContainer__input--invalid) {

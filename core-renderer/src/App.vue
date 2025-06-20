@@ -19,10 +19,10 @@
                 </div>
             </Transition>
         </div>
-        <Transition name="fade">
+        <Transition name="fade" mode="out-in">
             <PasswordValueGauges v-if="isVaultView" />
         </Transition>
-        <Transition name="fade">
+        <Transition name="fade" mode="out-in">
             <FilterGroupGauges v-if="isVaultView" />
         </Transition>
         <Transition name="fade" mode="out-in">
@@ -106,7 +106,7 @@ export default defineComponent({
         let lastMouseover: number = 0;
         const threshold: number = 1000;
 
-        function onMouseover()
+        function extendSession()
         {
             if (Date.now() - lastMouseover < threshold)
             {
@@ -119,13 +119,17 @@ export default defineComponent({
 
         watch(() => app.loadedUser.value, (newValue) => 
         {
+            const body = document.getElementById('body');
+
             if (newValue)
             {
-                document.getElementById('body')?.addEventListener('mouseover', onMouseover);
+                body?.addEventListener('mouseover', extendSession);
+                body?.addEventListener('keyup', extendSession);
             }
             else 
             {
-                document.getElementById('body')?.removeEventListener('mouseover', onMouseover);
+                body?.removeEventListener('mouseover', extendSession);
+                body?.removeEventListener('keyup', extendSession);
             }
         });
 

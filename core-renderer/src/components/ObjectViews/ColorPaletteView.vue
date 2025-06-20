@@ -1,6 +1,6 @@
 <template>
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
-        :gridDefinition="gridDefinition" :hideButtons="readOnly">
+        :gridDefinition="gridDefinition">
         <VaulticFieldset :centered="true">
             <ColorPickerInputField :label="'Error Color'" :color="color"
                 v-model="colorPaletteState.r" :width="'50%'" :height="'4vh'" :minHeight="'30px'"
@@ -52,7 +52,7 @@
     </ObjectView>
 </template>
 <script lang="ts">
-import { defineComponent, ComputedRef, computed, Ref, ref, watch, onMounted, Reactive, reactive } from 'vue';
+import { defineComponent, ComputedRef, computed, Ref, ref, watch, Reactive, reactive } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import ColorPickerInputField from '../InputFields/ColorPickerInputField.vue';
@@ -80,8 +80,6 @@ export default defineComponent({
         let colorPaletteState: Reactive<ColorPalette> = props.creating ? reactive(props.model) : getCustomRef(props.model);
         const color: ComputedRef<string> = computed(() => '#d0d0d0');
         const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
-
-        const readOnly: Ref<boolean> = ref(app.currentVault.isReadOnly.value);
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
@@ -145,7 +143,6 @@ export default defineComponent({
             color,
             refreshKey,
             gridDefinition,
-            readOnly,
             onSave
         };
     },

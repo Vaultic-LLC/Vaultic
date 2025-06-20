@@ -5,7 +5,9 @@
                 Reset
             </div>
             <div class="strengthGraphContainer__title">
-                <h2>Security Over Time</h2>
+                <Transition name="fade" mode="out-in">
+                    <h2 :key="titleKey">{{ widgetTitle }}</h2>
+                </Transition>
             </div>
         </div>
         <div v-if="!canLoadWidget" class="strengthGraphContainer__chart">
@@ -67,6 +69,8 @@ export default defineComponent({
         const failedToLoad: Ref<boolean> = ref(false);
         const canLoadWidget: ComputedRef<boolean> = computed(() => app.canShowSubscriptionWidgets.value);
 
+        const widgetTitle: ComputedRef<string> = computed(() => `Secure ${app.activePasswordValuesTable == DataType.Passwords ? "Passwords" : "Values"}`);
+        const titleKey: Ref<string> = ref('');
         const loading: Ref<boolean> = ref(false);
         const refreshKey: Ref<string> = ref('');
         const key: Ref<string> = ref('');
@@ -100,7 +104,7 @@ export default defineComponent({
 
         function updateData(newColor?: string, oldColor?: string)
         {
-            if (!lineChart.value)
+            if (!lineChart.value?.chart)
             {
                 return;
             }
@@ -110,7 +114,7 @@ export default defineComponent({
 
             lineChart.value.chart.data.labels = toRaw(lableArray.value);
             lineChart.value.chart.data.datasets[0].data = chartOneArray.value;
-            lineChart.value.chart.data.datasets[0].label = 'Secure ' + table.value;
+            lineChart.value.chart.data.datasets[0].label = 'Secure';
 
             lineChart.value.chart.data.datasets[1].data = target.value;
 
@@ -128,7 +132,7 @@ export default defineComponent({
 
         function updateColors(newColor: string, oldColor: string, length: number)
         {
-            if (!lineChart.value)
+            if (!lineChart.value?.chart)
             {
                 return;
             }
@@ -158,7 +162,7 @@ export default defineComponent({
 
         function setChartColorsAndUpdate(chartOneBorderColor: string, chartTwoBorderColor: string, backgroundColor: string)
         {
-            if (!lineChart.value)
+            if (!lineChart.value?.chart)
             {
                 return;
             }
@@ -248,7 +252,7 @@ export default defineComponent({
         {
             return [
                 {
-                    label: 'Secure ' + table.value,
+                    label: 'Secure',
                     data: [],
                     backgroundColor: function (context: any)
                     {
@@ -492,6 +496,8 @@ export default defineComponent({
                     setCurrentChartData(valueChartData.value);
                 }
             }
+
+            titleKey.value = Date.now().toString();
         });
 
         watch(() => app.userPreferences.currentColorPalette, (newValue, oldValue) =>
@@ -540,6 +546,11 @@ export default defineComponent({
                 resizeObserver.observe(chartContainer.value)
             }
 
+            if (app.loadedUser.value)
+            {
+                refetchData();
+            }
+
             app.currentVault.passwordStore.addEvent("onChanged", onDataChange);
             app.currentVault.valueStore.addEvent("onChanged", onDataChange);
         });
@@ -553,6 +564,8 @@ export default defineComponent({
         setOptions(1000);
 
         return {
+            widgetTitle,
+            titleKey,
             canLoadWidget,
             lineChart,
             chartContainer,

@@ -11,7 +11,7 @@ import { VaultPreferencesStoreState } from "../Entities/States/VaultPreferencesS
 import { CondensedVaultData, EntityState, UnsetupSharedClientUserVault } from "@vaultic/shared/Types/Entities";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
-import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
+import { DeepPartial, hasValue, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { IUserVaultRepository } from "../../Types/Repositories";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ChangeTracking } from "../Entities/ChangeTracking";
@@ -298,26 +298,25 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         const partialUserVault = {};
         let updatedUserVault = false;
 
-        if (newUserVault.currentSignature)
+        if (hasValue(newUserVault.currentSignature))
         {
             partialUserVault[nameof<UserVault>("currentSignature")] = newUserVault.currentSignature;
             updatedUserVault = true;
         }
 
-        if (newUserVault.vaultKey)
+        if (hasValue(newUserVault.vaultKey))
         {
             partialUserVault[nameof<UserVault>("vaultKey")] = newUserVault.vaultKey;
             updatedUserVault = true;
         }
 
-        // need to check for null since enum value could be 0
-        if (newUserVault.permissions != null)
+        if (hasValue(newUserVault.permissions))
         {
             partialUserVault[nameof<UserVault>("permissions")] = newUserVault.permissions;
             updatedUserVault = true;
         }
 
-        if (newUserVault.lastLoadedChangeVersion)
+        if (hasValue(newUserVault.lastLoadedChangeVersion))
         {
             partialUserVault[nameof<UserVault>("lastLoadedChangeVersion")] = newUserVault.lastLoadedChangeVersion;
             updatedUserVault = true;

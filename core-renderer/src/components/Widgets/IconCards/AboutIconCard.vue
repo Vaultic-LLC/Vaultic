@@ -1,6 +1,6 @@
 <template>
     <div>
-        <IconCard :icon="'alert-circle-outline'" :text="'About'" @click="showAboutPopup = true" />
+        <IconCard :icon="'information-circle-outline'" :text="'About'" @click="showAboutPopup = true" />
         <Teleport to="#body">
             <Transition name="fade">
                 <ObjectPopup v-if="showAboutPopup" :closePopup="onAboutPopupclose" :minWidth="'800px'"

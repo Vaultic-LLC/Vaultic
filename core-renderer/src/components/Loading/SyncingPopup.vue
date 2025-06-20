@@ -107,11 +107,10 @@ export default defineComponent({
     width: 11%;
     min-width: 150px;
     max-width: 300px;
-    height: 5%;
-    min-height: 40px;
+    height: 3vw;
+    min-height: 50px;
     top: 5%;
     right: 5%;
-    /* transform: translateX(-50%); */
     border: 1.5px solid color-mix(in srgb, rgb(108 101 148), #101010  50%);
     border-radius: min(1vw, 1rem);
     background-color: color-mix(in srgb, #212c6f, #101010  85%);
@@ -119,11 +118,13 @@ export default defineComponent({
     justify-content: space-between;
     z-index: v-bind(zIndex);
     flex-direction: column;
-    padding: 10px;
+    padding: clamp(6px, 0.4vw, 10px);
+    row-gap: 5px;
 }
 
 .syncingPopupContainer__text {
     display: flex;
+    font-size: clamp(9px, 0.7vw, 16px);
 }
 
 .syncingPopupContainer__indicator {
@@ -131,6 +132,11 @@ export default defineComponent({
     width: 100%;
     align-items: center;
     column-gap: 10px;
+}
+
+.syncingPopupContainer__loadingIndictor {
+    display: flex;
+    justify-content: center;
 }
 
 .syncingPopupContainer__doneIcon {

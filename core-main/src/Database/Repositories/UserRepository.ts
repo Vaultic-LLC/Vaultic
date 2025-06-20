@@ -14,7 +14,7 @@ import { safetifyMethod } from "../../Helpers/RepositoryHelper";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 import { EntityState, getVaultType, IUser, UserData } from "@vaultic/shared/Types/Entities";
-import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
+import { DeepPartial, hasValue, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { IUserRepository } from "../../Types/Repositories";
 import { defaultAppStoreState, defaultUserPreferencesStoreState, SimplifiedPasswordStore, StoreType } from "@vaultic/shared/Types/Stores";
 import { Algorithm, defaultKSFParams, KSFParams, VaulticKey } from "@vaultic/shared/Types/Keys";
@@ -44,7 +44,6 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         }
         catch { }
 
-        // TODO: switch to Argon2id
         const hash = await environment.utilities.hash.hash(Algorithm.SHA_256, keyToUse, salt);
         if (!hash.success)
         {
@@ -400,7 +399,6 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                     return TypedMethodResponse.fail(undefined, undefined, "Salt");
                 }
 
-                // TODO: switch to Argon2id
                 const hash = await environment.utilities.hash.hash(Algorithm.SHA_256, keyToUse, decryptedSaltResponse.value!);
                 if (!hash.success)
                 {
@@ -620,6 +618,40 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         }
     }
 
+    public async updateUserEmail(email: string): Promise<TypedMethodResponse<undefined>>
+    {
+        return await safetifyMethod(this, internalUpdateUserEmail);
+
+        async function internalUpdateUserEmail(this: UserRepository): Promise<TypedMethodResponse<undefined>>
+        {
+            const currentUser = await this.getCurrentUser();
+            if (!currentUser || !environment.cache.masterKey)
+            {
+                return TypedMethodResponse.fail(errorCodes.NO_USER);
+            }
+
+            currentUser.email = email;
+
+            const transaction = new Transaction();
+            transaction.updateEntity(currentUser, environment.cache.masterKey, () => this);
+
+            if (!(await transaction.commit()))
+            {
+                return TypedMethodResponse.fail(errorCodes.TRANSACTION_FAILED);
+            }
+
+            environment.cache.currentUser.email = email;
+
+            const backupResponse = await backupData(environment.cache.masterKey);
+            if (!backupResponse.success)
+            {
+                return TypedMethodResponse.fail(errorCodes.BACKUP_FAILED);
+            }
+
+            return TypedMethodResponse.success();
+        }
+    }
+
     public async getEntityThatNeedsToBeBackedUp(masterKey: string): Promise<TypedMethodResponse<DeepPartial<User> | undefined>>
     {
         if (!environment.cache.currentUser?.userID)
@@ -739,55 +771,55 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         const partialUser: DeepPartial<User> = {};
         let updatedUser = false;
 
-        if (newUser.email)
+        if (hasValue(newUser.email))
         {
             partialUser[nameof<User>("email")] = newUser.email;
             updatedUser = true;
         }
 
-        if (newUser.masterKeyEncryptionAlgorithm)
+        if (hasValue(newUser.masterKeyEncryptionAlgorithm))
         {
             partialUser[nameof<User>("masterKeyEncryptionAlgorithm")] = newUser.masterKeyEncryptionAlgorithm;
             updatedUser = true;
         }
 
-        if (newUser.publicSigningKey)
+        if (hasValue(newUser.publicSigningKey))
         {
             partialUser[nameof<User>("publicSigningKey")] = newUser.publicSigningKey;
             updatedUser = true;
         }
 
-        if (newUser.privateSigningKey)
+        if (hasValue(newUser.privateSigningKey))
         {
             partialUser[nameof<User>("privateSigningKey")] = newUser.privateSigningKey;
             updatedUser = true;
         }
 
-        if (newUser.publicEncryptingKey)
+        if (hasValue(newUser.publicEncryptingKey))
         {
             partialUser[nameof<User>("publicEncryptingKey")] = newUser.publicEncryptingKey;
             updatedUser = true;
         }
 
-        if (newUser.privateEncryptingKey)
+        if (hasValue(newUser.privateEncryptingKey))
         {
             partialUser[nameof<User>("privateEncryptingKey")] = newUser.privateEncryptingKey;
             updatedUser = true;
         }
 
-        if (newUser.currentSignature)
+        if (hasValue(newUser.currentSignature))
         {
             partialUser[nameof<User>("currentSignature")] = newUser.currentSignature;
             updatedUser = true;
         }
 
-        if (newUser.lastLoadedChangeVersion)
+        if (hasValue(newUser.lastLoadedChangeVersion))
         {
             partialUser[nameof<User>("lastLoadedChangeVersion")] = newUser.lastLoadedChangeVersion;
             updatedUser = true;
         }
 
-        if (newUser.ksfParams)
+        if (hasValue(newUser.ksfParams))
         {
             partialUser[nameof<User>("ksfParams")] = newUser.ksfParams;
             updatedUser = true;

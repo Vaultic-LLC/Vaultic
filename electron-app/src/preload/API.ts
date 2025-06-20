@@ -46,7 +46,9 @@ const userController: ClientUserController =
 	updateSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: ServerAllowSharingFrom, addedAllowSharingFrom?: number[], removedAllowSharingFrom?: number[], requireMFAOn?: RequireMFAOn) => ipcRenderer.invoke('userController:updateSettings', username, allowSharedVaultsFromOthers, allowSharingFrom, addedAllowSharingFrom, removedAllowSharingFrom, requireMFAOn),
 	searchForUsers: (username: string, excludedUserIDs: string) => ipcRenderer.invoke('userController:searchForUsers', username, excludedUserIDs),
 	getMFAKey: () => ipcRenderer.invoke('userController:getMFAKey'),
-	getUserInfo: () => ipcRenderer.invoke('userController:getUserInfo')
+	getUserInfo: () => ipcRenderer.invoke('userController:getUserInfo'),
+	startEmailVerification: (email: string) => ipcRenderer.invoke('userController:startEmailVerification', email),
+	finishEmailVerification: (verificationCode: string) => ipcRenderer.invoke('userController:finishEmailVerification', verificationCode)
 };
 
 const vaultController: ClientVaultController =
@@ -140,6 +142,7 @@ const userRepository: ClientUserRepository =
 	saveUser: (masterKey: string, changes: string) => ipcRenderer.invoke('userRepository:saveUser', masterKey, changes),
 	getStoreStates: (masterKey: string, storeStatesToRetrieve: UserData) => ipcRenderer.invoke('userRepository:getStoreStates', masterKey, storeStatesToRetrieve),
 	getValidMasterKey: () => ipcRenderer.invoke('userRepository:getValidMasterKey'),
+	updateUserEmail: (email: string) => ipcRenderer.invoke('userRepository:updateUserEmail', email),
 };
 
 const vaultRepository: ClientVaultRepository =

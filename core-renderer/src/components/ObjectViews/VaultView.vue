@@ -4,7 +4,7 @@
         <h2 v-else>Edit Vault</h2>
     </div>
     <div class="vaultView__content">
-        <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey" :hideButtons="readOnly">
+        <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey">
             <VaulticFieldset :centered="true">
                 <TextInputField :label="'Name'" v-model="vaultState.name" :color="color"
                     :width="'50%'" :maxWidth="''" />
@@ -71,8 +71,6 @@ export default defineComponent({
 
         const selectedOrganizations: Ref<ObjectSelectOptionModel[]> = ref(getSelectedOrds());
         const allOrganizations: Ref<ObjectSelectOptionModel[]> = ref([]);
-
-        const readOnly: Ref<boolean> = ref(app.currentVault.isReadOnly.value);
 
         let saveSucceeded: (value: boolean) => void;
         let saveFailed: (value: boolean) => void;
@@ -247,7 +245,6 @@ export default defineComponent({
             emptyMessage,
             vaultMembers,
             loadingIndividuals,
-            readOnly,
             onSave,
         };
     }

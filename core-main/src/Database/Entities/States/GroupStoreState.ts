@@ -2,7 +2,7 @@ import { Entity, OneToOne, PrimaryColumn, Column, JoinColumn } from "typeorm";
 import { StoreState } from "./StoreState";
 import { Vault } from "../Vault";
 import { IGroupStoreState } from "@vaultic/shared/Types/Entities";
-import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
+import { DeepPartial, hasValue, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 
 @Entity({ name: "groupStoreStates" })
 export class GroupStoreState extends StoreState implements IGroupStoreState
@@ -55,10 +55,10 @@ export class GroupStoreState extends StoreState implements IGroupStoreState
 
     public static isValid(groupStoreState: DeepPartial<GroupStoreState>): boolean
     {
-        return !!groupStoreState.currentSignature &&
-            !!groupStoreState.previousSignature &&
-            !!groupStoreState.state &&
-            !!groupStoreState.groupStoreStateID &&
-            !!groupStoreState.vaultID;
+        return hasValue(groupStoreState.currentSignature) &&
+            hasValue(groupStoreState.previousSignature) &&
+            hasValue(groupStoreState.state) &&
+            hasValue(groupStoreState.groupStoreStateID) &&
+            hasValue(groupStoreState.vaultID);
     }
 }

@@ -459,6 +459,7 @@ export default defineComponent({
 :deep(.encryptedInputFieldContainer__input) {
     height: 100%;
     font-size: var(--input-font-size);
+    padding-block-start: var(--input-padding-block-start) !important;
 }
 
 :deep(.encryptedInputFieldContainer__input--invalid) {

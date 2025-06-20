@@ -3,7 +3,7 @@
         <VaulticTable ref="tableRef" id="filterTable" :color="color" :columns="tableColumns" 
             :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyTableMessage"
             :allowPinning="!readOnly" :onPin="onPin" :onEdit="onEdit" :onDelete="onDelete" 
-            :searchBarSizeModel="searchBarSizeModel">
+            :searchBarSizeModel="searchBarSizeModel" :maxCellWidth="'6vw'">
             <template #tableControls>
                 <Transition name="fade" mode="out-in">
                     <AddDataTableItemButton v-if="!readOnly" :color="color" :initalActiveContentOnClick="tabToOpenOnAdd" />

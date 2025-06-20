@@ -157,6 +157,7 @@ export default defineComponent({
     height: 100%;
     font-size: var(--input-font-size) !important;
     background: v-bind(backgroundColor) !important;
+    padding-block-start: var(--input-padding-block-start) !important;
 }
 
 :deep(.colorPickerInputFieldContainer__inputText:focus) {

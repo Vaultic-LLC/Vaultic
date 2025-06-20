@@ -33,6 +33,8 @@ export interface ClientUserController
     searchForUsers: (username: string, excludedUserIDs: string) => Promise<SearchForUsersResponse>;
     getMFAKey: () => Promise<GetMFAKeyResponse>;
     getUserInfo: () => Promise<GetUserInfoResponse>;
+    startEmailVerification: (email: string) => Promise<ValidateEmailResponse>;
+    finishEmailVerification: (code: string) => Promise<VerifyEmailResponse>;
 }
 
 export interface ClientVaultController 

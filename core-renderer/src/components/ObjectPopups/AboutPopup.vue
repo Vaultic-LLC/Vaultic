@@ -8,6 +8,18 @@
             <ObjectView v-if="activeSection == 0" :color="primaryColor" :hideButtons="true">
                 <VaulticAccordion :value="'0'">
                     <VaulticAccordionPanel :value="'0'">
+                        <VaulticAccordionHeader :title="'Account'" />
+                        <VaulticAccordionContent>
+                            <div class="aboutPopupContainer__section">
+                                <h2 class="aboutPopupContainer__section__header">Update Email</h2>
+                                <div class="aboutPopupContainer__section__text">
+                                    To update your email, simply update the email for the 'Vaultic Password Manager' password in your password table. Note, you can
+                                    only do this while online.
+                                </div>
+                            </div>
+                        </VaulticAccordionContent>
+                    </VaulticAccordionPanel>
+                    <VaulticAccordionPanel :value="'1'">
                         <VaulticAccordionHeader :title="'Shortcuts'" />
                         <VaulticAccordionContent>
                             <div class="aboutPopupContainer__section">
@@ -18,7 +30,7 @@
                             </div>
                         </VaulticAccordionContent>
                     </VaulticAccordionPanel>
-                    <VaulticAccordionPanel :value="'1'">
+                    <VaulticAccordionPanel :value="'2'">
                         <VaulticAccordionHeader :title="'Widgets'" />
                         <VaulticAccordionContent>
                             <div class="aboutPopupContainer__section">
@@ -46,7 +58,7 @@
                             </div>
                         </VaulticAccordionContent>
                     </VaulticAccordionPanel>
-                    <VaulticAccordionPanel :value="'2'" :final="true">
+                    <VaulticAccordionPanel :value="'3'" :final="true">
                         <VaulticAccordionHeader :title="'Sharing'" />
                         <VaulticAccordionContent>
                             <div class="aboutPopupContainer__section">
@@ -61,6 +73,22 @@
                                 <div class="aboutPopupContainer__section__text">
                                     To keep your email hidden, a Username is used for sharing Vaults between Users. You can set your Username by going to the 
                                     Sharing section in your Settings. You must set a Username in order for other Users to be able to share data with you.
+                                </div>
+                            </div>
+                        </VaulticAccordionContent>
+                    </VaulticAccordionPanel>
+                    <VaulticAccordionPanel :value="'4'">
+                        <VaulticAccordionHeader :title="'Multifactor Authentication'" />
+                        <VaulticAccordionContent>
+                            <div class="aboutPopupContainer__section">
+                                <h2 class="aboutPopupContainer__section__header">Setup</h2>
+                                <div class="aboutPopupContainer__section__text">
+                                    Before enabling Multifactor Authentication, you must first add your key into an Authenticator App on your mobile phone. 
+                                    To do this, open up your phone's app store, search for 'Microsoft Authenticator', and download the first result. 
+                                    Once it is done downloading, hit the '+' icon in the top right, and then click 'Other' for the type of account. The app should
+                                    now be looking to scan a QR code. To find this code, simpily click on the 'User' section in the toggle on the bottom left of your 
+                                    Vaultic Password Manager's dashboard, and then click on 'Show' in the 'MFA Key' section of your account widget, which is located in 
+                                    the center of your dashboard. Now just scan the QR code you see on screen and done!
                                 </div>
                             </div>
                         </VaulticAccordionContent>

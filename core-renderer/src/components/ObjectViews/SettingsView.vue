@@ -178,7 +178,9 @@ export default defineComponent({
 
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const currentView: Ref<number> = ref(props.currentView ? props.currentView : 0);
-        const readOnly: Ref<boolean> = ref(app.currentVault.isReadOnly.value);
+
+        // no setting are currently vault specific and as such shouldn't be read only
+        const readOnly: Ref<boolean> = ref(false);
 
         const originalAllowSharedVaultsFromOthers: Ref<boolean> = ref(false);
         const originalUsername: Ref<string> = ref('');
@@ -526,6 +528,14 @@ export default defineComponent({
             if (newValue != originalAllowSharingFrom.value && newValue == AllowSharingFrom.SpecificUsers)
             {
                 objectView.value?.addWarning("Changing 'Allow Sharing From' to 'Specific Users' will remove all Vaults that are currently shared with you that aren't from Users you've selected");          
+            }
+        });
+
+        watch(() => requireMFAOn.value, (newValue) =>
+        {
+            if (originalRequireMFAOnSetting.value == DisplayRequireMFAOn.NoDevices && newValue != DisplayRequireMFAOn.NoDevices)
+            {
+                objectView.value?.addWarning("This will enable Multifactor Authentication on your devices. If you have not setup your MFA Key within an authenticator app yet you will not be able to log in. Please see the 'Multifactor Authentication' section within the about popup for how to setup MFA before changing this setting.");          
             }
         });
 

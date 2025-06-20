@@ -28,7 +28,6 @@
     opacity: 0;
 }
 
-
 .accountSetupFade-enter-active,
 .accountSetupFade-leave-active {
     transition: opacity 0.5s linear;
@@ -37,10 +36,6 @@
 .accountSetupFade-enter-from,
 .accountSetupFade-leave-to {
     opacity: 0;
-}
-
-.test {
-    color: #7676764d
 }
 
 .listFade-enter-active,

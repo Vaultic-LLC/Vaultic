@@ -38,6 +38,8 @@ export default function setupIPC()
 	ipcMain.handle('userController:searchForUsers', (e, username: string, excludedUserIDs: string) => validateSender(e, () => vaulticServer.user.searchForUsers(username, excludedUserIDs)));
 	ipcMain.handle('userController:getMFAKey', (e) => validateSender(e, () => vaulticServer.user.getMFAKey()));
 	ipcMain.handle('userController:getUserInfo', (e) => validateSender(e, () => vaulticServer.user.getUserInfo()));
+	ipcMain.handle('userController:startEmailVerification', (e, email: string) => validateSender(e, () => vaulticServer.user.startEmailVerification(email)));
+	ipcMain.handle('userController:finishEmailVerification', (e, verificationCode: string) => validateSender(e, () => vaulticServer.user.finishEmailVerification(verificationCode)));
 
 	ipcMain.handle('vaultController:getMembers', (e, userOrganizationID: number, vaultID: number) => validateSender(e, () => vaulticServer.vault.getMembers(userOrganizationID, vaultID)));
 	ipcMain.handle('vaultController:getVaultDataBreaches', (e, getVaultDataBreachesData: string) => validateSender(e, () => vaulticServer.vault.getVaultDataBreaches(getVaultDataBreachesData)));
@@ -87,6 +89,7 @@ export default function setupIPC()
 	ipcMain.handle('userRepository:saveUser', (e, masterKey: string, changes: string) => validateSender(e, () => environment.repositories.users.saveUser(masterKey, changes)));
 	ipcMain.handle('userRepository:getStoreStates', (e, masterKey: string, storeStatesToRetrive: UserData) => validateSender(e, () => environment.repositories.users.getStoreStates(masterKey, storeStatesToRetrive)));
 	ipcMain.handle('userRepository:getValidMasterKey', (e) => validateSender(e, () => environment.repositories.users.getValidMasterKey()));
+	ipcMain.handle('userRepository:updateUserEmail', (e, email: string) => validateSender(e, () => environment.repositories.users.updateUserEmail(email)));
 
 	ipcMain.handle('vaultRepository:updateVault', (e, masterKey: string, updateVaultData: string) => validateSender(e, () => environment.repositories.vaults.updateVault(masterKey, updateVaultData)));
 	ipcMain.handle('vaultRepository:setActiveVault', (e, masterKey: string, userVaultID: number) => validateSender(e, () => environment.repositories.vaults.setActiveVault(masterKey, userVaultID)));
@@ -112,10 +115,14 @@ export default function setupIPC()
 	ipcMain.handle('cache:clearMasterKey', (e) => validateSender(e, () => environment.cache.clearMasterKey()));
 }
 
-function validateSender(event: Electron.IpcMainInvokeEvent, onSuccess: () => any): any
+async function validateSender(event: Electron.IpcMainInvokeEvent, onSuccess: () => any): Promise<any>
 {
-	// only allow requests from ourselves
-	if ((new URL(event.senderFrame.url)).host === 'localhost:33633')
+	const url = (new URL(event.senderFrame.url));
+	let pathParts = url.pathname?.split("/");
+
+	//only allow requests from ourselves
+	if (url.host === 'localhost:33633' ||
+		(!url.host && pathParts.length > 0 && pathParts[pathParts.length - 1] === "index.html"))
 	{
 		return onSuccess();
 	}

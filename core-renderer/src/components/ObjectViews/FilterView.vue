@@ -5,7 +5,7 @@
             <TextInputField class="filterView__name" :label="'Name'" :color="color" v-model="filterState.n"
                 :width="'50%'" :maxWidth="''" :fadeIn="false" />
         </VaulticFieldset>
-        <VaulticFieldset :centered="true" :end="true" :fill-space="true">
+        <VaulticFieldset :centered="true" :fill-space="true" :end="true">
             <VaulticTable ref="tableRef" id="addFilterTable" :color="color" :columns="tableColumns" 
                 :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyMessage" :allowPinning="false"
                 :allowSearching="false" :onDelete="onDelete">
@@ -277,7 +277,7 @@ export default defineComponent({
                     const propertyType = displayFieldOptions.value.find(df => df.backingProperty == v.p)?.type ?? PropertyType.String;
                     models.push(new TableRowModel(k, false, undefined, 
                     {
-                        filterConditionType: propertyType == PropertyType.String ? FilterConditionType : EqualFilterConditionType,
+                        filterConditionType: propertyType == PropertyType.Enum ? EqualFilterConditionType : FilterConditionType,
                         inputType: propertyType,
                         filterType: v.t,
                         inputEnumType: propertyType == PropertyType.Enum ? NameValuePairType : undefined    // Passwords don't have an emum selectable type
@@ -312,6 +312,7 @@ export default defineComponent({
 #addFilterTable {
     width: 70%;
     height: 70%;
+    min-height: 200px;
     transform: translateY(-15%);
 }
 </style>

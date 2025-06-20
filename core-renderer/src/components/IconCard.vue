@@ -74,7 +74,7 @@ export default defineComponent({
 }
 
 .iconCardContainer:hover .iconCardContainer__items .iconCardContainer__icon {
-    transform: translateY(0);
+    transform: translateY(10%);
     color: v-bind(color);
 }
 

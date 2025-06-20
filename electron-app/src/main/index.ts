@@ -19,221 +19,265 @@ import { CryptUtility } from "./Utilities/CryptUtility";
 import { DataUtility } from "./Utilities/DataUtility";
 import { handleUserLogOut } from "./Core/Helpers/RepositoryHelper";
 
-let tray: Tray | null = null
-function createTray()
+let tray: Tray | null = null;
+let mainWindow: BrowserWindow | null = null;
+
+if (require('electron-squirrel-startup'))
 {
-	const icon = join(__dirname, '/app.png'); // required.
-	const trayicon = nativeImage.createFromPath(icon);
-
-	tray = new Tray(trayicon.resize({ width: 16 }));
-	const contextMenu = Menu.buildFromTemplate([
-		{
-			label: 'Open App',
-			click: () =>
-			{
-				createWindow()
-			}
-		},
-		{
-			label: 'Quit',
-			click: () =>
-			{
-				app.quit() // actually quit the app.
-			}
-		},
-	]);
-
-	tray.setContextMenu(contextMenu);
+	app.quit();
 }
-
-async function createWindow(): Promise<void>
+else
 {
-	if (!tray)
+	function createTray()
 	{
-		createTray();
+		const icon = join(__dirname, '/app.png'); // required.
+		const trayicon = nativeImage.createFromPath(icon);
+
+		tray = new Tray(trayicon.resize({ width: 16 }));
+		const contextMenu = Menu.buildFromTemplate([
+			{
+				label: 'Open Vaultic',
+				click: () =>
+				{
+					showOrCreateWindow()
+				}
+			},
+			{
+				label: 'Quit',
+				click: () =>
+				{
+					app.quit() // actually quit the app.
+				}
+			},
+		]);
+
+		tray.setContextMenu(contextMenu);
 	}
 
-	// Create the browser window.
-	const mainWindow = new BrowserWindow({
-		show: false,
-		autoHideMenuBar: true,
-		...(process.platform === 'linux' ? { icon } : {}),
-		webPreferences: {
-			contextIsolation: true,
-			preload: join(__dirname, '../preload/index.js'),
-			backgroundThrottling: false,
-			devTools: is.dev
+	async function createWindow(): Promise<void>
+	{
+		if (!tray)
+		{
+			createTray();
 		}
-	});
 
-	mainWindow.on('ready-to-show', () =>
-	{
-		mainWindow.maximize();
-		mainWindow.show()
-	});
+		// Create the browser window.
+		mainWindow = new BrowserWindow({
+			show: false,
+			autoHideMenuBar: true,
+			...(process.platform === 'linux' ? { icon } : {}),
+			webPreferences: {
+				contextIsolation: true,
+				preload: join(__dirname, '../preload/index.js'),
+				backgroundThrottling: false,
+				devTools: !app.isPackaged
+			}
+		});
 
-	mainWindow.webContents.setWindowOpenHandler((details) =>
-	{
-		shell.openExternal(details.url)
-		return { action: 'deny' }
-	});
+		mainWindow.on('ready-to-show', () =>
+		{
+			mainWindow?.maximize();
+			mainWindow?.show();
+		});
 
-	// HMR for renderer base on electron-vite cli.
-	// Load the remote URL for development or the local html file for production.
-	if (is.dev && process.env['ELECTRON_RENDERER_URL'])
+		mainWindow.webContents.setWindowOpenHandler((details) =>
+		{
+			shell.openExternal(details.url)
+			return { action: 'deny' }
+		});
+
+		// HMR for renderer base on electron-vite cli.
+		// Load the remote URL for development or the local html file for production.
+		if (is.dev && process.env['ELECTRON_RENDERER_URL'])
+		{
+			mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+		}
+		else
+		{
+			mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+		}
+	}
+
+	// We only want to allow one instance of the application at a time
+	const instanceLock = app.requestSingleInstanceLock()
+	if (!instanceLock)
 	{
-		mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+		app.quit()
 	}
 	else
 	{
-		mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
-	}
-}
-
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.whenReady().then(async () =>
-{
-	setupIPC();
-
-	if (app.isPackaged)
-	{
-		await setupEnvironment(false);
-	}
-	else
-	{
-		//@ts-ignore
-		const isTest = import.meta.env.VITE_ISTEST === "true";
-		await setupEnvironment(isTest);
+		app.on('second-instance', (event, commandLine, workingDirectory) =>
+		{
+			showOrCreateWindow();
+		})
 	}
 
-	// Set app user model id for windows
-	electronApp.setAppUserModelId('com.electron')
-
-	// Default open or close DevTools by F12 in development
-	// and ignore CommandOrControl + R in production.
-	// see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
-	app.on('browser-window-created', (_, window) =>
+	function showOrCreateWindow()
 	{
-		optimizer.watchWindowShortcuts(window)
-	});
-
-	createWindow()
-
-	app.on('activate', function ()
-	{
-		// On macOS it's common to re-create a window in the app when the
-		// dock icon is clicked and there are no other windows open.
-		if (BrowserWindow.getAllWindows().length === 0) createWindow()
-	});
-});
-
-app.on('window-all-closed', async () =>
-{
-	// don't call app.quit() since we want to back up the users data if possible
-	app.dock?.hide(); // for macOS
-	await handleUserLogOut();
-});
-
-app.on('web-contents-created', (event, contents) =>
-{
-	// disable all attempted webviews
-	contents.on('will-attach-webview', (event, webPreferences, params) =>
-	{
-		// Strip away preload scripts if unused or verify their location is legitimate
-		delete webPreferences.preload;
-
-		// Secure
-		webPreferences.nodeIntegration = false
-		webPreferences.allowRunningInsecureContent = false;
-		webPreferences.contextIsolation = true;
-		webPreferences.enableBlinkFeatures = undefined;
-		webPreferences.experimentalFeatures = false;
-		webPreferences.sandbox = true;
-		webPreferences.webSecurity = true;
-
-		// prevent webview
-		event.preventDefault();
-	});
-
-	// disable all attempted navigation
-	contents.on('will-navigate', (event) =>
-	{
-		event.preventDefault();
-	});
-
-	// no new windows should be opened
-	contents.setWindowOpenHandler(() =>
-	{
-		return { action: 'deny' }
-	});
-});
-
-async function setupEnvironment(isTest: boolean)
-{
-	await environment.init({
-		isTest,
-		sessionHandler:
+		// Someone tried to run a second instance, we should focus our window.
+		if (mainWindow)
 		{
-			setSession,
-			getSession
-		},
-		utilities:
-		{
-			crypt: new CryptUtility(),
-			hash: new HashUtility(),
-			generator: generatorUtility,
-			data: new DataUtility()
-		},
-		database:
-		{
-			createDataSource,
-			deleteDatabase
-		},
-		getDeviceInfo,
-		hasConnection
-	});
-}
+			if (mainWindow.isMinimized())
+			{
+				mainWindow.restore();
+			}
 
-async function setSession(tokenHash: string): Promise<void>
-{
-	const tokenHashCookie = { url: 'http://www.vaultic.co', name: 'TokenHash', value: tokenHash }
-	await session.defaultSession.cookies.set(tokenHashCookie);
-}
-
-async function getSession(): Promise<string>
-{
-	const cookies = await session.defaultSession.cookies.get({ url: 'http://www.vaultic.co' });
-	if (cookies.length != 1)
-	{
-		return "";
+			mainWindow.focus()
+		}
+		else
+		{
+			createWindow();
+		}
 	}
 
-	return cookies[0].value ?? "";
-}
-
-function hasConnection(): Promise<boolean>
-{
-	return new Promise((resolve) =>
+	// This method will be called when Electron has finished
+	// initialization and is ready to create browser windows.
+	// Some APIs can only be used after this event occurs.
+	app.whenReady().then(async () =>
 	{
-		const client = http2.connect('https://www.google.com');
-		client.setTimeout(5000, () =>
+		setupIPC();
+
+		if (app.isPackaged)
 		{
-			resolve(false);
-			client.destroy();
+			await setupEnvironment(false);
+		}
+		else
+		{
+			//@ts-ignore
+			const isTest = import.meta.env.VITE_ISTEST === "true";
+			await setupEnvironment(isTest);
+		}
+
+		// Set app user model id for windows
+		electronApp.setAppUserModelId('com.electron')
+
+		// Default open or close DevTools by F12 in development
+		// and ignore CommandOrControl + R in production.
+		// see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
+		app.on('browser-window-created', (_, window) =>
+		{
+			optimizer.watchWindowShortcuts(window)
 		});
 
-		client.on('connect', () =>
-		{
-			resolve(true);
-			client.destroy();
-		});
+		createWindow()
 
-		client.on('error', () =>
+		app.on('activate', async function ()
 		{
-			resolve(false);
-			client.destroy();
+			//await environment.repositories.logs.log(undefined, `Activate. Tray: ${!!tray}, Windows: ${BrowserWindow.getAllWindows().length}`);
+
+			// On macOS it's common to re-create a window in the app when the
+			// dock icon is clicked and there are no other windows open.
+			if (BrowserWindow.getAllWindows().length === 0) createWindow()
 		});
 	});
+
+	app.on('window-all-closed', async () =>
+	{
+		mainWindow = null;
+
+		// don't call app.quit() since we want to back up the users data if possible
+		await handleUserLogOut();
+	});
+
+	app.on('web-contents-created', (event, contents) =>
+	{
+		// disable all attempted webviews
+		contents.on('will-attach-webview', (event, webPreferences, params) =>
+		{
+			// Strip away preload scripts if unused or verify their location is legitimate
+			delete webPreferences.preload;
+
+			// Secure
+			webPreferences.nodeIntegration = false
+			webPreferences.allowRunningInsecureContent = false;
+			webPreferences.contextIsolation = true;
+			webPreferences.enableBlinkFeatures = undefined;
+			webPreferences.experimentalFeatures = false;
+			webPreferences.sandbox = true;
+			webPreferences.webSecurity = true;
+
+			// prevent webview
+			event.preventDefault();
+		});
+
+		// disable all attempted navigation
+		contents.on('will-navigate', (event) =>
+		{
+			event.preventDefault();
+		});
+
+		// no new windows should be opened
+		contents.setWindowOpenHandler(() =>
+		{
+			return { action: 'deny' }
+		});
+	});
+
+	async function setupEnvironment(isTest: boolean)
+	{
+		await environment.init({
+			isTest,
+			sessionHandler:
+			{
+				setSession,
+				getSession
+			},
+			utilities:
+			{
+				crypt: new CryptUtility(),
+				hash: new HashUtility(),
+				generator: generatorUtility,
+				data: new DataUtility()
+			},
+			database:
+			{
+				createDataSource,
+				deleteDatabase
+			},
+			getDeviceInfo,
+			hasConnection
+		});
+	}
+
+	async function setSession(tokenHash: string): Promise<void>
+	{
+		const tokenHashCookie = { url: 'http://www.vaultic.co', name: 'TokenHash', value: tokenHash }
+		await session.defaultSession.cookies.set(tokenHashCookie);
+	}
+
+	async function getSession(): Promise<string>
+	{
+		const cookies = await session.defaultSession.cookies.get({ url: 'http://www.vaultic.co' });
+		if (cookies.length != 1)
+		{
+			return "";
+		}
+
+		return cookies[0].value ?? "";
+	}
+
+	function hasConnection(): Promise<boolean>
+	{
+		return new Promise((resolve) =>
+		{
+			const client = http2.connect('https://www.google.com');
+			client.setTimeout(5000, () =>
+			{
+				resolve(false);
+				client.destroy();
+			});
+
+			client.on('connect', () =>
+			{
+				resolve(true);
+				client.destroy();
+			});
+
+			client.on('error', () =>
+			{
+				resolve(false);
+				client.destroy();
+			});
+		});
+	}
 }

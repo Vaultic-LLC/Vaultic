@@ -107,6 +107,14 @@
                 <SyncingPopup v-if="popupStore.syncingPopupIsShowing" :finish="popupStore.syncingPopupIsFinished" />
 			</Transition>
 		</Teleport>
+        <Teleport to="#body">
+			<Transition name="fade">
+                <ObjectPopup v-if="popupStore.verifyEmailPopupIsShowing" :popupInfoOverride="PopupNames.VerifyEmail" :height="'40%'" :width="'30%'" 
+                    :minHeight="'400px'" :minWidth="'550px'" :closePopup="popupStore.onVerifyEmailPopupClose">
+                    <VerifyEmailView :creating="false" :color="popupStore.color" @onSuccess="popupStore.onVerifyEmailPopupSuccess" />
+                </ObjectPopup>
+			</Transition>
+		</Teleport>    
     </div>
 </template>
 
@@ -129,6 +137,7 @@ import ClearBreachesView from './BreachedPasswords/ClearBreachesView.vue';
 import ShowMFAKeyView from './Account/ShowMFAKeyView.vue';
 import DeviceView from './ObjectViews/DeviceView.vue';
 import SyncingPopup from './Loading/SyncingPopup.vue';
+import VerifyEmailView from './Account/VerifyEmailView.vue';
 
 import app from "../Objects/Stores/AppStore";
 import { DataType } from '../Types/DataTypes';
@@ -153,7 +162,8 @@ export default defineComponent({
         ClearBreachesView,
         ShowMFAKeyView,
         DeviceView,
-        SyncingPopup
+        SyncingPopup,
+        VerifyEmailView
     },
     setup()
     {
