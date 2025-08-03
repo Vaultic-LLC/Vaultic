@@ -6,7 +6,9 @@ PolyFills.a;
 import { app, shell, BrowserWindow, session, nativeImage, Tray, Menu } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.png?asset'
+import windowsIcon from '../../resources/icon.ico?asset';
+import macIcon from '../../resources/icon.icns?asset';
+import linuxIcon from '../../resources/icon.png?asset';
 import setupIPC from './ipcSetup';
 import http2 from "http2";
 
@@ -30,8 +32,8 @@ else
 {
 	function createTray()
 	{
-		const icon = join(__dirname, '/app.png'); // required.
-		const trayicon = nativeImage.createFromPath(icon);
+		const trayIconPath = join(__dirname, '../../resources/icon.png'); // required.
+		const trayicon = nativeImage.createFromPath(trayIconPath);
 
 		tray = new Tray(trayicon.resize({ width: 16 }));
 		const contextMenu = Menu.buildFromTemplate([
@@ -65,7 +67,7 @@ else
 		mainWindow = new BrowserWindow({
 			show: false,
 			autoHideMenuBar: true,
-			...(process.platform === 'linux' ? { icon } : {}),
+			icon: process.platform === 'win32' ? windowsIcon : process.platform === 'darwin' ? macIcon : linuxIcon,
 			webPreferences: {
 				contextIsolation: true,
 				preload: join(__dirname, '../preload/index.js'),

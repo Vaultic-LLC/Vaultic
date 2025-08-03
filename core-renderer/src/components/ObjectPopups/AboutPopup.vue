@@ -110,9 +110,9 @@
                 <div v-if="isOnline" class="aboutPopupContainer__section">
                     <h2 class="aboutPopupContainer__section__header">Report a Bug</h2>
                     <div class="aboutPopupContainer__reportBugSection">
-                        <TextAreaInputField :colorModel="colorModel" :label="'Description'" v-model="bugDescription"
+                        <BasicTextAreaInpuField ref="bugDescriptionRef" :color="colorModel.color" :label="'Description'" v-model="bugDescription"
                             :width="'19vw'" :height="'15vh'" :minWidth="'216px'" :minHeight="'91px'"
-                            :maxHeight="'203px'" />
+                            :maxHeight="'203px'" :maxWidth="'19vw'" />
                         <PopupButton :color="primaryColor" :disabled="disableButtons" :text="'Report Bug'"
                             :width="'8vw'" :minWidth="'75px'" :maxWidth="'150px'" :height="'3vh'" :minHeight="'30px'"
                             :maxHeight="'45px'" :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="reportBug" />
@@ -140,12 +140,14 @@ import VaulticAccordionPanel from '../Accordion/VaulticAccordionPanel.vue';
 import VaulticAccordionHeader from '../Accordion/VaulticAccordionHeader.vue';
 import VaulticAccordionContent from '../Accordion/VaulticAccordionContent.vue';
 import IonIcon from '../Icons/IonIcon.vue';
+import BasicTextAreaInpuField from '../InputFields/BasicTextAreaInpuField.vue';
 
 import { InputColorModel, SingleSelectorItemModel, defaultInputColorModel } from '../../Types/Models';
 import { defaultInputTextColor } from '../../Types/Colors';
 import app from "../../Objects/Stores/AppStore";
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
+import { InputComponent } from '../../Types/Components';
 
 export default defineComponent({
     name: "AboutPopup",
@@ -159,10 +161,12 @@ export default defineComponent({
         VaulticAccordionPanel,
         VaulticAccordionHeader,
         VaulticAccordionContent,
-        IonIcon
+        IonIcon,
+        BasicTextAreaInpuField
     },
     setup()
     {
+        const bugDescriptionRef: Ref<InputComponent | null> = ref(null);
         const activeSection: Ref<number> = ref(0);
         const scrollbarColor: Ref<string> = ref('#0f111d');
         const primaryColor: Ref<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
@@ -200,6 +204,12 @@ export default defineComponent({
                 return;
             }
 
+            if (!bugDescription.value)
+            {
+                bugDescriptionRef.value?.invalidate("Please enter a description");
+                return;
+            }
+
             app.popups.showLoadingIndicator(primaryColor.value, "Reporting Bug");
             const response = await api.server.user.reportBug(bugDescription.value);
             app.popups.hideLoadingIndicator();
@@ -216,6 +226,7 @@ export default defineComponent({
         }
 
         return {
+            bugDescriptionRef,
             featuresTableControl,
             infoTableControl,
             activeSection,
