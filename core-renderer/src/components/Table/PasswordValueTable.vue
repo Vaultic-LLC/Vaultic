@@ -494,11 +494,23 @@ export default defineComponent({
         {
             init();
             app.vaultDataBreaches.addEvent('onBreachDismissed', initPasswords);
+
+            app.currentVault.groupStore.addEvent('onPasswordGroupUpdated', initPasswords);
+            app.currentVault.groupStore.addEvent('onValueGroupUpdated', initValues);
+
+            app.currentVault.filterStore.addEvent('onPasswordFilterUpdated', initPasswords);
+            app.currentVault.filterStore.addEvent('onValueFilterUpdated', initValues);
         });
 
         onUnmounted(() =>
         {
             app.vaultDataBreaches.removeEvent('onBreachDismissed', initPasswords);
+
+            app.currentVault.groupStore.removeEvent('onPasswordGroupUpdated', initPasswords);
+            app.currentVault.groupStore.removeEvent('onValueGroupUpdated', initValues);
+            
+            app.currentVault.filterStore.removeEvent('onPasswordFilterUpdated', initPasswords);
+            app.currentVault.filterStore.removeEvent('onValueFilterUpdated', initValues);
         });
 
         watch(() => app.activePasswordValuesTable, (newValue) =>

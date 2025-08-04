@@ -9,6 +9,7 @@ import { IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection, Secondar
 import { Algorithm } from "@vaultic/shared/Types/Keys";
 import { CurrentAndSafeStructure, DictionaryAsList, DoubleKeyedObject, PendingStoreState, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
+import StoreUpdateTransaction from "../StoreUpdateTransaction";
 
 export type StoreEvents = "onChanged";
 
@@ -138,6 +139,18 @@ export class Store<T extends KnownMappedFields<StoreState>, K extends StateKeys,
     protected emit(event: U, ...params: any[])
     {
         this.events[event]?.forEach(f => f(...params));
+    }
+
+    protected async commitAndEmit(masterKey: string, transaction: StoreUpdateTransaction, event: U): Promise<boolean>
+    {
+        const succeeded = await transaction.commit(masterKey);
+        if (!succeeded)
+        {
+            return false;
+        }
+
+        this.emit(event);
+        return true;
     }
 
     protected async getIdentifyingHash(value: string): Promise<string | undefined>

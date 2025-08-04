@@ -1,5 +1,5 @@
 import { ComputedRef, Ref, computed, ref } from "vue";
-import { PrimarydataTypeStoreStateKeys, SecondaryDataTypeStore, SecondarydataTypeStoreStateKeys } from "./Base";
+import { PrimarydataTypeStoreStateKeys, SecondaryDataTypeStore, SecondarydataTypeStoreStateKeys, StoreEvents } from "./Base";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { api } from "../../API";
 import { DataType, IGroupable, AtRiskType, Group, RelatedDataTypeChanges } from "../../Types/DataTypes";
@@ -43,9 +43,10 @@ const GroupStorePathRetriever: StorePathRetriever<SecondarydataTypeStoreStateKey
     'duplicateValueDataTypes.dataTypes': (...ids: string[]) => `u.${ids[0]}`,
 };
 
+export type GroupStoreEvents = StoreEvents | "onPasswordGroupUpdated" | "onValueGroupUpdated";
 export type GroupStoreState = IGroupStoreState;
 
-export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, SecondarydataTypeStoreStateKeys>
+export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, SecondarydataTypeStoreStateKeys, GroupStoreEvents>
 {
     protected internalPasswordGroups: ComputedRef<Group[]>;
     protected internalValueGroups: ComputedRef<Group[]>;
@@ -178,9 +179,11 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
 
         // need to get added and removed groups before updating the old group with the new one
         const primaryObjectChanges = this.getRelatedDataTypeChanges(currentGroup[primaryObjectCollection], updatedPrimaryObjects);
-
+        let event: GroupStoreEvents = "onPasswordGroupUpdated";
+        
         if (updatedGroup.t == DataType.Passwords)
         {
+            event = "onPasswordGroupUpdated";
             const pendingPasswordState = this.vault.passwordStore.getPendingState()!;
 
             this.syncPrimaryDataObjectsForGroup(updatedGroup, "p", primaryObjectChanges, pendingPasswordState.state.p,
@@ -199,6 +202,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
         }
         else if (updatedGroup.t == DataType.NameValuePairs)
         {
+            event = "onValueGroupUpdated";
             const pendingValueState = this.vault.valueStore.getPendingState()!;
 
             this.syncPrimaryDataObjectsForGroup(updatedGroup, "v", primaryObjectChanges, pendingValueState.state.v,
@@ -217,7 +221,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
         }
 
         transaction.updateVaultStore(this, pendingGroupStoreState);
-        return await transaction.commit(masterKey);
+        return await this.commitAndEmit(masterKey, transaction, event);
     }
 
     async deleteGroup(masterKey: string, group: Group): Promise<boolean>

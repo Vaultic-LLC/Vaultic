@@ -42,7 +42,7 @@ import EncryptedInputField from '../InputFields/EncryptedInputField.vue';
 import CheckboxInputField from '../InputFields/CheckboxInputField.vue';
 import ButtonLink from '../InputFields/ButtonLink.vue';
 
-import { InputComponent } from '../../Types/Components';
+import { EncryptedInputFieldComponent } from '../../Types/Components';
 import app from "../../Objects/Stores/AppStore";
 import { Account, InputColorModel, defaultInputColorModel } from '../../Types/Models';
 import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
@@ -71,8 +71,8 @@ export default defineComponent({
 
         const account: ComputedRef<Account> = computed(() => props.account);
 
-        const encryptedInputField: Ref<InputComponent | null> = ref(null);
-        const confirmEncryptedInputField: Ref<InputComponent | null> = ref(null);
+        const encryptedInputField: Ref<EncryptedInputFieldComponent | null> = ref(null);
+        const confirmEncryptedInputField: Ref<EncryptedInputFieldComponent | null> = ref(null);
 
         const greaterThanTwentyCharacters: Ref<boolean> = ref(false);
         const matchesKey: Ref<boolean> = ref(false);
@@ -99,11 +99,16 @@ export default defineComponent({
                 encryptedInputField.value?.invalidate("Please create a key at least 20 characters long");
                 return;
             }
-            else if (!matchesKey.value)
+            
+            encryptedInputField.value?.toggleMask(true);
+
+            if (!matchesKey.value)
             {
                 confirmEncryptedInputField.value?.invalidate("Keys do not match");
                 return;
             }
+
+            confirmEncryptedInputField.value?.toggleMask(true);
 
             app.popups.showLoadingIndicator(props.color, "Creating Account");
             const response = await api.helpers.server.registerUser(key.value, account.value.pendingUserToken!, account.value.firstName,

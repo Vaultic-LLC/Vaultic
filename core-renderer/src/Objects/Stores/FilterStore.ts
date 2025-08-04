@@ -1,5 +1,5 @@
 import { ComputedRef, Ref, computed, ref } from "vue";
-import { PrimarydataTypeStoreStateKeys, SecondaryDataTypeStore, SecondarydataTypeStoreStateKeys } from "./Base";
+import { PrimarydataTypeStoreStateKeys, SecondaryDataTypeStore, SecondarydataTypeStoreStateKeys, StoreEvents } from "./Base";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { VaultStoreParameter } from "./VaultStore";
 import { api } from "../../API";
@@ -58,9 +58,10 @@ const FilterStorePathRetriever: StorePathRetriever<FilterStoreStateKeys> =
     'duplicateValueDataTypes.dataTypes': (...ids: string[]) => `u.${ids[0]}`,
 };
 
+export type FilterStoreEvents = StoreEvents | "onPasswordFilterUpdated" | "onValueFilterUpdated";
 export type FilterStoreState = KnownMappedFields<IFilterStoreState>;
 
-export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, FilterStoreStateKeys>
+export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, FilterStoreStateKeys, FilterStoreEvents>
 {
     constructor(vault: any)
     {
@@ -120,15 +121,18 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
         const filterToSync: { [key: string]: Filter } = {};
         filterToSync[updatedFilter.id] = updatedFilter;
 
+        let event: FilterStoreEvents = "onChanged";
+
         if (updatedFilter.t == DataType.Passwords)
         {
             let filter: Filter | undefined = pendingFilterState.state.p[updatedFilter.id];
             if (!filter)
-            {
-                await api.repositories.logs.log(undefined, `No Filter`, "FilterStore.Update")
-                return false;
-            }
-
+                {
+                    await api.repositories.logs.log(undefined, `No Filter`, "FilterStore.Update")
+                    return false;
+                }
+                
+            event = "onPasswordFilterUpdated";
             this.updateFilterConditions(updatedFilter, "passwordDataTypes.conditions", "passwordDataTypes.conditions.condition",
                 addedConditions, removedConditions, pendingFilterState);
 
@@ -148,6 +152,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
                 return false;
             }
 
+            event = "onValueFilterUpdated";
             this.updateFilterConditions(updatedFilter, "valueDataTypes.conditions", "valueDataTypes.conditions.condition",
                 addedConditions, removedConditions, pendingFilterState);
 
@@ -160,7 +165,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
         }
 
         transaction.updateVaultStore(this, pendingFilterState);
-        return await transaction.commit(masterKey);
+        return await this.commitAndEmit(masterKey, transaction, event);
     }
 
     async deleteFilter(masterKey: string, filter: Filter): Promise<boolean>
