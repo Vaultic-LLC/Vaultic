@@ -76,11 +76,14 @@ export class VaultDataBreachStore extends Store<StoreState, StateKeys, DataBreac
             {
                 Object.keys(vault.passwordsByDomain).forEach(k =>
                 {
+                    // need to replace '+' with '.' since they were replaced in the password store to prevent
+                    // errors when using addValue
+                    const correctDomain = k.replace('+', '.');
                     limitedPasswords = limitedPasswords.concat(Object.keys(vault.passwordsByDomain![k]).map(v =>
                     {
                         return {
                             id: v,
-                            domain: k
+                            domain: correctDomain
                         }
                     }))
                 });

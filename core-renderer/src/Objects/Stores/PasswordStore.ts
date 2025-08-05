@@ -366,16 +366,20 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         const passwordsByDomain: DoubleKeyedObject = pendingPasswordState.getObject('passwordsByDomain');
         if (newDomain)
         {
-            if (!OH.has(passwordsByDomain, newDomain))
+            // This is to prevent errors when using addValue as that splits on '.'. Having a '.' in the domain
+            // already, like .com, will cause an unexpected split since domains are stored as keys.
+            const domainToUse = newDomain.replace('.', '+');
+
+            if (!OH.has(passwordsByDomain, domainToUse))
             {
                 const newDomainObject: DictionaryAsList = {};
                 newDomainObject[id] = true;
 
-                pendingPasswordState.addValue('passwordsByDomain', newDomain, newDomainObject);
+                pendingPasswordState.addValue('passwordsByDomain', domainToUse, newDomainObject);
             }
             else
             {
-                pendingPasswordState.addValue('passwordsByDomain.passwords', id, true, newDomain);
+                pendingPasswordState.addValue('passwordsByDomain.passwords', id, true, domainToUse);
             }
         }
 

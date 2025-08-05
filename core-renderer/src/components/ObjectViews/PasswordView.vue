@@ -12,8 +12,8 @@
                 :label="'Password'" v-model="passwordState.p" :isInitiallyEncrypted="isInitiallyEncrypted" 
                 :showRandom="true" :showUnlock="true" :required="true"
                 showCopy="true" :width="'50%'" :maxWidth="''" :maxHeight="''" @onDirty="passwordIsDirty = true" />
-            <TextInputField class="passwordView__domain" :inputGroupAddon="'www'" :color="color" :label="'Domain'" v-model="passwordState.d"
-                :showToolTip="true"
+            <TextInputField class="passwordView__domain" :inputGroupAddon="'www'" :color="color" 
+                :label="'Domain'" v-model="passwordState.d" :showToolTip="true" :additionalValidationFunction="validateDomain"
                 :toolTipMessage="'Domain is used to search for Breached Passwords. An example is facebook.com'"
                 :toolTipSize="'clamp(15px, 1vw, 28px)'" :width="'50%'" :maxWidth="''" :maxHeight="''" />
         </VaulticFieldset>
@@ -43,7 +43,7 @@
     </ObjectView>
 </template>
 <script lang="ts">
-import { defineComponent, ComputedRef, computed, Ref, ref, onMounted, Reactive, reactive } from 'vue';
+import { defineComponent, ComputedRef, computed, Ref, ref, onMounted, Reactive, reactive, inject } from 'vue';
 
 import ObjectView from "./ObjectView.vue"
 import TextInputField from '../InputFields/TextInputField.vue';
@@ -156,6 +156,19 @@ export default defineComponent({
                 }
             ]
         });
+
+        // mainly want to prevent '_' since users could use it to override prototypes on objects
+        // with '__proto__'.
+        const disallowedCharacters = /[ `!@#$%^&*()_+\-=[\]{};':"\\|,<>?~]/;
+        function validateDomain(value: string): [boolean, string]
+        {
+            if (disallowedCharacters.test(value))
+            {
+                return [false, "Please enter a valid domain"];
+            }
+
+            return [true, ""];
+        }
 
         function setSecurityQuestionModels()
         {
@@ -430,6 +443,7 @@ export default defineComponent({
             onQuestionDirty,
             onAnswerDirty,
             onDeleteSecurityQuestion,
+            validateDomain
         };
     },
 })
