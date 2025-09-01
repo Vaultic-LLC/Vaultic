@@ -189,7 +189,7 @@ export default defineComponent({
 
         function openCreateStrongAndMemorablePasswords()
         {
-            window.open('https://www.vaultic.org/post/creating-a-strong-and-memorable-master-key');
+            window.open('https://www.vaultic.org/how-to-create-a-strong-master-key');
         }
 
         watch(() => key.value, async (newValue) =>

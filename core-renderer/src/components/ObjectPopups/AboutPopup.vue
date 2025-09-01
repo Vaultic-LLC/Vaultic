@@ -97,15 +97,14 @@
             </ObjectView>
             <ObjectView v-else :color="primaryColor" :hideButtons="true">
                 <div class="aboutPopupContainer__section">
-                    <h2>Terms and Conditions</h2>
-                    // link to terms and conditions on website
+                    <h2>Terms of Service</h2>
+                    <ButtonLink :color="primaryColor" :text="'Terms of Service'" :fontSize="'clamp(17px, 1vw, 20px)'"
+                    @onClick="openTermsOfService" />                
                 </div>
                 <div class="aboutPopupContainer__section">
                     <h2>Privacy Policy</h2>
-                    // link to Privacy Policy on website
-                </div>
-                <div>
-                    Copywrite
+                    <ButtonLink :color="primaryColor" :text="'Privacy Policy'" :fontSize="'clamp(17px, 1vw, 20px)'"
+                        @onClick="openPrivacyPolicy" />
                 </div>
                 <div v-if="isOnline" class="aboutPopupContainer__section">
                     <h2 class="aboutPopupContainer__section__header">Report a Bug</h2>
@@ -141,6 +140,7 @@ import VaulticAccordionHeader from '../Accordion/VaulticAccordionHeader.vue';
 import VaulticAccordionContent from '../Accordion/VaulticAccordionContent.vue';
 import IonIcon from '../Icons/IonIcon.vue';
 import BasicTextAreaInpuField from '../InputFields/BasicTextAreaInpuField.vue';
+import ButtonLink from '../InputFields/ButtonLink.vue';
 
 import { InputColorModel, SingleSelectorItemModel, defaultInputColorModel } from '../../Types/Models';
 import { defaultInputTextColor } from '../../Types/Colors';
@@ -162,7 +162,8 @@ export default defineComponent({
         VaulticAccordionHeader,
         VaulticAccordionContent,
         IonIcon,
-        BasicTextAreaInpuField
+        BasicTextAreaInpuField,
+        ButtonLink
     },
     setup()
     {
@@ -225,6 +226,16 @@ export default defineComponent({
             }
         }
 
+        function openPrivacyPolicy()
+        {
+            window.open("https://vaultic.org/privacy-policy");
+        }
+
+        function openTermsOfService()
+        {
+            window.open("https://vaultic.org/terms-of-service");
+        }
+
         return {
             bugDescriptionRef,
             featuresTableControl,
@@ -237,7 +248,9 @@ export default defineComponent({
             colorModel,
             disableButtons,
             isOnline,
-            reportBug
+            reportBug,
+            openPrivacyPolicy,
+            openTermsOfService
         }
     }
 })

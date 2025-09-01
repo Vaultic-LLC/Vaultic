@@ -15,6 +15,14 @@
                             :width="'80%'" :maxWidth="'300px'" :isEmailField="true"
                             :additionalValidationFunction="emailsMatch" />
                     </div>
+                    <div class="createAccountViewContainer__terms">
+                        By signing up, you agree to our 
+                        <ButtonLink :color="color" :text="'Terms of Service'" :fontSize="'clamp(12px, 0.7vw, 17px)'"
+                            @onClick="openTermsOfService" /> 
+                        and 
+                        <ButtonLink :color="color" :text="'Privacy Policy'" :fontSize="'clamp(12px, 0.7vw, 17px)'"
+                            @onClick="openPrivacyPolicy" />.
+                    </div>
                 </div>
             </Transition>
         </AccountSetupView>
@@ -26,6 +34,7 @@ import { ComputedRef, Ref, computed, defineComponent, ref } from 'vue';
 
 import TextInputField from '../InputFields/TextInputField.vue';
 import AccountSetupView from './AccountSetupView.vue';
+import ButtonLink from '../InputFields/ButtonLink.vue';
 
 import { InputColorModel, defaultInputColorModel } from '../../Types/Models';
 import { InputComponent } from '../../Types/Components';
@@ -39,6 +48,7 @@ export default defineComponent({
     {
         TextInputField,
         AccountSetupView,
+        ButtonLink
     },
     emits: ['onSuccess'],
     props: ['color', 'account'],
@@ -84,6 +94,16 @@ export default defineComponent({
             return [email.value === reEnterEmail.value, "Email does not match"];
         }
 
+        function openTermsOfService()
+        {
+            window.open("https://vaultic.org/terms-of-service");
+        }
+
+        function openPrivacyPolicy()
+        {
+            window.open("https://vaultic.org/privacy-policy");
+        }
+
         return {
             refreshKey,
             firstName,
@@ -94,7 +114,9 @@ export default defineComponent({
             alertMessage,
             reEnterEmail,
             createAccount,
-            emailsMatch
+            emailsMatch,
+            openTermsOfService,
+            openPrivacyPolicy
         };
     }
 })
@@ -132,5 +154,9 @@ export default defineComponent({
     justify-content: center;
     align-items: center;
     column-gap: 20px;
+}
+
+.createAccountViewContainer__terms {
+    font-size: clamp(12px, 0.7vw, 17px);
 }
 </style>

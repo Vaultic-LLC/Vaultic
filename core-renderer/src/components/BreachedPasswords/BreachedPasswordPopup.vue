@@ -100,7 +100,7 @@ export default defineComponent({
 
         function whatToDoAfterADataBreach()
         {
-            window.open('https://www.vaultic.org/post/what-to-do-after-a-data-breach');
+            window.open('https://www.vaultic.org/what-to-do-after-a-data-breach');
         }
 
         onMounted(() =>
