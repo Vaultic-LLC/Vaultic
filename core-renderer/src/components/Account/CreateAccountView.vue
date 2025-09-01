@@ -15,16 +15,18 @@
                             :width="'80%'" :maxWidth="'300px'" :isEmailField="true"
                             :additionalValidationFunction="emailsMatch" />
                     </div>
-                    <div class="createAccountViewContainer__terms">
-                        By signing up, you agree to our 
-                        <ButtonLink :color="color" :text="'Terms of Service'" :fontSize="'clamp(12px, 0.7vw, 17px)'"
-                            @onClick="openTermsOfService" /> 
-                        and 
-                        <ButtonLink :color="color" :text="'Privacy Policy'" :fontSize="'clamp(12px, 0.7vw, 17px)'"
-                            @onClick="openPrivacyPolicy" />.
-                    </div>
                 </div>
             </Transition>
+            <template #footer>
+                <div class="createAccountViewContainer__terms">
+                    By continuing, you agree to the 
+                    <ButtonLink :color="color" :text="'Terms of Service'" :fontSize="'clamp(12px, 0.55vw, 17px)'"
+                        @onClick="openTermsOfService" /> 
+                    and 
+                    <ButtonLink :color="color" :text="'Privacy Policy'" :fontSize="'clamp(12px, 0.55vw, 17px)'"
+                        @onClick="openPrivacyPolicy" />.
+                </div>
+            </template>
         </AccountSetupView>
     </div>
 </template>
@@ -157,6 +159,6 @@ export default defineComponent({
 }
 
 .createAccountViewContainer__terms {
-    font-size: clamp(12px, 0.7vw, 17px);
+    font-size: clamp(12px, 0.55vw, 17px);
 }
 </style>
