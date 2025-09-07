@@ -1,8 +1,8 @@
 {
-	"name": "vaultic",
-	"version": "0.0.1",
+	"name": "Vaultic",
+	"version": "1.0.2",
 	"description": "A Password Manager",
-	"main": "./out/main/index.js",
+	"main": "./dist/main/index.js",
 	"author": "Vaultic LLC",
 	"homepage": "https://www.electronjs.org",
 	"scripts": {
@@ -23,6 +23,7 @@
 		"build:linux": "npm run build && electron-builder --linux --config",
 		"package": "npm run copy && electron-vite build --outDir=dist && electron-forge package",
 		"make": "npm run copy && electron-vite build --outDir=dist && electron-forge make",
+		"make:mas": "npm run copy && electron-vite build --outDir=dist && electron-forge make --platform=mas > make_output.txt",
 		"copy-core-main-test": "node ../../copy.js src=../../core-main/src dest=./src/main/Core",
 		"copy-core-renderer-test": "node ../../copy.js src=../../core-renderer/src dest=./src/renderer/src/core",
 		"copy-test": "npm run copy-core-main-test && npm run copy-core-renderer-test",
@@ -73,6 +74,7 @@
 		"@babel/plugin-transform-object-rest-spread": "^7.25.9",
 		"@electron-forge/cli": "6.2.1",
 		"@electron-forge/maker-deb": "6.2.1",
+		"@electron-forge/maker-pkg": "^7.8.3",
 		"@electron-forge/maker-rpm": "6.2.1",
 		"@electron-forge/maker-squirrel": "6.2.1",
 		"@electron-forge/maker-zip": "6.2.1",
