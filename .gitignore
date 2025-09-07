@@ -20,3 +20,7 @@ core-shared/node_modules
 core-shared/package-lock.json
 
 electron-app-test/app
+
+New_Distribution_Provisioning_Profile.provisionprofile
+New_Development_Profile.provisionprofile
+make_output.txt

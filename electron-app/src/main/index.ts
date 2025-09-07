@@ -58,7 +58,8 @@ else
 
 	async function createWindow(): Promise<void>
 	{
-		if (!tray)
+		// Only create tray for non-MAS builds (tray may not work properly in MAS sandbox)
+		if (!tray && !process.mas)
 		{
 			createTray();
 		}
@@ -101,17 +102,20 @@ else
 	}
 
 	// We only want to allow one instance of the application at a time
-	const instanceLock = app.requestSingleInstanceLock()
-	if (!instanceLock)
-	{
-		app.quit()
-	}
-	else
-	{
-		app.on('second-instance', (event, commandLine, workingDirectory) =>
+	// Disable singleton mode for Mac App Store builds due to sandbox restrictions
+	if (!process.mas) {
+		const instanceLock = app.requestSingleInstanceLock()
+		if (!instanceLock)
 		{
-			showOrCreateWindow();
-		})
+			app.quit()
+		}
+		else
+		{
+			app.on('second-instance', (event, commandLine, workingDirectory) =>
+			{
+				showOrCreateWindow();
+			})
+		}
 	}
 
 	function showOrCreateWindow()
@@ -177,8 +181,14 @@ else
 	{
 		mainWindow = null;
 
-		// don't call app.quit() since we want to back up the users data if possible
-		await handleUserLogOut();
+		// For MAS builds, quit immediately since tray functionality is disabled
+		if (process.mas) {
+			await handleUserLogOut();
+			app.quit();
+		} else {
+			// don't call app.quit() since we want to back up the users data if possible
+			await handleUserLogOut();
+		}
 	});
 
 	app.on('web-contents-created', (event, contents) =>
