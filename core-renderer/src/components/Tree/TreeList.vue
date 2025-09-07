@@ -4,10 +4,10 @@
             <SearchBar :modelValue="searchText" :color="primaryColor" :sizeModel="searchSize" />
             <div class="treeList__buttons">
                 <VaulticButton :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" @click="expandAll">
-                    <IonIcon :name="'chevron-expand-outline'" />
+                    <IonIcon :name="'chevron-expand-outline'" :tooltip="'Expand all'" />
                 </VaulticButton>
                 <VaulticButton :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" @click="collapseAll">
-                    <IonIcon :name="'chevron-collapse-outline'" />
+                    <IonIcon :name="'chevron-collapse-outline'" :tooltip="'Collapse all'" />
                 </VaulticButton>
                 <slot></slot>
                 <AddButton v-if="isOnline" :color="primaryColor" :preferredSize="'1vw'" :minSize="'15px'" @click="$emit('onAdd')" />

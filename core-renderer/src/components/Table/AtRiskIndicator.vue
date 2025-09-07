@@ -1,7 +1,7 @@
 <template>
     <div class="atRiskContainer">
         <div class="atRiskIcon" ref="atRiskIcon">
-            <IonIcon :name="'alert-circle-outline'" />
+            <IonIcon :name="'alert-circle-outline'" :tooltip="'At risk'" />
         </div>
     </div>
 </template>

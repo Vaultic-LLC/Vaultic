@@ -33,15 +33,15 @@
                     :invalid="isInvalid" @update:model-value="onInput">
                     <template #maskicon="slotProps">
                         <div class="encryptedInputFieldContainer__icons">
-                            <IonIcon v-if="showRandom && !isLocked" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'dice-outline'" @click="togglePopover"></IonIcon>
-                            <IonIcon class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'eye-off-outline'" @click="toggleMask(true)"></IonIcon>
+                            <IonIcon v-if="showRandom && !isLocked" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'dice-outline'" @click="togglePopover" :tooltip="'Randomize'"></IonIcon>
+                            <IonIcon class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'eye-off-outline'" @click="toggleMask(true)" :tooltip="'Hide'"></IonIcon>
                         </div>
                     </template>
                     <template #unmaskicon="slotProps">
                         <div class="encryptedInputFieldContainer__icons">
-                            <IonIcon v-if="showRandom && !isLocked" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'dice-outline'" @click="togglePopover"></IonIcon>
-                            <IonIcon v-if="isLocked && showUnlock" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'lock-open-outline'" @click="unlock"></IonIcon>
-                            <IonIcon v-else-if="!isLocked" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'eye-outline'" @click="toggleMask(false)"></IonIcon>
+                            <IonIcon v-if="showRandom && !isLocked" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'dice-outline'" @click="togglePopover" :tooltip="'Randomize'"></IonIcon>
+                            <IonIcon v-if="isLocked && showUnlock" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'lock-open-outline'" @click="unlock" :tooltip="'Unlock'"></IonIcon>
+                            <IonIcon v-else-if="!isLocked" class="p-password-toggle-mask-icon encryptedInputFieldContainer__icon" :name="'eye-outline'" @click="toggleMask(false)" :tooltip="'Show'"></IonIcon>
                             <!-- Prime vue requires something to be here otherwise it'll render its own icon -->
                             <span v-else></span>
                         </div>

@@ -4,7 +4,7 @@
             @mouseleave="hoveringDisplay = false">
             <div ref="editButton" class="editButton" :class="{ hoverDisplay: hoveringDisplay }" @click.stop="onEdit"
                 @mouseenter="hoveringIcon = true" @mouseleave="hoveringIcon = false">
-                <IonIcon class="editIcon" :name="'create-outline'" />
+                <IonIcon class="editIcon" :name="'create-outline'" :tooltip="'Edit'" />
             </div>
         </div>
         <div class="colorPaletteContainer" @click.stop="onPaletteSelected" @mouseenter="hoveringDisplay = true"
@@ -13,7 +13,7 @@
             <SelectorButton v-if="created" :selectorButtonModel="selectorButtonModel" class="selectorButton" 
                 :width="'clamp(14px, 1.4vw, 30px)'" />
             <div v-else class="addColorIconContainer">
-                <IonIcon :name="'add-outline'" />
+                <IonIcon :name="'add-outline'" :tooltip="'Add'" />
             </div>
             <div class="colorPaletteColorContainer">
                 <div class="colorPaletteColor passwordColor">

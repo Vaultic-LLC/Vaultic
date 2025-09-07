@@ -4,6 +4,7 @@ import app from "../../src/core/Objects/Stores/AppStore";
 import { createTestSuite, TestContext } from "../test";
 import { Field } from "@vaultic/shared/Types/Fields";
 import cryptHelper from "../../src/core/Helpers/cryptHelper";
+import { UpdatePasswordResponse } from "src/core/Objects/Stores/PasswordStore";
 
 let mergingDataTestSuite = createTestSuite("Merging Data");
 
@@ -32,7 +33,7 @@ async function copyDatabaseAndLogIntoOnlineMode(forTest: string, ctx: TestContex
 
     app.isOnline = true;
 
-    const loadUserResponse = await app.loadUserData(masterKey, logInResponse.value?.userDataPayload);
+    const loadUserResponse = await app.loadUserData(masterKey);
     ctx.assertTruthy("Load user data worked 2 for" + forTest, loadUserResponse);
 }
 
@@ -48,7 +49,7 @@ async function swapToSecondDatabaseAndLogIn(forTest: string, ctx: TestContext)
 
     app.isOnline = true;
 
-    const loadUserResponse = await app.loadUserData(masterKey, logInResponse.value?.userDataPayload);
+    const loadUserResponse = await app.loadUserData(masterKey);
     ctx.assertTruthy("Load user data worked 3 for " + forTest, loadUserResponse);
 }
 
@@ -70,45 +71,41 @@ mergingDataTestSuite.tests.push({
         offlineSafePasswordOne.login.value = "Merging Offline Safe Password 1";
         offlineSafePasswordOne.password.value = "Svoweijiio3282uGsido-==DSF]12:JIOvj";
 
-        let addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, offlineDupPasswordOne);
+        let pendingPasswordStoreState = app.currentVault.passwordStore.getPendingState()!;
+
+        let addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, offlineDupPasswordOne, [], pendingPasswordStoreState);
         ctx.assertTruthy("Add Offline Dup Password 1 succeeded", addPasswordSucceeded);
 
-        let retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(offlineDupPasswordOne.id.value);
-        ctx.assertTruthy("Password id is set", retrievedPassword?.id != undefined);
-        ctx.assertTruthy("Password additional info id is set", retrievedPassword?.value.additionalInformation.id != undefined);
-        ctx.assertTruthy("Password containsLogin id is set", retrievedPassword?.value.containsLogin.id != undefined);
-        ctx.assertTruthy("Password domain id is set", retrievedPassword?.value.domain.id != undefined);
-        ctx.assertTruthy("Password email id is set", retrievedPassword?.value.email.id != undefined);
-        ctx.assertTruthy("Password filters id is set", retrievedPassword?.value.filters.id != undefined);
-        ctx.assertTruthy("Password groups id is set", retrievedPassword?.value.groups.id != undefined);
-        ctx.assertTruthy("Password id id is set", retrievedPassword?.value.id.id != undefined);
-        ctx.assertTruthy("Password isVaultic id is set", retrievedPassword?.value.isVaultic.id != undefined);
-        ctx.assertTruthy("Password isWeak id is set", retrievedPassword?.value.isWeak.id != undefined);
-        ctx.assertTruthy("Password isWeakMessage id is set", retrievedPassword?.value.isWeakMessage.id != undefined);
-        ctx.assertTruthy("Password lastModifiedTime id is set", retrievedPassword?.value.lastModifiedTime.id != undefined);
-        ctx.assertTruthy("Password login id is set", retrievedPassword?.value.login.id != undefined);
-        ctx.assertTruthy("Password password id is set", retrievedPassword?.value.password.id != undefined);
-        ctx.assertTruthy("Password passwordFor id is set", retrievedPassword?.value.passwordFor.id != undefined);
-        ctx.assertTruthy("Password passwordLength id is set", retrievedPassword?.value.passwordLength.id != undefined);
-        ctx.assertTruthy("Password securityQuestions id is set", retrievedPassword?.value.securityQuestions.id != undefined);
+        pendingPasswordStoreState = app.currentVault.passwordStore.getPendingState()!;
 
-        addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, offlineDupPasswordTwo);
+        let retrievedPassword = app.currentVault.passwordStore.passwordsByID[offlineDupPasswordOne.id];
+        ctx.assertTruthy("offlineDupPasswordOne id is set", retrievedPassword?.id != undefined);
+
+        addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, offlineDupPasswordTwo, [], pendingPasswordStoreState);
         ctx.assertTruthy("Add Offline Dup Password 2 succeeded", addPasswordSucceeded);
 
-        addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, offlineSafePasswordOne);
+        pendingPasswordStoreState = app.currentVault.passwordStore.getPendingState()!;
+
+        retrievedPassword = app.currentVault.passwordStore.passwordsByID[offlineDupPasswordTwo.id];
+        ctx.assertTruthy("offlineDupPasswordTwo id is set", retrievedPassword?.id != undefined);
+
+        addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, offlineSafePasswordOne, [], pendingPasswordStoreState);
         ctx.assertTruthy("Add Offline Safe Password 1 succeeded", addPasswordSucceeded);
 
-        ctx.assertTruthy("Offline dup password one exists in duplicates", app.currentVault.passwordStore.duplicatePasswords.value.get(offlineDupPasswordOne.id.value));
-        ctx.assertTruthy("Offline dup password two exists in duplicates", app.currentVault.passwordStore.duplicatePasswords.value.get(offlineDupPasswordTwo.id.value));
+        retrievedPassword = app.currentVault.passwordStore.passwordsByID[offlineSafePasswordOne.id];
+        ctx.assertTruthy("offlineSafePasswordOne id is set", retrievedPassword?.id != undefined);
+
+        ctx.assertTruthy("Offline dup password one exists in duplicates", app.currentVault.passwordStore.duplicatePasswords[offlineDupPasswordOne.id]);
+        ctx.assertTruthy("Offline dup password two exists in duplicates", app.currentVault.passwordStore.duplicatePasswords[offlineDupPasswordTwo.id]);
         ctx.assertEquals("Offline safe password one exists", app.currentVault.passwordStore.currentAndSafePasswordsSafe[app.currentVault.passwordStore.currentAndSafePasswordsSafe.length - 1], 1);
 
         await copyDatabaseAndLogIntoOnlineMode(mergingPasswordAddTest, ctx);
 
-        ctx.assertUndefined("Merged Offline Dup Password one does not exist", app.currentVault.passwordStore.passwordsByID.value.get(offlineDupPasswordOne.id.value));
-        ctx.assertUndefined("Merged Offline Dup Password two does not exist", app.currentVault.passwordStore.passwordsByID.value.get(offlineDupPasswordTwo.id.value));
-        ctx.assertUndefined("Merged Offline Safe Password one does not exist", app.currentVault.passwordStore.passwordsByID.value.get(offlineSafePasswordOne.id.value));
+        ctx.assertUndefined("Merged Offline Dup Password one does not exist", app.currentVault.passwordStore.passwordsByID[offlineDupPasswordOne.id]);
+        ctx.assertUndefined("Merged Offline Dup Password two does not exist", app.currentVault.passwordStore.passwordsByID[offlineDupPasswordTwo.id]);
+        ctx.assertUndefined("Merged Offline Safe Password one does not exist", app.currentVault.passwordStore.passwordsByID[offlineSafePasswordOne.id]);
 
-        ctx.assertEquals("No duplicate passwords", app.currentVault.passwordStore.duplicatePasswords.value.size, 0);
+        ctx.assertEquals("No duplicate passwords", Object.keys(app.currentVault.passwordStore.duplicatePasswords).length, 0);
         ctx.assertEquals("No safe passwords", app.currentVault.passwordStore.currentAndSafePasswordsSafe.length, 0);
 
         const onlineDupPasswordOne = defaultPassword();
@@ -123,35 +120,41 @@ mergingDataTestSuite.tests.push({
         onlineSafePasswordOne.login.value = "Merging online Safe Password 1";
         onlineSafePasswordOne.password.value = "Svoweijiio3282uGsido-==DSF]12:JIOvj";
 
-        addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, onlineDupPasswordOne);
+        pendingPasswordStoreState = app.currentVault.passwordStore.getPendingState()!;
+
+        addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, onlineDupPasswordOne, [], pendingPasswordStoreState);
         ctx.assertTruthy("Add Online Dup Password 1 succeeded", addPasswordSucceeded);
 
-        addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, onlineDupPasswordTwo);
+        pendingPasswordStoreState = app.currentVault.passwordStore.getPendingState()!;
+
+        addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, onlineDupPasswordTwo, [], pendingPasswordStoreState);
         ctx.assertTruthy("Add Online Dup Password 2 succeeded", addPasswordSucceeded);
 
-        addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, onlineSafePasswordOne);
+        pendingPasswordStoreState = app.currentVault.passwordStore.getPendingState()!;
+
+        addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, onlineSafePasswordOne, [], pendingPasswordStoreState);
         ctx.assertTruthy("Add Online Safe Password 1 succeeded", addPasswordSucceeded);
 
-        ctx.assertTruthy("Online dup password one exists in duplicates", app.currentVault.passwordStore.duplicatePasswords.value.get(onlineDupPasswordOne.id.value));
-        ctx.assertTruthy("Online dup password two exists in duplicates", app.currentVault.passwordStore.duplicatePasswords.value.get(onlineDupPasswordTwo.id.value));
+        ctx.assertTruthy("Online dup password one exists in duplicates", app.currentVault.passwordStore.duplicatePasswords[onlineDupPasswordOne.id]);
+        ctx.assertTruthy("Online dup password two exists in duplicates", app.currentVault.passwordStore.duplicatePasswords[onlineDupPasswordTwo.id]);
         ctx.assertEquals("Online safe password one exists", app.currentVault.passwordStore.currentAndSafePasswordsSafe[app.currentVault.passwordStore.currentAndSafePasswordsSafe.length - 1], 1);
 
         await swapToSecondDatabaseAndLogIn(mergingPasswordAddTest, ctx);
 
-        ctx.assertTruthy("Merged Offline duplicate Password one exists after merge", app.currentVault.passwordStore.passwordsByID.value.get(offlineDupPasswordOne.id.value));
-        ctx.assertTruthy("Merged Offline duplicate Password two exists after merge", app.currentVault.passwordStore.passwordsByID.value.get(offlineDupPasswordTwo.id.value));
+        ctx.assertTruthy("Merged Offline duplicate Password one exists after merge", app.currentVault.passwordStore.passwordsByID[offlineDupPasswordOne.id]);
+        ctx.assertTruthy("Merged Offline duplicate Password two exists after merge", app.currentVault.passwordStore.passwordsByID[offlineDupPasswordTwo.id]);
 
-        ctx.assertTruthy("Merged online duplicate Password one exists after merge", app.currentVault.passwordStore.passwordsByID.value.get(onlineDupPasswordOne.id.value));
-        ctx.assertTruthy("Merged online duplicate Password one exists after merge", app.currentVault.passwordStore.passwordsByID.value.get(onlineDupPasswordTwo.id.value));
+        ctx.assertTruthy("Merged online duplicate Password one exists after merge", app.currentVault.passwordStore.passwordsByID[onlineDupPasswordOne.id]);
+        ctx.assertTruthy("Merged online duplicate Password one exists after merge", app.currentVault.passwordStore.passwordsByID[onlineDupPasswordTwo.id]);
 
-        ctx.assertTruthy("Merged offline safe Password one exists after merge", app.currentVault.passwordStore.passwordsByID.value.get(offlineSafePasswordOne.id.value));
-        ctx.assertTruthy("Merged online safe Password one exists after merge", app.currentVault.passwordStore.passwordsByID.value.get(onlineSafePasswordOne.id.value));
+        ctx.assertTruthy("Merged offline safe Password one exists after merge", app.currentVault.passwordStore.passwordsByID[offlineSafePasswordOne.id]);
+        ctx.assertTruthy("Merged online safe Password one exists after merge", app.currentVault.passwordStore.passwordsByID[onlineSafePasswordOne.id]);
 
-        ctx.assertTruthy("Merged Offline duplicate Password one exists in duplicates after merge", app.currentVault.passwordStore.duplicatePasswords.value.get(offlineDupPasswordOne.id.value));
-        ctx.assertTruthy("Merged Offline duplicate Password two exists in duplicates after merge", app.currentVault.passwordStore.duplicatePasswords.value.get(offlineDupPasswordTwo.id.value));
+        ctx.assertTruthy("Merged Offline duplicate Password one exists in duplicates after merge", app.currentVault.passwordStore.duplicatePasswords[offlineDupPasswordOne.id]);
+        ctx.assertTruthy("Merged Offline duplicate Password two exists in duplicates after merge", app.currentVault.passwordStore.duplicatePasswords[offlineDupPasswordTwo.id]);
 
-        ctx.assertTruthy("Merged online duplicate Password one exists in duplicates after merge", app.currentVault.passwordStore.duplicatePasswords.value.get(onlineDupPasswordOne.id.value));
-        ctx.assertTruthy("Merged online duplicate Password two exists in duplicates after merge", app.currentVault.passwordStore.duplicatePasswords.value.get(onlineDupPasswordTwo.id.value));
+        ctx.assertTruthy("Merged online duplicate Password one exists in duplicates after merge", app.currentVault.passwordStore.duplicatePasswords[onlineDupPasswordOne.id]);
+        ctx.assertTruthy("Merged online duplicate Password two exists in duplicates after merge", app.currentVault.passwordStore.duplicatePasswords[onlineDupPasswordTwo.id]);
 
         ctx.assertEquals("Safe passwords has 6 values", app.currentVault.passwordStore.currentAndSafePasswordsSafe.length, 6);
         ctx.assertEquals("Current passwords has 6 values", app.currentVault.passwordStore.currentAndSafePasswordsCurrent.length, 6);
@@ -165,47 +168,55 @@ mergingDataTestSuite.tests.push({
         const password = defaultPassword();
         password.login.value = "Merging Added Security Questions Works";
 
-        let addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, password);
+        let pendingPasswordStoreState = app.currentVault.passwordStore.getPendingState()!;
+
+        let addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, password, [], pendingPasswordStoreState);
         ctx.assertTruthy("Add Password 1 succeeded", addPasswordSucceeded);
 
         await logIntoOfflineMode(mergingSecurityQuestionsAddTest, ctx);
 
-        let retrievedPassword: Field<Password> = JSON.parse(JSON.stringify(app.currentVault.passwordStore.passwordsByID.value.get(password.id.value)));
+        let retrievedPassword: Password = JSON.parse(JSON.stringify(app.currentVault.passwordStore.passwordsByID[password.id]));
         ctx.assertTruthy("Retrieved Password exists", retrievedPassword);
 
-        retrievedPassword!.value.securityQuestions.value.set("1", Field.create({
-            id: Field.create("1"),
-            question: Field.create("First"),
-            questionLength: Field.create(0),
-            answer: Field.create("yes"),
-            answerLength: Field.create(0)
-        }));
+        const securityQuestion = 
+        {
+            id: "1",
+            q: "First",
+            a: "yes"
+        };
 
-        const addOffline = await app.currentVault.passwordStore.updatePassword(masterKey, retrievedPassword!.value, false, [], []);
+        retrievedPassword.q["1"] = securityQuestion;
+
+        pendingPasswordStoreState = app.currentVault.passwordStore.getPendingState()!;
+
+        const addOffline = await app.currentVault.passwordStore.updatePassword(masterKey, retrievedPassword, false, [securityQuestion], [], [], [], {}, pendingPasswordStoreState);
         ctx.assertTruthy("Add security question offline worked", addOffline);
 
         await copyDatabaseAndLogIntoOnlineMode(mergingSecurityQuestionsAddTest, ctx);
 
-        retrievedPassword = JSON.parse(JSON.stringify(app.currentVault.passwordStore.passwordsByID.value.get(password.id.value)));
-        ctx.assertEquals("Retrieved Password security question doesn't exist", retrievedPassword?.value.securityQuestions.value.size, 0);
+        retrievedPassword = JSON.parse(JSON.stringify(app.currentVault.passwordStore.passwordsByID[password.id]));
+        ctx.assertEquals("Retrieved Password security question doesn't exist", Object.keys(retrievedPassword?.q).length, 0);
 
-        retrievedPassword!.value.securityQuestions.value.set("2", Field.create({
-            id: Field.create("2"),
-            question: Field.create("Second"),
-            questionLength: Field.create(0),
-            answer: Field.create("no"),
-            answerLength: Field.create(0)
-        }));
+        const securityQuestion2 = 
+        {
+            id: "2",
+            q: "Second",
+            a: "no"
+        };
 
-        const addOnline = await app.currentVault.passwordStore.updatePassword(masterKey, retrievedPassword!.value, false, [], []);
+        retrievedPassword!.q["2"] = securityQuestion2;
+
+        pendingPasswordStoreState = app.currentVault.passwordStore.getPendingState()!;
+
+        const addOnline = await app.currentVault.passwordStore.updatePassword(masterKey, retrievedPassword!, false, [securityQuestion2], [], [], [], {}, pendingPasswordStoreState);
         ctx.assertTruthy("Add security question online worked", addOnline);
 
         await swapToSecondDatabaseAndLogIn(mergingSecurityQuestionsAddTest, ctx);
 
-        retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password.id.value)!;
+        retrievedPassword = app.currentVault.passwordStore.passwordsByID[password.id];
 
-        ctx.assertTruthy("Merged Security Question one exists", retrievedPassword?.value.securityQuestions.value.has("1"));
-        ctx.assertTruthy("Merged Security Question two exists", retrievedPassword?.value.securityQuestions.value.has("2"));
+        ctx.assertTruthy("Merged Security Question one exists", retrievedPassword?.q["1"]);
+        ctx.assertTruthy("Merged Security Question two exists", retrievedPassword?.q["2"]);
     }
 });
 
@@ -217,82 +228,97 @@ mergingDataTestSuite.tests.push({
         password.login.value = "Merging Added Filters / Groups for password Works";
 
         const filter = defaultFilter(DataType.Passwords);
-        filter.name.value = "Merging Added Filter For Password";
-        filter.conditions.value.set("1", Field.create({
-            id: Field.create("1"),
-            property: Field.create("domain"),
-            filterType: Field.create(FilterConditionType.EqualTo),
-            value: Field.create("Merging Added Filter For Password")
-        }));
+        filter.n = "Merging Added Filter For Password";
+        filter.c["1"] = 
+        {
+            id: "1",
+            p: "domain",
+            t: FilterConditionType.EqualTo,
+            v: "Merging Added Filter For Password"
+        };
 
         const group = defaultGroup(DataType.Passwords);
-        group.name.value = "Merging Added Group For Password";
+        group.n = "Merging Added Group For Password";
 
         const group2 = defaultGroup(DataType.Passwords);
-        group2.name.value = "Merging Added Group For Password";
+        group2.n = "Merging Added Group For Password";
 
-        let addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, password);
+        let pendingPasswordStoreState = app.currentVault.passwordStore.getPendingState()!;
+
+        let addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(masterKey, password, [], pendingPasswordStoreState);
         ctx.assertTruthy("Add Password succeeded", addPasswordSucceeded);
 
-        const addedFilterSucceeded = await app.currentVault.filterStore.addFilter(masterKey, filter);
+        let pendingFilterStoreState = app.currentVault.filterStore.getPendingState()!;
+
+        const addedFilterSucceeded = await app.currentVault.filterStore.addFilter(masterKey, filter, pendingFilterStoreState);
         ctx.assertTruthy("Add Filter succeeded", addedFilterSucceeded);
 
-        let addedGroupSucceeded = await app.currentVault.groupStore.addGroup(masterKey, group);
+        let pendingGroupStoreState = app.currentVault.groupStore.getPendingState()!;
+
+        let addedGroupSucceeded = await app.currentVault.groupStore.addGroup(masterKey, group, pendingGroupStoreState);
         ctx.assertTruthy("Add Group 1 succeeded", addedGroupSucceeded);
 
-        addedGroupSucceeded = await app.currentVault.groupStore.addGroup(masterKey, group2);
+        pendingGroupStoreState = app.currentVault.groupStore.getPendingState()!;
+
+        addedGroupSucceeded = await app.currentVault.groupStore.addGroup(masterKey, group2, pendingGroupStoreState);
         ctx.assertTruthy("Add Group 2 succeeded", addedGroupSucceeded);
 
         await logIntoOfflineMode(mergingFilterGroupsAddForPasswordTest, ctx);
 
-        let retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password.id.value);
+        let retrievedPassword = app.currentVault.passwordStore.passwordsByID[password.id];
         ctx.assertTruthy("Retrieved Password exists", retrievedPassword);
-        ctx.assertEquals("No groups", retrievedPassword?.value.groups.value.size, 0);
-        ctx.assertEquals("No filters", retrievedPassword?.value.filters.value.size, 0);
+        ctx.assertEquals("No groups", Object.keys(retrievedPassword?.g).length, 0);
+        ctx.assertEquals("No filters", Object.keys(retrievedPassword?.i).length, 0);
 
-        ctx.assertEquals("No Passwords for Group", app.currentVault.groupStore.passwordGroupsByID.value.get(group.id.value)?.value.passwords.value.size, 0);
-        ctx.assertEquals("No Passwords for Filter", app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)?.value.passwords.value.size, 0);
+        ctx.assertEquals("No Passwords for Group", Object.keys(app.currentVault.groupStore.passwordGroupsByID[group.id].p).length, 0);
+        ctx.assertEquals("No Passwords for Filter", Object.keys(app.currentVault.filterStore.passwordFiltersByID[filter.id].p).length, 0);
 
-        const clonedPassword: Password = JSON.parse(JSON.stringify(retrievedPassword!.value));
-        clonedPassword.groups.value.set(group.id.value, Field.create(group.id.value));
+        const clonedPassword: Password = JSON.parse(JSON.stringify(retrievedPassword!));
+        clonedPassword.g[group.id] = true;
 
-        let updateOffline = await app.currentVault.passwordStore.updatePassword(masterKey, clonedPassword, false, [], []);
+        pendingPasswordStoreState = app.currentVault.passwordStore.getPendingState()!;
+
+        let updateOffline = (await app.currentVault.passwordStore.updatePassword(masterKey, clonedPassword, false, [], [], [], [], {}, pendingPasswordStoreState)) == UpdatePasswordResponse.Success;
         ctx.assertTruthy("Update password offline worked", updateOffline);
-        ctx.assertTruthy("Group has offline password", app.currentVault.groupStore.passwordGroupsByID.value.get(group.id.value)?.value.passwords.value.has(clonedPassword.id.value));
+        ctx.assertTruthy("Group has offline password", app.currentVault.groupStore.passwordGroupsByID[group.id].p[clonedPassword.id]);
 
-        const clonedGroup: Group = JSON.parse(JSON.stringify(app.currentVault.groupStore.passwordGroupsByID.value.get(group2.id.value)!.value));
-        clonedGroup.passwords.value.set(clonedPassword.id.value, Field.create(clonedPassword.id.value));
+        const clonedGroup: Group = JSON.parse(JSON.stringify(app.currentVault.groupStore.passwordGroupsByID[group2.id]));
+        clonedGroup.p[clonedPassword.id] = true;
 
-        updateOffline = await app.currentVault.groupStore.updateGroup(masterKey, clonedGroup);
+        pendingGroupStoreState = app.currentVault.groupStore.getPendingState()!;
+
+        updateOffline = await app.currentVault.groupStore.updateGroup(masterKey, clonedGroup, clonedGroup.p,pendingGroupStoreState);
         ctx.assertTruthy("Update group offline worked", updateOffline);
-        ctx.assertTruthy("Password has group", app.currentVault.passwordStore.passwordsByID.value.get(password.id.value)?.value.groups.value.has(clonedGroup.id.value));
+        ctx.assertTruthy("Password has group", app.currentVault.passwordStore.passwordsByID[password.id].g[clonedGroup.id]);
 
         await copyDatabaseAndLogIntoOnlineMode(mergingFilterGroupsAddForPasswordTest, ctx);
 
-        retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password.id.value);
-        ctx.assertEquals("Offline group doesn't exist for password", retrievedPassword?.value.groups.value.size, 0);
-        ctx.assertEquals("Group doesn't have password", app.currentVault.groupStore.passwordGroupsByID.value.get(group.id.value)?.value.passwords.value.size, 0);
+        retrievedPassword = app.currentVault.passwordStore.passwordsByID[password.id];
+        ctx.assertEquals("Offline group doesn't exist for password", Object.keys(retrievedPassword?.g).length, 0);
+        ctx.assertEquals("Group doesn't have password", Object.keys(app.currentVault.groupStore.passwordGroupsByID[group.id].p).length, 0);
 
-        retrievedPassword!.value.domain.value = "Merging Added Filter For Password";
+        retrievedPassword!.d = "Merging Added Filter For Password";
 
-        const addOnline = await app.currentVault.passwordStore.updatePassword(masterKey, retrievedPassword!.value, false, [], []);
+        pendingPasswordStoreState = app.currentVault.passwordStore.getPendingState()!;
+
+        const addOnline = await app.currentVault.passwordStore.updatePassword(masterKey, retrievedPassword, false, [], [], [], [], {}, pendingPasswordStoreState);
 
         ctx.assertTruthy("Update password worked", addOnline);
-        ctx.assertTruthy("Password has filter", app.currentVault.passwordStore.passwordsByID.value.get(password.id.value)?.value.filters.value.has(filter.id.value));
-        ctx.assertTruthy("Filer has password", app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)?.value.passwords.value.has(password.id.value));
+        ctx.assertTruthy("Password has filter", app.currentVault.passwordStore.passwordsByID[password.id].i[filter.id]);
+        ctx.assertTruthy("Filer has password", app.currentVault.filterStore.passwordFiltersByID[filter.id].p[password.id]);
 
         await swapToSecondDatabaseAndLogIn(mergingFilterGroupsAddForPasswordTest, ctx);
 
-        retrievedPassword = app.currentVault.passwordStore.passwordsByID.value.get(password.id.value);
+        retrievedPassword = app.currentVault.passwordStore.passwordsByID[password.id];
 
-        ctx.assertTruthy("Password has group 1 after merge", retrievedPassword?.value.groups.value.get(group.id.value));
-        ctx.assertTruthy("Password has group 2 after merge", retrievedPassword?.value.groups.value.get(group2.id.value))
+        ctx.assertTruthy("Password has group 1 after merge", retrievedPassword?.g[group.id]);
+        ctx.assertTruthy("Password has group 2 after merge", retrievedPassword?.g[group2.id])
 
-        ctx.assertTruthy("Group 1 has password after merge", app.currentVault.groupStore.passwordGroupsByID.value.get(group.id.value)?.value.passwords.value.has(retrievedPassword!.value.id.value));
-        ctx.assertTruthy("Group 2 has password after merge", app.currentVault.groupStore.passwordGroupsByID.value.get(group2.id.value)?.value.passwords.value.has(retrievedPassword!.value.id.value));
+        ctx.assertTruthy("Group 1 has password after merge", app.currentVault.groupStore.passwordGroupsByID[group.id].p[retrievedPassword!.id]);
+        ctx.assertTruthy("Group 2 has password after merge", app.currentVault.groupStore.passwordGroupsByID[group2.id].p[retrievedPassword!.id]);
 
-        ctx.assertTruthy("Password has filter after merge", retrievedPassword?.value.filters.value.get(filter.id.value));
-        ctx.assertTruthy("Filter has password after merge", app.currentVault.filterStore.passwordFiltersByID.value.get(filter.id.value)?.value.passwords.value.has(retrievedPassword!.value.id.value));
+        ctx.assertTruthy("Password has filter after merge", retrievedPassword?.i[filter.id]);
+        ctx.assertTruthy("Filter has password after merge", app.currentVault.filterStore.passwordFiltersByID[filter.id].p[retrievedPassword!.id]);
     }
 });
 

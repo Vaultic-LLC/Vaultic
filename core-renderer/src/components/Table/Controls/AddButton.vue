@@ -1,6 +1,6 @@
 <template>
     <VaulticButton :color="color" :minSize="minSize" :preferredSize="preferredSize" :maxSize="maxSize" :tooltipMessage="tooltipMessage" >
-        <IonIcon class="addTableItemButtonIcon" :name="'add-outline'" />
+        <IonIcon class="addTableItemButtonIcon" :name="'add-outline'" :tooltip="'Add'" />
     </VaulticButton>
 </template>
 

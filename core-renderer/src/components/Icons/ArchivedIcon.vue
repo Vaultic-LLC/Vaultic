@@ -1,6 +1,6 @@
 <template>
     <VaulticIcon :fontSize="fontSize">
-        <IonIcon :name="'trash-bin-outline'" />
+        <IonIcon :name="'trash-bin-outline'" :tooltip="'Archived'" />
     </VaulticIcon>
 </template>
 

@@ -4,7 +4,7 @@
         </div>
         <div ref="objectPopup" class="objectyPopup">
             <div v-if="!doPreventClose" class="closeIconContainer" @click.stop="doClosePopup">
-                <IonIcon class="closeIcon" :name="'close-circle-outline'" />
+                <IonIcon class="closeIcon" :name="'close-circle-outline'" :tooltip="'Close'" />
             </div>
             <div class="objectyPopupContent">
                 <slot></slot>

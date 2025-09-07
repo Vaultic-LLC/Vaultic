@@ -1,5 +1,5 @@
 <template>
-    <div class="vaulticIonIcon md hydrated" role="img">
+    <div ref="icon" class="vaulticIonIcon md hydrated" role="img">
         <div class="icon-inner">
             <svg v-if="name == 'add-outline'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32" d="M256 112v288M400 256H112"/></svg>
             <svg v-else-if="name == 'alert-circle-outline'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M448 256c0-106-86-192-192-192S64 150 64 256s86 192 192 192 192-86 192-192z" fill="none" stroke="currentColor" stroke-miterlimit="10" stroke-width="32"/><path d="M250.26 166.05L256 288l5.73-121.95a5.74 5.74 0 00-5.79-6h0a5.74 5.74 0 00-5.68 6z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/><path stroke="currentColor" d="M256 367.91a20 20 0 1120-20 20 20 0 01-20 20z"/></svg>
@@ -34,14 +34,33 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import tippy from 'tippy.js';
+import { defineComponent, onMounted, Ref, ref } from 'vue';
 
 export default defineComponent({
     name: "IonIcon",
-    props: ['name'],
-    setup()
+    props: ['name', 'tooltip'],
+    setup(props)
     {
+        const icon: Ref<HTMLElement | null> = ref(null);
+
+        onMounted(() =>
+        {
+            if (props.tooltip && icon.value)
+            {
+                tippy(icon.value, 
+                {
+					content: props.tooltip,
+					inertia: true,
+					animation: 'scale',
+					theme: 'material',
+                    delay: [1000, 0]
+                });
+            }
+        });
+
         return {
+            icon
         };
     }
 })

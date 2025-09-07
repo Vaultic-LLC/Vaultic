@@ -7,11 +7,11 @@
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, onMounted, Ref, ref } from 'vue';
+import { computed, ComputedRef, defineComponent, onMounted, Ref, ref, watch } from 'vue';
 
 import IonIcon from './Icons/IonIcon.vue';
 
-import tippy, { Placement } from 'tippy.js';
+import tippy, { Instance, Placement } from 'tippy.js';
 import 'tippy.js/dist/tippy.css'; // optional for styling
 import 'tippy.js/animations/scale.css';
 
@@ -29,11 +29,21 @@ export default defineComponent({
 		const iconSize: ComputedRef<string> = computed(() => props.size ?? "28px");
 		const computedIconColor: ComputedRef<string> = computed(() => props.iconColor ? props.iconColor : "white");
 
+        let tippyInstance: Instance | null = null;
+
+        watch(() => props.message, () =>
+        {
+            if (tippyInstance && props.message)
+            {
+                tippyInstance.setContent(props.message);
+            }
+        });
+
 		onMounted(() =>
 		{
 			if (props.message && toolTipIcon.value)
 			{
-				tippy(toolTipIcon.value, {
+				tippyInstance = tippy(toolTipIcon.value, {
 					content: props.message,
 					inertia: true,
 					animation: 'scale',

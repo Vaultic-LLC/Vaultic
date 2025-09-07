@@ -9,6 +9,7 @@
                     <h2 :key="titleKey">{{ widgetTitle }}</h2>
                 </Transition>
             </div>
+            <Tooltip :color="color" :fadeIn="false" :size="'clamp(20px, 1.25vw, 50px)'" :message="tooltipMessage" />
         </div>
         <div v-if="!canLoadWidget" class="strengthGraphContainer__chart">
             <WidgetSubscriptionMessage />
@@ -41,6 +42,7 @@ import { Ref, defineComponent, onMounted, ref, watch, toRaw, onUnmounted, Comput
 import LoadingIndicator from '../Loading/LoadingIndicator.vue';
 import WidgetSubscriptionMessage from '../Widgets/WidgetSubscriptionMessage.vue'; 
 import WidgetErrorMessage from '../Widgets/WidgetErrorMessage.vue';
+import Tooltip from '../ToolTip.vue';
 
 import { Chart, LineController, LineElement, PointElement, LinearScale, Title, CategoryScale, Filler } from "chart.js"
 import { Line } from "vue-chartjs"
@@ -62,14 +64,17 @@ export default defineComponent({
         Line,
         LoadingIndicator,
         WidgetErrorMessage,
-        WidgetSubscriptionMessage
+        WidgetSubscriptionMessage,
+        Tooltip
     },
     setup()
     {
         const failedToLoad: Ref<boolean> = ref(false);
         const canLoadWidget: ComputedRef<boolean> = computed(() => app.canShowSubscriptionWidgets.value);
 
-        const widgetTitle: ComputedRef<string> = computed(() => `Secure ${app.activePasswordValuesTable == DataType.Passwords ? "Passwords" : "Values"}`);
+        const dataTypeString: ComputedRef<string> = computed(() => app.activePasswordValuesTable == DataType.Passwords ? "Passwords" : "Values");
+        const widgetTitle: ComputedRef<string> = computed(() => `Secure ${dataTypeString.value}`);
+        const tooltipMessage: ComputedRef<string> = computed(() => `The chart shows the number of total ${dataTypeString.value} vs the number of secure ${dataTypeString.value} (${dataTypeString.value} that don't match any metric). The 'target' line is where you should aim for.`);
         const titleKey: Ref<string> = ref('');
         const loading: Ref<boolean> = ref(false);
         const refreshKey: Ref<string> = ref('');
@@ -565,6 +570,7 @@ export default defineComponent({
 
         return {
             widgetTitle,
+            tooltipMessage,
             titleKey,
             canLoadWidget,
             lineChart,

@@ -2,7 +2,7 @@
     <div class="treeNode" @click="onClick" @mouseenter="hovering = true" @mouseleave="hovering = false">
         <div class="treeNode__parentRow">
             <IonIcon class="treeNode__arrowIcon" v-if="treeNodeModel.isParent"
-                :class="{ selected: treeNodeModel.selected }" :name="'chevron-forward-outline'" />
+                :class="{ selected: treeNodeModel.selected }" :name="'chevron-forward-outline'" :tooltip="'Expand'" />
             <component :is="treeNodeModel.icon" :fontSize="'clamp(12px, 0.6vw, 17px)'" />
             <div class="treeNode__selectIcon" v-if="!treeNodeModel.isParent">
                 <SelectorButton :selectorButtonModel="selectorButtonModel" :width="'clamp(8px, 0.7vw, 20px)'"

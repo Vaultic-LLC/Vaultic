@@ -5,7 +5,7 @@
             <Transition name="fade" mode="out-in">
                 <div v-if="navigationStack.length > 0 && !disableBack" class="accountSetupPopupContainer__backButton"
                     @click="navigateBack">
-                    <IonIcon :name="'arrow-back-outline'" />
+                    <IonIcon :name="'arrow-back-outline'" :tooltip="'Back'" />
                 </div>
             </Transition>
             <Transition name="fade" mode="out-in">

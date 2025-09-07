@@ -1,6 +1,6 @@
 <template>
     <VaulticIcon :fontSize="fontSize">
-        <IonIcon :name="'cloud-upload-outline'" />
+        <IonIcon :name="'cloud-upload-outline'" :tooltip="'Shared with others'" />
     </VaulticIcon>
 </template>
 

@@ -145,13 +145,13 @@
                             </div>
                         </div>
                         <div v-if="allowPinning !== false" class="vaulticTableContainer__rowIconButton" @click="internalOnPin((data as TableRowModel).isPinned === true, data)">
-                            <IonIcon class="rowIcon magnet" :class="{ isPinned: (data as TableRowModel).isPinned === true}" :name="'magnet-outline'" />
+                            <IonIcon class="rowIcon magnet" :class="{ isPinned: (data as TableRowModel).isPinned === true}" :name="'magnet-outline'" :tooltip="'Pin to top'" />
                         </div>
                         <div v-if="onEdit" class="vaulticTableContainer__rowIconButton" @click="(e) => onEdit(getBackingObject((data as TableRowModel).id), e)">
-                            <IonIcon class="rowIcon edit" :name="'create-outline'" />
+                            <IonIcon class="rowIcon edit" :name="'create-outline'" :tooltip="'Edit'" />
                         </div>
                         <div v-if="onDelete" class="vaulticTableContainer__rowIconButton" @click="deleteConfirm(getBackingObject((data as TableRowModel).id))">
-                            <IonIcon class="rowIcon delete" :name="'trash-outline'" />
+                            <IonIcon class="rowIcon delete" :name="'trash-outline'" :tooltip="'Delete'" />
                         </div>
                     </div>
                 </template>
