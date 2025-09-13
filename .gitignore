@@ -9,9 +9,9 @@ electron-app/src/main/Core
 core-renderer/node_modules
 core-renderer/package-lock.json
 
-core-renderer/test/src/core
-core-renderer/test/node_modules
-core-renderer/test/package-lock.json
+core-test/renderer
+core-test/node_modules
+core-test/package-lock.json
 
 core-main/node_modules
 core-main/package-lock.json
@@ -20,6 +20,9 @@ core-shared/node_modules
 core-shared/package-lock.json
 
 electron-app-test/app
+electron-app-test/node_modules
+electron-app-test/package-lock.json
+
 
 New_Distribution_Provisioning_Profile.provisionprofile
 New_Development_Profile.provisionprofile

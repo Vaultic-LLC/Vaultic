@@ -90,6 +90,7 @@ export default function setupIPC()
 	ipcMain.handle('userRepository:getStoreStates', (e, masterKey: string, storeStatesToRetrive: UserData) => validateSender(e, () => environment.repositories.users.getStoreStates(masterKey, storeStatesToRetrive)));
 	ipcMain.handle('userRepository:getValidMasterKey', (e) => validateSender(e, () => environment.repositories.users.getValidMasterKey()));
 	ipcMain.handle('userRepository:updateUserEmail', (e, email: string) => validateSender(e, () => environment.repositories.users.updateUserEmail(email)));
+	ipcMain.handle('userRepository:deleteAccount', (e) => validateSender(e, () => environment.repositories.users.deleteAccount()));
 
 	ipcMain.handle('vaultRepository:updateVault', (e, masterKey: string, updateVaultData: string) => validateSender(e, () => environment.repositories.vaults.updateVault(masterKey, updateVaultData)));
 	ipcMain.handle('vaultRepository:setActiveVault', (e, masterKey: string, userVaultID: number) => validateSender(e, () => environment.repositories.vaults.setActiveVault(masterKey, userVaultID)));
@@ -117,6 +118,11 @@ export default function setupIPC()
 
 async function validateSender(event: Electron.IpcMainInvokeEvent, onSuccess: () => any): Promise<any>
 {
+	if (!event.senderFrame)
+	{
+		return undefined;
+	}
+
 	const url = (new URL(event.senderFrame.url));
 	let pathParts = url.pathname?.split("/");
 

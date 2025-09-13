@@ -37,6 +37,13 @@
                     :width="'6vw'" :minWidth="'70px'" :maxWidth="'200px'" :height="'3vh'" :minHeight="'30px'"
                     :maxHeight="'45px'" :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="onShowMFAKey" />
         </div>
+        <div class="accountInfoWidget__divider accountInfoWidget__centered"></div>
+        <div class="accountInfoWidget__section accountInfoWidget__centered">
+            <div class="accountInfoWidget__sectionHeader">Delete Account</div>
+            <PopupButton :color="currentPrimaryColor" :text="'Delete'"
+                    :width="'6vw'" :minWidth="'70px'" :maxWidth="'200px'" :height="'3vh'" :minHeight="'30px'"
+                    :maxHeight="'45px'" :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="onDeleteAccount" />
+        </div>
     </div>
 </template>
 
@@ -158,6 +165,17 @@ export default defineComponent({
             app.popups.showAlert("Unable to Access", "Please sign in to Online Mode in order to access this resource", false);
         }
 
+        function onDeleteAccount()
+        {
+            if (!app.isOnline)
+            {
+                showNotOnlinePopup();
+                return;
+            }
+
+            app.popups.showDeleteAccountPopup();
+        }
+
         return {
             currentUser,
             buttonText,
@@ -166,7 +184,8 @@ export default defineComponent({
             openPaymentInfoLink,
             downloadDeactivationKey,
             openDeactivationPopup,
-            onShowMFAKey
+            onShowMFAKey,
+            onDeleteAccount
         }
     }
 })

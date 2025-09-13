@@ -12,6 +12,20 @@ class ChangeTrackingRepository extends VaulticRepository<ChangeTracking>
         return environment.databaseDataSouce.getRepository(ChangeTracking);
     }
 
+    public async getAllUnverifiedChangeTrackingsForUser(userID: number): Promise<ChangeTracking[]>
+    {
+        const changeTrackings = await this.retrieveManyReactive((repository) => repository.find({
+            where: { userID: userID }
+        }));
+
+        if (!changeTrackings)
+        {
+            return [];
+        }
+
+        return changeTrackings as ChangeTracking[];
+    }
+
     public async getChangeTrackingsForUser(masterKey: string, userID: number): Promise<ChangeTracking[]>
     {
         let recievedChangeTrackings = await this.retrieveAndVerifyAll(masterKey, (repository) => repository.find(

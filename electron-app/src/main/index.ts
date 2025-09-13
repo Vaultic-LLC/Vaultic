@@ -103,7 +103,8 @@ else
 
 	// We only want to allow one instance of the application at a time
 	// Disable singleton mode for Mac App Store builds due to sandbox restrictions
-	if (!process.mas) {
+	if (!process.mas)
+	{
 		const instanceLock = app.requestSingleInstanceLock()
 		if (!instanceLock)
 		{
@@ -114,7 +115,7 @@ else
 			app.on('second-instance', (event, commandLine, workingDirectory) =>
 			{
 				showOrCreateWindow();
-			})
+			});
 		}
 	}
 
@@ -143,16 +144,7 @@ else
 	{
 		setupIPC();
 
-		if (app.isPackaged)
-		{
-			await setupEnvironment(false);
-		}
-		else
-		{
-			//@ts-ignore
-			const isTest = import.meta.env.VITE_ISTEST === "true";
-			await setupEnvironment(isTest);
-		}
+		await setupEnvironment(false);
 
 		// Set app user model id for windows
 		electronApp.setAppUserModelId('com.electron')

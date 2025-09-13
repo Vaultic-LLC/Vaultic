@@ -21,7 +21,7 @@
                     :pt="{
                         root: 'textInputFieldContainer__iconField'
                     }">
-                    <InputText :fluid="true" :id="id" v-model="valuePlaceHolder" :disabled="disabled" :invalid="isInvalid" 
+                    <InputText :fluid="true" :id="id" :placeholder="placeholder ?? ''" v-model="valuePlaceHolder" :disabled="disabled" :invalid="isInvalid" 
                         @update:model-value="onInput"
                         :pt="{
                             root: {
@@ -78,7 +78,8 @@ export default defineComponent({
     },
     emits: ["update:modelValue"],
     props: ["modelValue", "label", "color", "fadeIn", "disabled", "width", 'minWidth', 'maxWidth', 'height', 'minHeight', 'maxHeight', 
-    "additionalValidationFunction", "isOnWidget", "showToolTip", 'toolTipMessage', 'toolTipSize', 'isEmailField', 'inputGroupAddon'],
+    "additionalValidationFunction", "isOnWidget", "showToolTip", 'toolTipMessage', 'toolTipSize', 'isEmailField', 'inputGroupAddon', 
+    'placeholder'],
     setup(props, ctx)
     {
         const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.r);

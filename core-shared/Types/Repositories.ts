@@ -16,6 +16,7 @@ export interface ClientUserRepository
     getStoreStates: (masterKey: string, storesToRetrieve: UserData) => Promise<TypedMethodResponse<DeepPartial<UserData> | undefined>>;
     getValidMasterKey: () => Promise<string | undefined>;
     updateUserEmail: (email: string) => Promise<TypedMethodResponse<undefined>>;
+    deleteAccount: () => Promise<TypedMethodResponse<boolean | undefined>>;
 }
 
 export interface VerifyUserMasterKeyResponse

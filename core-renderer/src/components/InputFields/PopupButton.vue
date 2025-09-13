@@ -121,7 +121,7 @@ export default defineComponent({
     font-size: v-bind(computedFontSize) !important;
 }
 
-.popupButton__primeVueButton:hover {
+.popupButton__primeVueButton:not(:disabled):hover {
     box-shadow: 0 0 25px v-bind(color) !important;
 }
 </style>

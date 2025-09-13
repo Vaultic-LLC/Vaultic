@@ -114,7 +114,15 @@
                     <VerifyEmailView :creating="false" :color="popupStore.color" @onSuccess="popupStore.onVerifyEmailPopupSuccess" />
                 </ObjectPopup>
 			</Transition>
-		</Teleport>    
+		</Teleport>
+        <Teleport to="#body">
+			<Transition name="fade">
+                <ObjectPopup v-if="popupStore.deleteAccountPopupIsShowing" :height="'30%'" :width="'30%'" 
+                    :minHeight="'300px'" :minWidth="'550px'" :closePopup="popupStore.hideDeleteAccountPopup">
+                    <DeleteAccountView />
+                </ObjectPopup>
+			</Transition>
+		</Teleport>
     </div>
 </template>
 
@@ -138,6 +146,7 @@ import ShowMFAKeyView from './Account/ShowMFAKeyView.vue';
 import DeviceView from './ObjectViews/DeviceView.vue';
 import SyncingPopup from './Loading/SyncingPopup.vue';
 import VerifyEmailView from './Account/VerifyEmailView.vue';
+import DeleteAccountView from './Account/DeleteAccountView.vue';
 
 import app from "../Objects/Stores/AppStore";
 import { DataType } from '../Types/DataTypes';
@@ -163,7 +172,8 @@ export default defineComponent({
         ShowMFAKeyView,
         DeviceView,
         SyncingPopup,
-        VerifyEmailView
+        VerifyEmailView,
+        DeleteAccountView,
     },
     setup()
     {

@@ -1,0 +1,33 @@
+{
+	"extends": "@electron-toolkit/tsconfig/tsconfig.web.json",
+	"include": [
+		"src/renderer/src/env.d.ts",
+		"src/renderer/src/**/*",
+		"src/renderer/src/**/*.js",
+		"src/renderer/src/**/*.vue",
+		"src/renderer/tests/**/*",
+		"src/preload/*.d.ts"
+	],
+	"compilerOptions": {
+		"composite": true,
+		"baseUrl": ".",
+		"paths": {
+			"@renderer/*": [
+				"src/renderer/src/core/*"
+			],
+			"@/*": [
+				"src/renderer/src/core/*"
+			],
+			"@lib/*": [
+				"src/renderer/tests/lib/*"
+			]
+		},
+		"rootDirs": [
+			"src",
+			"../common"
+		],
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"strictPropertyInitialization": false
+	}
+}

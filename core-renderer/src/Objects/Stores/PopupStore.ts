@@ -122,6 +122,8 @@ export function createPopupStore()
     const onVerifyEmailPopupClose: Ref<() => void> = ref(() => { });
     const onVerifyEmailPopupSuccess: Ref<() => void> = ref(() => { });
 
+    const deleteAccountPopupIsShowing: Ref<boolean> = ref(false);
+
     function addOnEnterHandler(index: number, callback: () => void)
     {
         onEnterHandlers[index] = callback;
@@ -431,6 +433,17 @@ export function createPopupStore()
         verifyEmailPopupIsShowing.value = true;
     }
 
+    function showDeleteAccountPopup()
+    {
+        deleteAccountPopupIsShowing.value = true;
+    }
+
+    function hideDeleteAccountPopup()
+    {
+        deleteAccountPopupIsShowing.value = false;
+
+    }
+
     return {
         get color() { return color.value },
         get loadingIndicatorIsShowing() { return loadingIndicatorIsShowing.value },
@@ -477,6 +490,7 @@ export function createPopupStore()
         get verifyEmailPopupIsShowing() { return verifyEmailPopupIsShowing.value },
         get onVerifyEmailPopupClose() { return onVerifyEmailPopupClose.value },
         get onVerifyEmailPopupSuccess() { return onVerifyEmailPopupSuccess.value },
+        get deleteAccountPopupIsShowing() { return deleteAccountPopupIsShowing.value },
         closeAllPopupsOnLock,
         addOnEnterHandler,
         removeOnEnterHandler,
@@ -512,6 +526,8 @@ export function createPopupStore()
         showSyncingPopup,
         finishSyncingPopup,
         hideSyncingPopup,
-        showVerifyEmailPopup
+        showVerifyEmailPopup,
+        showDeleteAccountPopup,
+        hideDeleteAccountPopup
     }
 }

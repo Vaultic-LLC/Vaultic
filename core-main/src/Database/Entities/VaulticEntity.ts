@@ -321,7 +321,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         }
         catch (e)
         {
-            return TypedMethodResponse.fail(errorCodes.VERIFICATION_FAILED, e);
+            return TypedMethodResponse.fail(errorCodes.VERIFICATION_FAILED, undefined, e);
         }
     }
 
@@ -333,6 +333,7 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         const selfVerification = await this.internalVerify(key);
         if (!selfVerification.success)
         {
+            console.log(`\n\nFailed in verify: ${JSON.stringify(this)}`);
             selfVerification.addToCallStack(`Verifying ${this.entityName()}: ${this.identifier()}`);
             throw selfVerification;
         }

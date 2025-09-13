@@ -100,9 +100,7 @@ app.whenReady().then(async () =>
 {
     setupIPC();
 
-    //@ts-ignore
-    const isTest = import.meta.env.VITE_ISTEST === "true";
-    await setupEnvironment(isTest);
+    await setupEnvironment(true);
 
     // Set app user model id for windows
     electronApp.setAppUserModelId('com.electron')

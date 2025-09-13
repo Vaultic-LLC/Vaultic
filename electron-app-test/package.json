@@ -5,16 +5,34 @@
     "main": "index.js",
     "scripts": {
         "copy-electron-app": "cd ../ && cd electron-app && npm run copy && cd ../ && cd electron-app-test && node ../copy.js src=../electron-app dest=./app",
-        "copy-test-files": "cd ../core-renderer/test && npm run copy && cd ../../electron-app-test && node ../copy.js src=../core-renderer/test/tests dest=./app/src/renderer/tests",
         "copy-env": "node ../copy.js src=./src/app dest=./app",
-        "copy-renderer": "node ../copy.js src=./src/renderer dest=./app/src/renderer/src",
+        "copy-renderer": "node ../copy.js src=./src/renderer/src dest=./app/src/renderer/src && node ../copy.js src=./src/renderer/renderer dest=./app/src/renderer",
         "copy-preload": "node ../copy.js src=./src/preload dest=./app/src/preload",
         "copy-main": "node ../copy.js src=./src/main dest=./app/src/main",
-        "copy": "node ../delete.js src=./app && npm run copy-electron-app && npm run copy-test-files && npm run copy-env && npm run copy-renderer && npm run copy-main && npm run copy-preload",
+        "copy-test": "node ../copy.js src=../core-test/src dest=./app/src/renderer/tests",
+        "copy": "node ../delete.js src=./app && npm run copy-electron-app && npm run copy-env && npm run copy-renderer && npm run copy-main && npm run copy-preload && npm run copy-test",
         "copy-no-app": "npm run copy-test-files && npm run copy-env && npm run copy-renderer && npm run copy-main && npm run copy-preload",
-        "test": "npm run copy && cd app && npm run test",
+        "test": "npm run copy && npm-run-all --parallel start-db-server run-tests",
+        "start-db-server": "node database-api-server.js",
+        "run-tests": "node -e \"setTimeout(() => process.exit(0), 2000)\" && cd app && npm run test",
         "test-no-copy-app": "npm run copy-no-app && cd app && npm run test"
     },
     "author": "",
-    "license": "ISC"
+    "license": "ISC",
+    "devDependencies": {
+        "@tsconfig/node20": "^20.1.4",
+        "@types/cors": "^2.8.19",
+        "@types/express": "^5.0.3",
+        "@types/jsdom": "^21.1.7",
+        "@types/node": "^20.14.5",
+        "@types/pg": "^8.15.5",
+        "axios": "^1.6.0",
+        "cors": "^2.8.5",
+        "express": "^5.1.0",
+        "jsdom": "^24.1.0",
+        "nodemon": "^3.0.2",
+        "npm-run-all2": "^6.2.0",
+        "pg": "^8.11.3",
+        "ts-node": "^10.9.2"
+    }
 }
