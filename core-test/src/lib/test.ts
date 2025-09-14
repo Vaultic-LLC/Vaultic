@@ -10,8 +10,9 @@ export interface ITest
     func: (ctx: TestContext) => Promise<void>;
 }
 
-export interface TestContext
+export interface TestContext<T = any>
 {
+    state: T;
     assertEquals<T>(description: string, actual: T, expected: T): void;
     assertTruthy<T>(description: string, value: T): void;
     assertUndefined(description: string, value: any): void;
@@ -28,6 +29,7 @@ export function createTestSuite(name: string): TestSuite
 export class Test
 {
     name: string;
+    testState: any;
     func: (ctx: TestContext) => Promise<void>;
     results: TestResult;
 
@@ -42,6 +44,7 @@ export class Test
     run()
     {
         return this.func({
+            state: this.testState,
             assertEquals: this.assertEquals.bind(this),
             assertTruthy: this.assertTruthy.bind(this),
             assertUndefined: this.assertUndefined.bind(this)
