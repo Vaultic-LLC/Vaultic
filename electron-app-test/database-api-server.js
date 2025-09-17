@@ -14,7 +14,7 @@ app.use(cors());
 app.use(express.json());
 
 // PostgreSQL connection configuration
-const dbConfig =
+const publicDBConfig =
 {
     host: 'localhost',
     port: 5432,
@@ -23,8 +23,16 @@ const dbConfig =
     password: 'root',
 };
 
-// Execute raw SQL query
-app.post('/api/db/query', async (req, res) =>
+const privateDBConfig =
+{
+    host: 'localhost',
+    port: 5432,
+    database: 'vaulticTestPrivate',
+    user: 'root',
+    password: 'root',
+};
+
+async function queryDatabase(config, req, res)
 {
     const { sql, params = [] } = req.body;
 
@@ -36,7 +44,7 @@ app.post('/api/db/query', async (req, res) =>
     let client;
     try
     {
-        client = new Client(dbConfig);
+        client = new Client(config);
         await client.connect();
 
         const result = await client.query(sql, params);
@@ -59,6 +67,16 @@ app.post('/api/db/query', async (req, res) =>
             await client.end();
         }
     }
+}
+
+app.post('/api/db/queryPublic', async (req, res) =>
+{
+    await queryDatabase(publicDBConfig, req, res);
+});
+
+app.post('/api/db/queryPrivate', async (req, res) =>
+{
+    await queryDatabase(privateDBConfig, req, res);
 });
 
 // Start server
@@ -66,7 +84,8 @@ app.listen(port, () =>
 {
     console.log(`Database API server running at http://localhost:${port}`);
     console.log('Available endpoints:');
-    console.log('  POST /api/db/query - Execute raw SQL');
+    console.log('  POST /api/db/queryPublic - Execute raw SQL');
+    console.log('  POST /api/db/queryPrivate - Execute raw SQL');
 });
 
 // Graceful shutdown

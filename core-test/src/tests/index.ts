@@ -1,4 +1,4 @@
-import { Test, TestResult, TestSuite } from "../lib/test";
+import { TestRunner } from "../lib/test";
 
 import appStoreTestSuite from "./stores/appStore.test";
 import vaultStoreTestSuite from "./stores/vaultStore.test";
@@ -15,124 +15,112 @@ import cryptUtilityTestSuite from "./utilities/cryptUtility.test";
 
 import backupTestSuite from "./base/backup.test";
 import mergingDataTestSuite from "./base/mergingData.test";
+import deleteAccountTestSuite from "./base/deleteAccount.test";
 
-const results: TestResult = new TestResult();
-
-async function runTests(suite: TestSuite)
-{
-    console.log(`Running ${suite.name} Tests`);
-    for (let i = 0; i < suite.tests.length; i++)
-    {
-        await new Test(suite.tests[i], results).run()
-    }
-}
+const runner = new TestRunner();
 
 export default async function runAllTests()
 {
-    console.time();
-
     // These should go first since they mess with logging in
-    await runTests(serverHelperTestSuite);
+    await runner.runSuite(serverHelperTestSuite);
     //await runTests(backupTestSuite);
-    await runTests(mergingDataTestSuite);
-    await runTests(appStoreTestSuite);
-    await runTests(vaultStoreTestSuite);
+    await runner.runSuite(mergingDataTestSuite);
+    await runner.runSuite(appStoreTestSuite);
+    await runner.runSuite(vaultStoreTestSuite);
 
-    await runTests(passwordStoreSuite);
-    await runTests(valueStoreSuite);
-    await runTests(groupStoreSuite);
-    await runTests(filterStoreSuite);
-    await runTests(transactionTestSuite);
-    await runTests(importExportHelperTestSuite);
-    await runTests(cryptUtilityTestSuite);
+    await runner.runSuite(passwordStoreSuite);
+    await runner.runSuite(valueStoreSuite);
+    await runner.runSuite(groupStoreSuite);
+    await runner.runSuite(filterStoreSuite);
+    await runner.runSuite(transactionTestSuite);
+    await runner.runSuite(importExportHelperTestSuite);
+    await runner.runSuite(cryptUtilityTestSuite);
 
-    results.printStatus();
+    await runner.runSuite(deleteAccountTestSuite);
+
+    runner.printResults();
 }
 
 export async function runAllPasswordTests()
 {
-    console.time();
-    await runTests(serverHelperTestSuite);
-    await runTests(passwordStoreSuite);
+    await runner.runSuite(serverHelperTestSuite);
+    await runner.runSuite(passwordStoreSuite);
 
-    results.printStatus();
+    runner.printResults();
 }
 
 export async function runAllValueTests()
 {
-    console.time();
-    await runTests(valueStoreSuite);
+    await runner.runSuite(valueStoreSuite);
 
-    results.printStatus();
+    runner.printResults();
 }
 
 export async function runAllGroupTests()
 {
-    console.time();
-    await runTests(serverHelperTestSuite);
-    await runTests(groupStoreSuite);
+    await runner.runSuite(serverHelperTestSuite);
+    await runner.runSuite(groupStoreSuite);
 
-    results.printStatus();
+    runner.printResults();
 }
 
 export async function runAllFilterTests()
 {
-    console.time();
-    await runTests(filterStoreSuite);
+    await runner.runSuite(filterStoreSuite);
 
-    results.printStatus();
+    runner.printResults();
 }
 
 export async function runAllTransactionTests()
 {
-    console.time();
-    await runTests(transactionTestSuite);
+    await runner.runSuite(transactionTestSuite);
 
-    results.printStatus();
+    runner.printResults();
 }
 
 export async function runServerHelperTests()
 {
-    console.time();
-    await runTests(serverHelperTestSuite);
+    await runner.runSuite(serverHelperTestSuite);
 
-    results.printStatus();
+    runner.printResults();
 }
 
 export async function runImportExportHelperTests()
 {
-    console.time();
-    await runTests(serverHelperTestSuite);
-    await runTests(importExportHelperTestSuite);
+    await runner.runSuite(serverHelperTestSuite);
+    await runner.runSuite(importExportHelperTestSuite);
 
-    results.printStatus();
+    runner.printResults();
 }
 
 export async function runCryptUtilityTests()
 {
-    console.time();
-    await runTests(serverHelperTestSuite);
-    await runTests(cryptUtilityTestSuite);
+    await runner.runSuite(serverHelperTestSuite);
+    await runner.runSuite(cryptUtilityTestSuite);
 
-    results.printStatus();
+    runner.printResults();
 }
 
 export async function runAllBackupTests()
 {
-    console.time();
+    await runner.runSuite(serverHelperTestSuite);
+    await runner.runSuite(backupTestSuite);
 
-    await runTests(serverHelperTestSuite);
-    await runTests(backupTestSuite);
-
-    results.printStatus();
+    runner.printResults();
 }
 
 export async function runAllMergingDataTests()
 {
-    console.time();
+    await runner.runSuite(serverHelperTestSuite);
+    await runner.runSuite(mergingDataTestSuite);
 
-    await runTests(serverHelperTestSuite);
-    await runTests(mergingDataTestSuite);
+    runner.printResults();
+}
 
-    results.printStatus();
+export async function runAllDeleteAccountTests()
+{
+    await runner.runSuite(serverHelperTestSuite);
+    await runner.runSuite(deleteAccountTestSuite);
+
+    runner.printResults();
 }

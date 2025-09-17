@@ -19,29 +19,35 @@ export default defineComponent({
     {
         ScrollPanel
     },
-	props: ['color'],
+	props: ['color', 'onlyShowOnHover'],
 	setup(props)
 	{
         const primaryColor: ComputedRef<string> = computed(() => props.color);
+        const opacity: ComputedRef<number> = computed(() => props.onlyShowOnHover ? 0 : 1);
 
 		return {
-            primaryColor
+            primaryColor,
+            opacity
 		}
 	}
 });
 </script>
 
-<style>
-.scrollView__content {
+<style scoped>
+:deep(.scrollView__content) {
     height: 100% !important;
     width: 100% !important;
 }
 
-.scrollView__barY {
+:deep(.scrollView__barY) {
     width: clamp(5px, .5vw, 9px) !important;
 }
 
-.p-scrollpanel-bar {
+:deep(.p-scrollpanel-bar) {
     background: v-bind(primaryColor) !important;
+}
+
+:deep(.p-scrollpanel-bar-y) {
+    opacity: v-bind(opacity);
 }
 </style>

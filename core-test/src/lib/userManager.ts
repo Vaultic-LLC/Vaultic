@@ -5,8 +5,10 @@ import { TestContext } from "./test";
 import StoreUpdateTransaction from "@renderer/Objects/StoreUpdateTransaction";
 import { AutoLockTime } from "@vaultic/shared/Types/Stores";
 import { ServerAllowSharingFrom, ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
-import { serverDB } from "./serverDatabaseBridge";
+import { publicServerDB } from "./serverDatabaseBridge";
 import { Member } from "@vaultic/shared/Types/DataTypes";
+import localDatabase from "./localDatabaseBridge";
+import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 
 export class User
 {
@@ -24,7 +26,7 @@ export class User
     get masterKey(): string { return this._masterKey; }
     get publicEncryptingKey(): string | undefined { return this._publicEncryptingKey; }
 
-    constructor(id: number, email: string, masterKey: string)
+    constructor(id: number, email: string, masterKey: string, vaulticKey: string)
     {
         this._id = id;
         this._email = email;
@@ -42,14 +44,14 @@ export class User
             return true;
         }
 
-        const user = await serverDB.getUserByID(this._id);
+        const user = await publicServerDB.getUserByID(this._id);
         if (!user)
         {
             ctx.assertTruthy("Fetched user succeeded", false);
             return false;
         }
 
-        this._publicEncryptingKey = user.UserData!.PublicEncryptingKey;
+        this._publicEncryptingKey = user!.PublicEncryptingKey;
         this._loadedUserData = true;
 
         return true;
@@ -80,16 +82,19 @@ class UserManager
     async createNewUser(ctx: TestContext, email?: string, masterKey?: string): Promise<User | undefined> 
     {
         const masterKeyToUse = masterKey ?? `test${this.createdUsers}`;
-        const newUser = new User(this.createdUsers, email ?? `test${this.createdUsers}@gmail.com`, masterKeyToUse);
+        const vaulticKey = JSON.stringify({ algorithm: Algorithm.XCHACHA20_POLY1305, key: masterKey });
+        const emailToUse = email ?? `test${new Date().getTime()}@gmail.com`;
 
-        const registerResponse = await this.registerUser(ctx, newUser);
-        if (!registerResponse)
+        const registerResponse = await this.registerUser(ctx, emailToUse, masterKeyToUse, vaulticKey);
+        if (!registerResponse.success)
         {
             ctx.assertTruthy("Register user works", false);
             return undefined;
         }
 
-        this.users.set(this.createdUsers, newUser);
+        const newUser = new User(registerResponse.value!, emailToUse, masterKeyToUse, vaulticKey);
+
+        this.users.set(newUser.id, newUser);
         this.createdUsers++;
         this.currentUserID = newUser.id;
 
@@ -111,47 +116,54 @@ class UserManager
         return this.users.get(this.currentUserID);
     }
 
-    private async registerUser(ctx: TestContext, user: User): Promise<boolean>
+    private async registerUser(ctx: TestContext, email: string, masterKey: string, vaulticKey: string): Promise<TypedMethodResponse<number>>
     {
-        await app.lock();
+        await this.logCurrentUserOut();
 
-        const validateEmailResponse = await api.server.user.validateEmail(user.email);
+        const validateEmailResponse = await api.server.user.validateEmail(email);
         if (!validateEmailResponse.Success)
         {
             ctx.assertTruthy("Validate Email Response Succeeded", false);
-            return false;
+            return TypedMethodResponse.fail();
         }
             
         const verifyEmailResponse = await api.server.user.verifyEmail(validateEmailResponse.PendingUserToken!, validateEmailResponse.Code!);
         if (!verifyEmailResponse.Success)
         {
             ctx.assertTruthy("Verify Email Response Succeeded", false);
-            return false;
+            return TypedMethodResponse.fail();
         }
 
-        const registerUserResposne = await api.helpers.server.registerUser(user.masterKey, validateEmailResponse.PendingUserToken!, "Test", "Test");
+        const registerUserResposne = await api.helpers.server.registerUser(masterKey, validateEmailResponse.PendingUserToken!, "Test", "Test");
         if (!registerUserResposne.Success)
         {
             ctx.assertTruthy("Register user works", false);
-            return false;
+            return TypedMethodResponse.fail();
         }
 
         // --- first log in needs to do some more work ---
-        const firstLogInResponse = await api.helpers.server.logUserIn(user.masterKey, user.email, true, false);
+        const firstLogInResponse = await api.helpers.server.logUserIn(masterKey, email, true, false);
         if (!firstLogInResponse.success || !firstLogInResponse.value?.Success)
         {
             ctx.assertTruthy("Log user in works", false);
-            return false;
+            return TypedMethodResponse.fail();
         }
 
-        const createUserResponse = await api.repositories.users.createUser(user.masterKey, user.email, "Test", "Test");
+        const createUserResponse = await api.repositories.users.createUser(masterKey, email, "Test", "Test");
         app.isOnline = true;
+
+        const userIDResponse = await localDatabase.query<{ userID: number }>(`SELECT "UserID" FROM "Users" WHERE "Email" = '${email}'`);
+        if (userIDResponse.length == 0)
+        {
+            ctx.assertTruthy("User ID response is empty", false);
+            return TypedMethodResponse.fail();
+        }
 
         const loadDataResponse = await app.loadUserData(createUserResponse.value!);
         if (!loadDataResponse)
         {
             ctx.assertTruthy("Load Data works after first login", false);
-            return false;
+            return TypedMethodResponse.fail();
         }
 
         const transaction = new StoreUpdateTransaction(app.currentVault.userVaultID);
@@ -163,14 +175,14 @@ class UserManager
         state.commitProxyObject("settings", reactiveAppSettings);
 
         transaction.updateUserStore(app, state);
-        const updateLocalSettingsResponse = await transaction.commit(user.vaulticKey);
+        const updateLocalSettingsResponse = await transaction.commit(vaulticKey);
         ctx.assertTruthy("Update local settings succeeded", updateLocalSettingsResponse);
 
-        const updateUserNameResponse = await api.server.user.updateSettings(user.email, true, ServerAllowSharingFrom.Everyone);
+        const updateUserNameResponse = await api.server.user.updateSettings(email, true, ServerAllowSharingFrom.Everyone);
         ctx.assertTruthy("Update user name succeeded", updateUserNameResponse.Success);
         // --- end of first log in ---
 
-        return true;
+        return TypedMethodResponse.success(userIDResponse[0].userID);
     }
 
     async logUserIn(ctx: TestContext, userID: number): Promise<boolean>
@@ -182,7 +194,7 @@ class UserManager
 
         const user = this.users.get(userID)!;
 
-        await app.lock();
+        await this.logCurrentUserOut();
 
         let response = await api.helpers.server.logUserIn(user.masterKey, user.email, false, false);
     
@@ -231,6 +243,20 @@ class UserManager
 
         this.currentUserID = userID;
         return true;
+    }
+
+    async logCurrentUserOut(redirect: boolean = true, expireSession: boolean = true, syncData: boolean = true)
+    {
+        if (!this.currentUserID)
+        {
+            return;
+        }
+
+        await app.lock(redirect, expireSession, syncData);
+        this.currentUserID = undefined;
+
+        // give time for syncing to finish
+        await new Promise(resolve => setTimeout(resolve, 300));
     }
 }
 

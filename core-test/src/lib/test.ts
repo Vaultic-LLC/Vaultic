@@ -29,7 +29,6 @@ export function createTestSuite(name: string): TestSuite
 export class Test
 {
     name: string;
-    testState: any;
     func: (ctx: TestContext) => Promise<void>;
     results: TestResult;
 
@@ -41,10 +40,10 @@ export class Test
         this.results.totalTests += 1;
     }
 
-    run()
+    run(state: any)
     {
         return this.func({
-            state: this.testState,
+            state,
             assertEquals: this.assertEquals.bind(this),
             assertTruthy: this.assertTruthy.bind(this),
             assertUndefined: this.assertUndefined.bind(this)
@@ -123,5 +122,39 @@ export class TestResult
                 });
             });
         }
+    }
+}
+
+export class TestRunner
+{
+    private results: TestResult;
+    private first: boolean;
+
+    constructor()
+    {
+        this.results = new TestResult();
+        this.first = true;
+    }
+
+    async runSuite(suite: TestSuite)
+    {
+        if (this.first)
+        {
+            console.time();
+            this.first = false;
+        }
+
+        console.log(`Running ${suite.name} Tests`);
+        const state = {};
+
+        for (let i = 0; i < suite.tests.length; i++)
+        {
+            await new Test(suite.tests[i], this.results).run(state)
+        }
+    }
+
+    printResults()
+    {
+        this.results.printStatus();
     }
 }

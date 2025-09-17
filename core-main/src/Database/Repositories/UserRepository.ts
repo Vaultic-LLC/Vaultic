@@ -997,7 +997,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             });
 
             const changeTrackings = await environment.repositories.changeTrackings.getAllUnverifiedChangeTrackingsForUser(currentUser.userID);
-                changeTrackings.forEach(changeTracking =>
+            changeTrackings.forEach(changeTracking =>
             {
                 transaction.deleteEntity(changeTracking.changeTrackingID, () => environment.repositories.changeTrackings);
             });

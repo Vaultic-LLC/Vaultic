@@ -7,42 +7,46 @@
                 <div>{{ currentUser?.email }}</div>
             </div>
         </div>
-        <div class="accountInfoWidget__divider accountInfoWidget__centered"></div>
-        <div class="accountInfoWidget__section accountInfoWidget__centered">
-            <div class="accountInfoWidget__sectionHeader">
-                Subscription: {{ subscriptionStatus }}
-            </div>
-            <PopupButton :color="currentPrimaryColor" :text="buttonText"
-                :width="'6vw'" :minWidth="'70px'" :maxWidth="'200px'" :height="'3vh'" :minHeight="'30px'"
-                :maxHeight="'45px'" :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="openPaymentInfoLink" />
-        </div>
-        <div class="accountInfoWidget__divider accountInfoWidget__centered"></div>
-        <div class="accountInfoWidget__section accountInfoWidget__centered">
-            <div class="accountInfoWidget__sectionHeader">Deactivation Key</div>
-            <PopupButton :color="currentPrimaryColor" :text="'Download'"
-                :width="'6vw'" :minWidth="'70px'" :maxWidth="'200px'" :height="'3vh'" :minHeight="'30px'"
-                :maxHeight="'45px'" :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="downloadDeactivationKey" />
-        </div>
-        <div class="accountInfoWidget__divider accountInfoWidget__centered"></div>
-        <div class="accountInfoWidget__section accountInfoWidget__centered">
-            <div class="accountInfoWidget__sectionHeader">Emergency Deactivation</div>
-            <PopupButton :color="currentPrimaryColor" :text="'Deactivate'"
-                    :width="'6vw'" :minWidth="'70px'" :maxWidth="'200px'" :height="'3vh'" :minHeight="'30px'"
-                    :maxHeight="'45px'" :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="openDeactivationPopup" />
-        </div>
-        <div class="accountInfoWidget__divider accountInfoWidget__centered"></div>
-        <div class="accountInfoWidget__section accountInfoWidget__centered">
-            <div class="accountInfoWidget__sectionHeader">MFA Key</div>
-            <PopupButton :color="currentPrimaryColor" :text="'Show'"
-                    :width="'6vw'" :minWidth="'70px'" :maxWidth="'200px'" :height="'3vh'" :minHeight="'30px'"
-                    :maxHeight="'45px'" :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="onShowMFAKey" />
-        </div>
-        <div class="accountInfoWidget__divider accountInfoWidget__centered"></div>
-        <div class="accountInfoWidget__section accountInfoWidget__centered">
-            <div class="accountInfoWidget__sectionHeader">Delete Account</div>
-            <PopupButton :color="currentPrimaryColor" :text="'Delete'"
-                    :width="'6vw'" :minWidth="'70px'" :maxWidth="'200px'" :height="'3vh'" :minHeight="'30px'"
-                    :maxHeight="'45px'" :fontSize="'clamp(13px, 1vw, 20px)'" @onClick="onDeleteAccount" />
+        <div class="accountInfoWidget__sections">
+            <ScrollView :color="currentPrimaryColor">
+                <div class="accountInfoWidget__divider accountInfoWidget__centered"></div>
+                <div class="accountInfoWidget__section accountInfoWidget__centered">
+                    <div class="accountInfoWidget__sectionHeader">
+                        Subscription: {{ subscriptionStatus }}
+                    </div>
+                    <PopupButton :color="currentPrimaryColor" :text="buttonText"
+                        :width="'6vw'" :minWidth="'70px'" :maxWidth="'200px'" :height="'3vh'" :minHeight="'30px'"
+                        :maxHeight="'45px'" :fontSize="'clamp(12px, 0.9vw, 20px)'" @onClick="openPaymentInfoLink" />
+                </div>
+                <div class="accountInfoWidget__divider accountInfoWidget__centered"></div>
+                <div class="accountInfoWidget__section accountInfoWidget__centered">
+                    <div class="accountInfoWidget__sectionHeader">Deactivation Key</div>
+                    <PopupButton :color="currentPrimaryColor" :text="'Download'"
+                        :width="'6vw'" :minWidth="'70px'" :maxWidth="'200px'" :height="'3vh'" :minHeight="'30px'"
+                        :maxHeight="'45px'" :fontSize="'clamp(12px, 0.9vw, 20px)'" @onClick="downloadDeactivationKey" />
+                </div>
+                <div class="accountInfoWidget__divider accountInfoWidget__centered"></div>
+                <div class="accountInfoWidget__section accountInfoWidget__centered">
+                    <div class="accountInfoWidget__sectionHeader">Emergency Deactivation</div>
+                    <PopupButton :color="currentPrimaryColor" :text="'Deactivate'"
+                            :width="'6vw'" :minWidth="'70px'" :maxWidth="'200px'" :height="'3vh'" :minHeight="'30px'"
+                            :maxHeight="'45px'" :fontSize="'clamp(12px, 0.9vw, 20px)'" @onClick="openDeactivationPopup" />
+                </div>
+                <div class="accountInfoWidget__divider accountInfoWidget__centered"></div>
+                <div class="accountInfoWidget__section accountInfoWidget__centered">
+                    <div class="accountInfoWidget__sectionHeader">MFA Key</div>
+                    <PopupButton :color="currentPrimaryColor" :text="'Show'"
+                            :width="'6vw'" :minWidth="'70px'" :maxWidth="'200px'" :height="'3vh'" :minHeight="'30px'"
+                            :maxHeight="'45px'" :fontSize="'clamp(12px, 0.9vw, 20px)'" @onClick="onShowMFAKey" />
+                </div>
+                <div class="accountInfoWidget__divider accountInfoWidget__centered"></div>
+                <div class="accountInfoWidget__section accountInfoWidget__centered">
+                    <div class="accountInfoWidget__sectionHeader">Delete Account</div>
+                    <PopupButton :color="currentPrimaryColor" :text="'Delete'"
+                            :width="'6vw'" :minWidth="'70px'" :maxWidth="'200px'" :height="'3vh'" :minHeight="'30px'"
+                            :maxHeight="'45px'" :fontSize="'clamp(12px, 0.9vw, 20px)'" @onClick="onDeleteAccount" />
+                </div>
+            </ScrollView>
         </div>
     </div>
 </template>
@@ -52,6 +56,7 @@ import { ComputedRef, computed, defineComponent } from 'vue';
 
 import PopupButton from '../InputFields/PopupButton.vue';
 import UserProfilePic from '../Account/UserProfilePic.vue';
+import ScrollView from '../ObjectViews/ScrollView.vue';
 
 import app from '../../Objects/Stores/AppStore';
 import { api } from '../../API';
@@ -64,7 +69,8 @@ export default defineComponent({
     components: 
     {
         PopupButton,
-        UserProfilePic
+        UserProfilePic,
+        ScrollView
     },
     setup()
     {
@@ -200,6 +206,8 @@ export default defineComponent({
     width: 23%;
     height: 44%;
     border-radius: clamp(10px, 1vw, 1.2rem);
+    display: flex;
+    flex-direction: column;
 }
 
 .accountInfoWidget__centered {
@@ -213,6 +221,11 @@ export default defineComponent({
     column-gap: clamp(5px, 1vw, 40px);
     margin-top: 2%;
     margin-bottom: clamp(10px, 1vw, 20px);
+}
+
+.accountInfoWidget__sections {
+    position: relative;
+    overflow: hidden;
 }
 
 .accountInfoWidget__userTextInfo {

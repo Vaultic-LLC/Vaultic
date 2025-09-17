@@ -124,7 +124,8 @@ const environment: ClientEnvironment =
     recreateDatabase: () => ipcRenderer.invoke('environment:recreateDatabase'),
     hasConnection: () => ipcRenderer.invoke('environment:hasConnection'),
     createNewDatabase: (renameCurrentTo: string) => ipcRenderer.invoke('environment:createNewDatabase', renameCurrentTo),
-    setDatabaseAsCurrent: (name: string) => ipcRenderer.invoke('environment:setDatabaseAsCurrent', name)
+    setDatabaseAsCurrent: (name: string) => ipcRenderer.invoke('environment:setDatabaseAsCurrent', name),
+    runLocalQuery: (sql: string) => ipcRenderer.invoke('environment:runLocalQuery', sql)
 };
 
 const cache: Promisify<ClientVaulticCache> =

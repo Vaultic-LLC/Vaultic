@@ -92,7 +92,7 @@ class Environment
         }
 
         await this.setupDatabase();
-        return this.internalFailedToInitalizeDatabase;
+        return !this.internalFailedToInitalizeDatabase;
     }
 
     getDeviceInfo()

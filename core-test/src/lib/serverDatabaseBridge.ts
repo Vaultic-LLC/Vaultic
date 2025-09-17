@@ -27,7 +27,6 @@ type User = SchemaObject &
     RegistrationRecord: string | undefined;
     UserIdentifier: string | undefined;
 
-    UserData: UserData | undefined;
     // public License License { get; set; }
     // public Session Session { get; set; }
     // public StripeData StripeData { get; set; }
@@ -69,10 +68,12 @@ type Vault = SchemaObject &
  */
 class ServerDatabaseBridge
 {
+    private queryEndpoint: string;
     private httpClient: AxiosInstance;
 
-    constructor() 
+    constructor(queryEndpoint: string) 
     {
+        this.queryEndpoint = queryEndpoint;
         // Create HTTP client for API requests
         this.httpClient = axios.create({
             baseURL: 'http://localhost:3000/api/db',
@@ -87,23 +88,25 @@ class ServerDatabaseBridge
     /**
      * Execute a raw SQL query via HTTP API
      */
-    async query<T = any>(sql: string, params?: any[]): Promise<QueryResult<T>> 
+    async query<T = any>(sql: string, params?: any[]): Promise<T[]> 
     {
         try 
         {
-            const response = await this.httpClient.post('/query', 
+            const response = await this.httpClient.post(`/${this.queryEndpoint}`, 
             {
                 sql,
                 params: params || []
             });
+
+            const data: QueryResult<T> | undefined = response.data;
             
-            if (response.data && response.data.success) 
+            if (data && data.success) 
             {
-                return response.data.rows || [];
+                return data.rows || [];
             } 
             else 
             {
-                throw new Error(response.data?.error || 'Query failed');
+                throw new Error('Query failed');
             }
         } 
         catch (error) 
@@ -112,26 +115,34 @@ class ServerDatabaseBridge
             throw error;
         }
     }
+}
 
-    async getUserByID(userID: number): Promise<User | undefined>
+class PublicServerDatabaseBridge extends ServerDatabaseBridge
+{
+    constructor()
     {
-        const result = await this.query<User>(`
+        super('queryPublic');
+    }
+
+    async getUserByID(userID: number): Promise<(User & UserData) | undefined>
+    {
+        const result = await this.query<User & UserData>(`
             SELECT * 
             FROM "Users" AS u
             INNER JOIN "UserDatas" ON "u"."UserID" = "UserDatas"."UserID"
             WHERE "u"."UserID" = ${userID}`);
 
-        if (result.rows.length === 0)
+        if (result.length === 0)
         {
             return undefined;
         }
 
-        return result.rows[0];
+        return result[0];
     }
 
     async getVaultIDsForUser(userID: number): Promise<{ VaultID: Number, UserVaultID: Number, UserOrganizationID: number}[]>
     {
-        const result = await this.query<{ VaultID: Number, UserVaultID: Number, UserOrganizationID: number}>(`
+        return await this.query<{ VaultID: Number, UserVaultID: Number, UserOrganizationID: number}>(`
             SELECT v."VaultID", uv."UserVaultID", uo."UserOrganizationID"
             FROM "Users" u
             INNER JOIN "UserOrganizations" uo ON u."UserID" = uo."UserID"
@@ -139,10 +150,17 @@ class ServerDatabaseBridge
             INNER JOIN "OrganizationVaults" ov ON uv."OrganizationVaultID" = ov."OrganizationVaultID"
             INNER JOIN "Vaults" v ON ov."VaultID" = v."VaultID"
             WHERE u."UserID" = ${userID}`);
+    }
+}
 
-        return result.rows;
+class PrivateServerDatabaseBridge extends ServerDatabaseBridge
+{
+    constructor()
+    {
+        super('queryPrivate');
     }
 }
 
 // Create a default instance with standard configuration
-export const serverDB = new ServerDatabaseBridge();
+export const publicServerDB = new PublicServerDatabaseBridge();
+export const privateServerDB = new PrivateServerDatabaseBridge();

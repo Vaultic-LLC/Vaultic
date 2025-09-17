@@ -169,6 +169,7 @@ async function setupEnvironment(isTest: boolean)
     // for testing only
     ipcMain.handle('environment:createNewDatabase', (e, renameCurrentTo: string) => createNewDatabase(renameCurrentTo));
     ipcMain.handle('environment:setDatabaseAsCurrent', (e, name: string) => setDatabaseAsCurrent(name));
+    ipcMain.handle('environment:runLocalQuery', (e, sql: string) => runLocalQuery(sql));
 
     await environment.init({
         isTest,
@@ -272,18 +273,38 @@ async function setDatabaseAsCurrent(name: string)
                 return;
             }
 
-            fs.unlink(`${directory}\\${name}.db`, async (err) =>
-            {
-                if (err)
-                {
-                    console.log(`current delete error: ${err}`)
-                    resolve(err);
-                    return;
+            // Use force delete for better error handling
+            const { forceDeleteFile } = require('../../electron-app/src/main/Utilities/FileUtility');
+            
+            try {
+                const success = await forceDeleteFile(`${directory}\\${name}.db`, { 
+                    verbose: true, 
+                    maxRetries: 3,
+                    useSystemCommands: true 
+                });
+                
+                if (success) {
+                    await environment.setupDatabase();
+                    resolve(true);
+                } else {
+                    console.log('Failed to delete database file');
+                    resolve(false);
                 }
+            } catch (deleteErr) {
+                console.log(`current delete error: ${deleteErr}`);
+                resolve(deleteErr);
+            }
+        });
+    });
+}
 
-                await environment.setupDatabase();
-                resolve(true);
-            });
+async function runLocalQuery(sql: string): Promise<any>
+{
+    return new Promise((resolve) =>
+    {
+        environment.databaseDataSouce.transaction(async (manager) =>
+        {
+            resolve(await manager.query(sql));
         });
     });
 }

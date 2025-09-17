@@ -20,6 +20,7 @@ import { ChangeTracking } from "../Core/Database/Entities/ChangeTracking";
 import { app } from "electron";
 
 let database: Database;
+let dataSource: DataSource | undefined;
 
 export function getDirectory(isTest: boolean)
 {
@@ -83,7 +84,7 @@ export function createDataSource(isTest: boolean)
 		database = new Database(databaseDirectory);
 	}
 
-	return new DataSource({
+	dataSource = new DataSource({
 		type: "better-sqlite3",
 		database: databaseDirectory,
 		entities: [
@@ -104,11 +105,19 @@ export function createDataSource(isTest: boolean)
 		migrationsRun: true,
 		migrations: [CreateSchema1722604318830]
 	});
+
+	return dataSource;
 }
 
-export function deleteDatabase(isTest: boolean)
+export async function deleteDatabase(isTest: boolean)
 {
+	await dataSource?.destroy();
+	dataSource = undefined;
 	database?.close();
+
+	// give time for the database to fully close
+	await new Promise(resolve => setTimeout(resolve, 1000));
+
 	return new Promise<boolean>((resolve) =>
 	{
 		fs.unlink(getDirectory(isTest) + databaseFilePath(), (err) =>
