@@ -8,7 +8,7 @@
             </div>
         </div>
         <div class="accountInfoWidget__sections">
-            <ScrollView :color="currentPrimaryColor">
+            <ScrollView :color="currentPrimaryColor" :onlyShowOnHover="false">
                 <div class="accountInfoWidget__divider accountInfoWidget__centered"></div>
                 <div class="accountInfoWidget__section accountInfoWidget__centered">
                     <div class="accountInfoWidget__sectionHeader">

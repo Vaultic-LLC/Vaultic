@@ -23,7 +23,7 @@ export default defineComponent({
 	setup(props)
 	{
         const primaryColor: ComputedRef<string> = computed(() => props.color);
-        const opacity: ComputedRef<number> = computed(() => props.onlyShowOnHover ? 0 : 1);
+        const opacity: ComputedRef<number> = computed(() => props.onlyShowOnHover === false ? 1 : 0);
 
 		return {
             primaryColor,
