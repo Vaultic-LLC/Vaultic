@@ -15,7 +15,7 @@ export interface IGroupStoreState extends StoreState
 {
     /** Password Groups By ID */
     p: { [key: string]: Group };
-    /** PasswordFiltersByID */
+    /** Value Groups By ID */
     v: { [key: string]: Group };
     /** Empty Password Groups */
     w: DictionaryAsList;

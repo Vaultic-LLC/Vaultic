@@ -4,25 +4,20 @@ import userManager, { User } from "@lib/userManager";
 
 let serverHelperTestSuite = createTestSuite("Server Helper");
 
-type TestState =
-{
-    user: User | undefined;
-}
-
 serverHelperTestSuite.tests.push({
-    name: "Register and First Log In Works", func: async (ctx: TestContext<TestState>) =>
+    name: "Register and First Log In Works", func: async (ctx: TestContext) =>
     {
-        ctx.state.user = await userManager.createNewUser(ctx);
-        ctx.assertTruthy("Create new user works", !!ctx.state.user);
+        const user = await userManager.createNewUser(ctx);
+        ctx.assertTruthy("Create new user works", !!user);
 
         await userManager.logCurrentUserOut();
     }
 });
 
 serverHelperTestSuite.tests.push({
-    name: "Log In Works", func: async (ctx: TestContext<TestState>) =>
+    name: "Log In Works", func: async (ctx: TestContext) =>
     {
-        const logInResponse = await userManager.logUserIn(ctx, ctx.state.user!.id);
+        const logInResponse = await userManager.logUserIn(ctx, userManager.defaultUserID!);
         ctx.assertTruthy("Log in works", logInResponse);
 
         await userManager.logCurrentUserOut();
@@ -30,12 +25,12 @@ serverHelperTestSuite.tests.push({
 });
 
 serverHelperTestSuite.tests.push({
-    name: "Log In With No Current Data Works", func: async (ctx: TestContext<TestState>) =>
+    name: "Log In With No Current Data Works", func: async (ctx: TestContext) =>
     {
         const recreateDatabase = await api.environment.recreateDatabase();
         ctx.assertTruthy("Recreate Database worked", recreateDatabase);
 
-        const logInResponse = await userManager.logUserIn(ctx, ctx.state.user!.id);
+        const logInResponse = await userManager.logUserIn(ctx, userManager.defaultUserID!);
         ctx.assertTruthy("Log in works", logInResponse);
     }
 });

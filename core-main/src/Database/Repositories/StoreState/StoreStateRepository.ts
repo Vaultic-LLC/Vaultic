@@ -7,7 +7,6 @@ import { getObjectFromPath, PropertyManagerConstructor } from "@vaultic/shared/U
 import { ChangeTracking } from "../../Entities/ChangeTracking";
 import { StoreRetriever } from "../../../Types/Parameters";
 import { environment } from "../../../Environment";
-import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 
 export class StoreStateRepository<T extends StoreState> extends VaulticRepository<T>
 {
@@ -249,6 +248,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
         const parsedChanges: { [key: string]: PathChange[] } = JSON.parse(pathChanges);
         const paths = Object.keys(parsedChanges);
 
+        console.log(`Type: ${type}, For Client: ${forClient}, Paths: ${JSON.stringify(paths)}`);
         for (let i = 0; i < paths.length; i++)
         {
             const pathChange = parsedChanges[paths[i]];
@@ -288,12 +288,14 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                     const path = `${paths[i]}.${pathChange[j].p}`;
                     if (forClient)
                     {
+                        // This will grab the change of a parent object when this change was a delete. Otherwise it'll just grab the property
+                        // update.
                         const serverChangeTime = seenServerChanges.get(type)?.get(path);
                         if (serverChangeTime && serverChangeTime > changeTime)
                         {
-                            // TODO: test to make sure this works
                             // The value was updated on the server after we updted it locally, making the server value the newest.
                             // We don't want to apply this change, nor do we want any other devices to apply it
+                            console.log(`DEL 1 Type: ${type}, For Client: ${forClient}, Deleting path: ${paths[i]}`);
                             delete parsedChanges[paths[i]];
                             continue;
                         }
@@ -305,6 +307,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                         if (forClient)
                         {
                             // The object was delete on another device, don't include changes to it
+                            console.log(`DEL 2 Type: ${type}, For Client: ${forClient}, Deleting path: ${paths[i]}`);
                             delete parsedChanges[paths[i]];
                         }
                     }
@@ -313,6 +316,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                     switch (pathChange[j].t)
                     {
                         case StoreStateChangeType.Add:
+                            console.log(`ADD Type: ${type}, For Client: ${forClient}, Adding path: ${paths[i]}`);
                             manager.set(pathChange[j].p, pathChange[j].v, obj);
                             break;
                         case StoreStateChangeType.Update:
@@ -321,6 +325,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                             break;
                         case StoreStateChangeType.Delete:
                             manager.delete(pathChange[j].p, obj);
+                            console.log(`DEL 3 Type: ${type}, For Client: ${forClient}, Deleting path: ${paths[i]}`);
                             break;
                     }
 
@@ -331,13 +336,35 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                             if (!seenServerChanges.has(type))
                             {
                                 const seenChange = new Map();
+                                // add the path and the path.property since deletes happen on the path and won't have the property
+                                // but they still need to be checked for when checking to ignore local changes above.
+                                seenChange.set(paths[i], changeTime);
                                 seenChange.set(path, changeTime);
 
                                 seenServerChanges.set(type, seenChange);
                             }
                             else
                             {
-                                seenServerChanges.get(type).set(path, changeTime)
+                                const seenChange = seenServerChanges.get(type);
+                                if (!seenChange.has(paths[i]))
+                                {
+                                    seenChange.set(paths[i], changeTime);
+                                }
+                                else if (seenChange.get(paths[i]) < changeTime)
+                                {
+                                    // We want the newest change to signify when the object was updated
+                                    seenChange.set(paths[i], changeTime);
+                                }
+
+                                if (!seenChange.has(path))
+                                {
+                                    seenChange.set(path, changeTime);
+                                }
+                                else if (seenChange.get(path) < changeTime)
+                                {
+                                    // we want the newest change to signify when the property was updated
+                                    seenChange.set(path, changeTime);
+                                }
                             }
                         }
                     }
@@ -356,11 +383,11 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
         seenServerChanges: Map<StoreType, Map<string, number>>): string
     {
         const parsedPathChanges: { [key: string]: PathChange[] } = JSON.parse(pathChanges);
-        const paths = Object.keys(pathChanges);
+        const paths = Object.keys(parsedPathChanges);
 
         for (let i = 0; i < paths.length; i++)
         {
-            const pathChange = pathChanges[paths[i]];
+            const pathChange = parsedPathChanges[paths[i]];
             for (let j = 0; j < pathChange.length; j++)
             {
                 // Most likely an array
@@ -380,7 +407,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                             // TODO: test to make sure this works
                             // The value was updated on the server after we updted it locally, making the server value the newest.
                             // We don't want to apply this change, nor do we want any other devices to apply it
-                            delete pathChanges[path[i]];
+                            delete parsedPathChanges[path[i]];
                             continue;
                         }
                         else
@@ -389,7 +416,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                             if (!obj)
                             {
                                 // The object was delete on another device, don't include changes to it
-                                delete pathChanges[paths[i]];
+                                delete parsedPathChanges[paths[i]];
                             }
 
                             const manager = PropertyManagerConstructor.getFor(obj);

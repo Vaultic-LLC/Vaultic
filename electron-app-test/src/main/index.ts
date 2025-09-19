@@ -239,6 +239,7 @@ function hasConnection(): Promise<boolean>
 let directory = electronAPI.process.env.APPDATA || (electronAPI.process.platform == 'darwin' ? electronAPI.process.env.HOME + '/Library/Preferences' : electronAPI.process.env.HOME + "/.local/share");
 directory += "\\Vaultic\\VTest";
 
+// Copies vaultic.db to renameCurrentTo.db, and then deletes and re sets up vaultic.db
 async function createNewDatabase(renameCurrentTo: string)
 {
     return new Promise((resolve) => 
@@ -252,16 +253,18 @@ async function createNewDatabase(renameCurrentTo: string)
                 return;
             }
 
-            await deleteDatabase();
+            await deleteDatabase(true);
+            
             await environment.setupDatabase();
             resolve(true);
         });
     });
 }
 
+// Will delete vaultic.db, copy name.db to vaultic.db, and then delete name.db
 async function setDatabaseAsCurrent(name: string)
 {
-    await deleteDatabase();
+    await deleteDatabase(true);
     return new Promise<any>((resolve) =>
     {
         fs.copyFile(`${directory}\\${name}.db`, `${directory}\\vaultic.db`, async function (err)
@@ -273,27 +276,18 @@ async function setDatabaseAsCurrent(name: string)
                 return;
             }
 
-            // Use force delete for better error handling
-            const { forceDeleteFile } = require('../../electron-app/src/main/Utilities/FileUtility');
-            
-            try {
-                const success = await forceDeleteFile(`${directory}\\${name}.db`, { 
-                    verbose: true, 
-                    maxRetries: 3,
-                    useSystemCommands: true 
-                });
-                
-                if (success) {
-                    await environment.setupDatabase();
-                    resolve(true);
-                } else {
-                    console.log('Failed to delete database file');
-                    resolve(false);
+            fs.unlink(`${directory}\\${name}.db`, async (err) =>
+            {
+                if (err)
+                {
+                    console.log(`current delete error: ${err}`)
+                    resolve(err);
+                    return;
                 }
-            } catch (deleteErr) {
-                console.log(`current delete error: ${deleteErr}`);
-                resolve(deleteErr);
-            }
+
+                await environment.setupDatabase();
+                resolve(true);
+            });
         });
     });
 }

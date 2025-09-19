@@ -925,6 +925,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             }
             catch (e)
             {
+                console.log(`Error syncing vaults: ${e}`);
                 await environment.repositories.logs.log(undefined, JSON.stringify(e));
             }
 

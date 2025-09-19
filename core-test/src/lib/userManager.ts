@@ -3,12 +3,16 @@ import app, { AppSettings } from "@renderer/Objects/Stores/AppStore";
 import { Algorithm } from "@vaultic/shared/Types/Keys";
 import { TestContext } from "./test";
 import StoreUpdateTransaction from "@renderer/Objects/StoreUpdateTransaction";
-import { AutoLockTime } from "@vaultic/shared/Types/Stores";
+import { AutoLockTime, DictionaryAsList } from "@vaultic/shared/Types/Stores";
 import { ServerAllowSharingFrom, ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
 import { publicServerDB } from "./serverDatabaseBridge";
 import { Member } from "@vaultic/shared/Types/DataTypes";
 import localDatabase from "./localDatabaseBridge";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
+import { DataType, Filter, FilterCondition, Group, NameValuePair, Password, SecurityQuestion } from "@renderer/Types/DataTypes";
+import { UpdatePasswordResponse } from "@renderer/Objects/Stores/PasswordStore";
+import { ReactivePassword } from "@renderer/Objects/Stores/ReactivePassword";
+import { ReactiveValue } from "@renderer/Objects/Stores/ReactiveValue";
 
 export class User
 {
@@ -69,19 +73,183 @@ export class User
             icon: undefined
         }
     }
+
+    async addPassword(testName: string,ctx: TestContext, password: Password, addedSecurityQuestions: SecurityQuestion[] = []): Promise<Password>
+    {
+        const pendingPasswordStoreState = app.currentVault.passwordStore.getPendingState()!;
+        const addPasswordSucceeded = await app.currentVault.passwordStore.addPassword(this._vaulticKey, password, addedSecurityQuestions, pendingPasswordStoreState);
+
+        ctx.assertTruthy("Add Password succeeded for " + testName, addPasswordSucceeded);
+
+        let retrievedPassword = app.currentVault.passwordStore.passwordsByID[password.id];
+        ctx.assertTruthy("Retrieved password succeeded for " + testName, retrievedPassword);
+
+        return retrievedPassword;
+    }
+
+    async updatePassword(
+        testName: string, 
+        ctx: TestContext, 
+        updatingPassword: Password,
+        passwordWasUpdated: boolean,
+        addedSecurityQuestions: SecurityQuestion[],
+        updatedSecurityQuestionQuestions: SecurityQuestion[],
+        updatedSecurityQuestionAnswers: SecurityQuestion[],
+        deletedSecurityQuestions: string[],
+        groups: DictionaryAsList): Promise<Password>
+    {
+        const pendingPasswordStoreState = app.currentVault.passwordStore.getPendingState()!;
+        const updatePasswordSucceeded = await app.currentVault.passwordStore.updatePassword(this._vaulticKey, updatingPassword, passwordWasUpdated, 
+            addedSecurityQuestions, updatedSecurityQuestionQuestions, updatedSecurityQuestionAnswers, deletedSecurityQuestions, groups, pendingPasswordStoreState);
+
+        ctx.assertTruthy("Update Password succeeded for " + testName, updatePasswordSucceeded == UpdatePasswordResponse.Success);
+
+        let retrievedPassword = app.currentVault.passwordStore.passwordsByID[updatingPassword.id];
+        ctx.assertTruthy("Retrieved password succeeded for " + testName, retrievedPassword);
+
+        return retrievedPassword;
+    }
+
+    async deletePassword(testName: string, ctx: TestContext, deletingPassword: ReactivePassword): Promise<boolean>
+    {
+        const deletePasswordSucceeded = await app.currentVault.passwordStore.deletePassword(this._vaulticKey, deletingPassword);
+        ctx.assertTruthy("Delete Password succeeded for " + testName, deletePasswordSucceeded);
+
+        const retrievedPassword = app.currentVault.passwordStore.passwordsByID[deletingPassword.id];
+        ctx.assertTruthy("Didn't retrieve password for " + testName, !retrievedPassword);
+
+        return deletePasswordSucceeded && !retrievedPassword;
+    }
+
+    async addNameValuePair(testName: string, ctx: TestContext, value: NameValuePair): Promise<NameValuePair>
+    {
+        const pendingValueStoreState = app.currentVault.valueStore.getPendingState()!;
+        const addedNameValuePairSucceeded = await app.currentVault.valueStore.addNameValuePair(this._vaulticKey, value, pendingValueStoreState);
+        ctx.assertTruthy("Add Name Value Pair succeeded for " + testName, addedNameValuePairSucceeded);
+
+        let retrievedNameValuePair = app.currentVault.valueStore.nameValuePairsByID[value.id];
+        ctx.assertTruthy("Retrieved Name Value Pair succeeded for " + testName, retrievedNameValuePair);
+
+        return retrievedNameValuePair;
+    }
+
+    async updateNameValuePair(testName: string, ctx: TestContext, updatedNameValuePair: NameValuePair, valueWasUpdated: boolean, updatedPrimaryObjects: DictionaryAsList): Promise<NameValuePair>
+    {
+        const pendingValueStoreState = app.currentVault.valueStore.getPendingState()!;
+        const updateNameValuePairSucceeded = await app.currentVault.valueStore.updateNameValuePair(this._vaulticKey, updatedNameValuePair, valueWasUpdated, updatedPrimaryObjects, pendingValueStoreState);
+        ctx.assertTruthy("Update Name Value Pair succeeded for " + testName, updateNameValuePairSucceeded);
+
+        let retrievedNameValuePair = app.currentVault.valueStore.nameValuePairsByID[updatedNameValuePair.id];
+        ctx.assertTruthy("Retrieved Name Value Pair succeeded for " + testName, retrievedNameValuePair);
+
+        return retrievedNameValuePair;
+    }
+
+    async deleteNameValuePair(testName: string, ctx: TestContext, deletingNameValuePair: ReactiveValue): Promise<boolean>
+    {
+        const deleteNameValuePairSucceeded = await app.currentVault.valueStore.deleteNameValuePair(this._vaulticKey, deletingNameValuePair);
+        ctx.assertTruthy("Delete Name Value Pair succeeded for " + testName, deleteNameValuePairSucceeded);
+
+        let retrievedNameValuePair = app.currentVault.valueStore.nameValuePairsByID[deletingNameValuePair.id];
+        ctx.assertTruthy("Didn't retrieve Name Value Pair for " + testName, !retrievedNameValuePair);
+
+        return deleteNameValuePairSucceeded && !retrievedNameValuePair;
+    }
+
+    async addFilter(testName: string, ctx: TestContext, filter: Filter): Promise<Filter>
+    {
+        const pendingFilterStoreState = app.currentVault.filterStore.getPendingState()!;
+        const addedFilterSucceeded = await app.currentVault.filterStore.addFilter(this._vaulticKey, filter, pendingFilterStoreState);
+        ctx.assertTruthy("Add Filter succeeded for " + testName, addedFilterSucceeded);
+
+        let retrievedFilter = filter.t == DataType.Passwords ? app.currentVault.filterStore.passwordFiltersByID[filter.id] :
+            app.currentVault.filterStore.nameValuePairFiltersByID[filter.id];
+
+        ctx.assertTruthy("Retrieved filter succeeded for " + testName, retrievedFilter);
+        return retrievedFilter;
+    }
+
+    async updateFilter(testName: string, ctx: TestContext, updatedFilter: Filter, addedFilterConditions: FilterCondition[], removedConditions: string[]): Promise<Filter>
+    {
+        const pendingFilterStoreState = app.currentVault.filterStore.getPendingState()!;
+        const updateFilterSucceeded = await app.currentVault.filterStore.updateFilter(this._vaulticKey, updatedFilter, addedFilterConditions, removedConditions, pendingFilterStoreState);
+        ctx.assertTruthy("Update Filter succeeded for " + testName, updateFilterSucceeded);
+
+        let retrievedFilter = updatedFilter.t == DataType.Passwords ? app.currentVault.filterStore.passwordFiltersByID[updatedFilter.id] :
+            app.currentVault.filterStore.nameValuePairFiltersByID[updatedFilter.id];
+
+        ctx.assertTruthy("Retrieved filter succeeded for " + testName, retrievedFilter);
+        return retrievedFilter;
+    }
+
+    async deleteFilter(testName: string, ctx: TestContext, deletingFilter: Filter): Promise<boolean>
+    {
+        const deleteFilterSucceeded = await app.currentVault.filterStore.deleteFilter(this._vaulticKey, deletingFilter);
+        ctx.assertTruthy("Delete Filter succeeded for " + testName, deleteFilterSucceeded);
+
+        let retrievedFilter = deletingFilter.t == DataType.Passwords ? app.currentVault.filterStore.passwordFiltersByID[deletingFilter.id] :
+            app.currentVault.filterStore.nameValuePairFiltersByID[deletingFilter.id];
+
+        ctx.assertTruthy("Didn't retrieve filter for " + testName, !retrievedFilter);
+        return deleteFilterSucceeded && !retrievedFilter;
+    }
+
+    async addGroup(testName: string, ctx: TestContext, group: Group): Promise<Group>
+    {
+        const pendingGroupStoreState = app.currentVault.groupStore.getPendingState()!;
+        const addedGroupSucceeded = await app.currentVault.groupStore.addGroup(this._vaulticKey, group, pendingGroupStoreState);
+        ctx.assertTruthy("Add Group succeeded for " + testName, addedGroupSucceeded);
+
+        let retrievedGroup = group.t == DataType.Passwords ? app.currentVault.groupStore.passwordGroupsByID[group.id] :
+            app.currentVault.groupStore.valueGroupsByID[group.id];
+
+        ctx.assertTruthy("Retrieved group succeeded for " + testName, retrievedGroup);
+        return retrievedGroup;
+    }
+
+    async updateGroup(testName: string, ctx: TestContext, updatedGroup: Group, updatedPrimaryObjects: DictionaryAsList): Promise<Group>
+    {
+        const pendingGroupStoreState = app.currentVault.groupStore.getPendingState()!;
+        const updateGroupSucceeded = await app.currentVault.groupStore.updateGroup(this._vaulticKey, updatedGroup, updatedPrimaryObjects, pendingGroupStoreState);
+        ctx.assertTruthy("Update Group succeeded for " + testName, updateGroupSucceeded);
+
+        let retrievedGroup = updatedGroup.t == DataType.Passwords ? app.currentVault.groupStore.passwordGroupsByID[updatedGroup.id] :
+            app.currentVault.groupStore.valueGroupsByID[updatedGroup.id];
+
+        ctx.assertTruthy("Retrieved group succeeded for " + testName, retrievedGroup);
+        return retrievedGroup;
+    }
+
+    async deleteGroup(testName: string, ctx: TestContext, deletingGroup: Group): Promise<boolean>
+    {
+        const deleteGroupSucceeded = await app.currentVault.groupStore.deleteGroup(this._vaulticKey, deletingGroup);
+        ctx.assertTruthy("Delete Group succeeded for " + testName, deleteGroupSucceeded);
+
+        let retrievedGroup = deletingGroup.t == DataType.Passwords ? app.currentVault.groupStore.passwordGroupsByID[deletingGroup.id] :
+            app.currentVault.groupStore.valueGroupsByID[deletingGroup.id];
+        
+        ctx.assertTruthy("Didn't retrieve group for " + testName, !retrievedGroup);
+        return deleteGroupSucceeded && !retrievedGroup;
+    }
 }
 
 class UserManager
 {
-    private createdUsers: number = 1;
-    private users: Map<number, User> = new Map();
-    private currentUserID: number | undefined;
+    private _createdUsers: number = 1;
+    private _users: Map<number, User> = new Map();
+    private _currentUserID: number | undefined;
+
+    // The first user that is created and never deleted
+    private _defaultUserID: number;
+
+    get defaultUserID() { return this._defaultUserID; }
+    get defaultUser() { return this._users.get(this._defaultUserID)!; }
 
     constructor() { }
 
     async createNewUser(ctx: TestContext, email?: string, masterKey?: string): Promise<User | undefined> 
     {
-        const masterKeyToUse = masterKey ?? `test${this.createdUsers}`;
+        const masterKeyToUse = masterKey ?? `test${this._createdUsers}`;
         const vaulticKey = JSON.stringify({ algorithm: Algorithm.XCHACHA20_POLY1305, key: masterKey });
         const emailToUse = email ?? `test${new Date().getTime()}@gmail.com`;
 
@@ -93,27 +261,41 @@ class UserManager
         }
 
         const newUser = new User(registerResponse.value!, emailToUse, masterKeyToUse, vaulticKey);
+        if (!this._defaultUserID)
+        {
+            this._defaultUserID = newUser.id;
+        }
 
-        this.users.set(newUser.id, newUser);
-        this.createdUsers++;
-        this.currentUserID = newUser.id;
+        this._users.set(newUser.id, newUser);
+        this._createdUsers++;
+        this._currentUserID = newUser.id;
 
         return newUser;
     }
 
-    getCurrentUserID(): number | undefined
+    getDefaultUser(): User | undefined
     {
-        return this.currentUserID;
-    }
-
-    getCurrentUser(): User | undefined
-    {
-        if (!this.currentUserID)
+        if (!this._defaultUserID)
         {
             return undefined;
         }
 
-        return this.users.get(this.currentUserID);
+        return this._users.get(this._defaultUserID);
+    }
+
+    getCurrentUserID(): number | undefined
+    {
+        return this._currentUserID;
+    }
+
+    getCurrentUser(): User | undefined
+    {
+        if (!this._currentUserID)
+        {
+            return undefined;
+        }
+
+        return this._users.get(this._currentUserID);
     }
 
     private async registerUser(ctx: TestContext, email: string, masterKey: string, vaulticKey: string): Promise<TypedMethodResponse<number>>
@@ -187,13 +369,12 @@ class UserManager
 
     async logUserIn(ctx: TestContext, userID: number): Promise<boolean>
     {
-        if (this.currentUserID === userID || !this.users.has(userID))
+        if (!this._users.has(userID))
         {
             return false;
         }
 
-        const user = this.users.get(userID)!;
-
+        const user = this._users.get(userID)!;
         await this.logCurrentUserOut();
 
         let response = await api.helpers.server.logUserIn(user.masterKey, user.email, false, false);
@@ -241,19 +422,42 @@ class UserManager
             ctx.assertTruthy("Sync And Load Data Works", syncAndLoadDataResponse);
         }
 
-        this.currentUserID = userID;
+        this._currentUserID = userID;
         return true;
+    }
+
+    async logUserInOffline(ctx: TestContext, userID: number): Promise<boolean>
+    {
+        if (!this._users.has(userID))
+        {
+            return false;
+        }
+
+        const user = this._users.get(userID)!;
+
+        // we want to sync data here. Its any changes done after logging into offline 
+        // tht we don't want to sync
+        await this.logCurrentUserOut();
+
+        const response = await api.repositories.users.setCurrentUser(user.vaulticKey, user.email);
+        ctx.assertTruthy("Set Current user worked", response.success)
+    
+        let loadUserResponse = await app.loadUserData(user.vaulticKey);
+        ctx.assertTruthy("Load user data worked", loadUserResponse);
+
+        this._currentUserID = userID;
+        return response.success && loadUserResponse;
     }
 
     async logCurrentUserOut(redirect: boolean = true, expireSession: boolean = true, syncData: boolean = true)
     {
-        if (!this.currentUserID)
+        if (!this._currentUserID)
         {
             return;
         }
 
         await app.lock(redirect, expireSession, syncData);
-        this.currentUserID = undefined;
+        this._currentUserID = undefined;
 
         // give time for syncing to finish
         await new Promise(resolve => setTimeout(resolve, 300));

@@ -175,7 +175,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         updatedSecurityQuestionQuestions: SecurityQuestion[],
         updatedSecurityQuestionAnswers: SecurityQuestion[],
         deletedSecurityQuestions: string[],
-        groups: DictionaryAsList,
+        addingGroups: DictionaryAsList,
         pendingPasswordState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>): Promise<UpdatePasswordResponse>
     {
         const currentPassword: ReactivePassword | undefined = pendingPasswordState.getObject('dataTypesByID.dataType', updatingPassword.id);
@@ -188,7 +188,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         const finishUpdatePassword = async () => 
         {
             // retrieve these before updating
-            const changedGroups = this.getRelatedDataTypeChanges(currentPassword.g, groups);
+            const changedGroups = this.getRelatedDataTypeChanges(currentPassword.g, addingGroups);
 
             if (passwordWasUpdated)
             {
@@ -461,7 +461,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
 
         for (let i = 0; i < deletedSecurityQuestions.length; i++)
         {
-            pendingPasswordState.deleteValue('securityQuestions', updatedSecurityQuestionQuestions[i].id, password.id);
+            pendingPasswordState.deleteValue('securityQuestions', deletedSecurityQuestions[i], password.id);
         }
 
         async function updateSecurityQuestionQuestion(securityQuestion: SecurityQuestion)

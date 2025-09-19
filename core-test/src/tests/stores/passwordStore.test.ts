@@ -45,6 +45,7 @@ passwordStoreSuite.tests.push({
         const decryptedSecurityQuesitonQuestion = await cryptHelper.decrypt(masterKey, retrievedPassword.value.securityQuestions.value.get("SecurityQuestion")!.value.question.value);
         const decryptedSecurityQuesitonAnswer = await cryptHelper.decrypt(masterKey, retrievedPassword.value.securityQuestions.value.get("SecurityQuestion")!.value.answer.value);
 
+        ctx.assertTruthy("ID is set", retrievedPassword.id);
         ctx.assertEquals("Login is correct", retrievedPassword.value.login.value, "PasswordStore Add Works");
         ctx.assertEquals("Email is correct", retrievedPassword.value.email.value, "Email@Email");
         ctx.assertEquals("Domain is correct", retrievedPassword.value.domain.value, "www.domain.com");

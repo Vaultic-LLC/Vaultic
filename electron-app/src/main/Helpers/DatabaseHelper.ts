@@ -122,6 +122,7 @@ export async function deleteDatabase(isTest: boolean)
 	{
 		fs.unlink(getDirectory(isTest) + databaseFilePath(), (err) =>
 		{
+			console.log("delete database error", err);
 			resolve(!err);
 		});
 	});
