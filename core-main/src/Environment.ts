@@ -80,6 +80,7 @@ class Environment
         }
         catch (e)
         {
+            console.log("failed to setup database", e);
             this.internalFailedToInitalizeDatabase = true;
         }
     }
@@ -92,7 +93,7 @@ class Environment
         }
 
         await this.setupDatabase();
-        return this.internalFailedToInitalizeDatabase;
+        return !this.internalFailedToInitalizeDatabase;
     }
 
     getDeviceInfo()

@@ -624,7 +624,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
         async function internalUpdateUserEmail(this: UserRepository): Promise<TypedMethodResponse<undefined>>
         {
-            const currentUser = await this.getCurrentUser();
+            const currentUser = await this.getVerifiedCurrentUser(environment.cache.masterKey);
             if (!currentUser || !environment.cache.masterKey)
             {
                 return TypedMethodResponse.fail(errorCodes.NO_USER);
@@ -968,6 +968,43 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         }
 
         return states;
+    }
+
+    public async deleteAccount(): Promise<TypedMethodResponse<boolean | undefined>>
+    {
+        return await safetifyMethod(this, internalDeleteAccount);
+
+        async function internalDeleteAccount(this: UserRepository): Promise<TypedMethodResponse<boolean>>
+        {
+            const currentUser = await this.getVerifiedCurrentUser(environment.cache.masterKey);
+            if (!currentUser)
+            {
+                return TypedMethodResponse.fail(errorCodes.NO_USER);
+            }
+
+            const response = await vaulticServer.user.deleteAccount();
+            if (!response.Success)
+            {
+                return TypedMethodResponse.fail(undefined, undefined, "Failed to delete account");
+            }
+
+            const transaction = new Transaction();
+            const userVaults = await environment.repositories.userVaults.getVerifiedUserVaults(environment.cache.masterKey, undefined, currentUser.userID);
+
+            userVaults[0].forEach(userVault =>
+            {
+                transaction.deleteEntity(userVault.vaultID, () => environment.repositories.vaults);
+            });
+
+            const changeTrackings = await environment.repositories.changeTrackings.getAllUnverifiedChangeTrackingsForUser(currentUser.userID);
+            changeTrackings.forEach(changeTracking =>
+            {
+                transaction.deleteEntity(changeTracking.changeTrackingID, () => environment.repositories.changeTrackings);
+            });
+
+            transaction.deleteEntity(currentUser.userID, () => this);
+            return TypedMethodResponse.success(await transaction.commit());
+        }
     }
 }
 

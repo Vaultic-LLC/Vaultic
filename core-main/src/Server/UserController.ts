@@ -13,6 +13,7 @@ export interface UserController extends ClientUserController
     getPublicKeys: (publicKeyType: PublicKeyType, userIDs: number[]) => Promise<GetPublicKeysResponse>;
     startUpdateKSFParams: (registrationRequest: string) => Promise<StartRegistrationResponse>;
     finishUpdateKSFParams: (registrationRecord: string, userDataPayload: UserDataPayload) => Promise<BaseResponse>;
+    deleteAccount: () => Promise<BaseResponse>;
 }
 
 export function createUserController(axiosHelper: AxiosHelper): UserController
@@ -179,6 +180,11 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         });
     }
 
+    function deleteAccount(): Promise<BaseResponse>
+    {
+        return axiosHelper.api.post('User/DeleteAccount');
+    }
+
     return {
         validateEmail,
         verifyEmail,
@@ -201,6 +207,7 @@ export function createUserController(axiosHelper: AxiosHelper): UserController
         startUpdateKSFParams,
         finishUpdateKSFParams,
         startEmailVerification,
-        finishEmailVerification
+        finishEmailVerification,
+        deleteAccount
     }
 }

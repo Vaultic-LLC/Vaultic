@@ -19,6 +19,8 @@ export class VaulticCache
     get currentUser() { return this.internalCurrentUser; }
     get sessionKey() { return this.internalSessionKey; }
     get exportKey() { return this.internalExportKey; }
+
+    // this is the vaultic key, not just the master key
     get masterKey() { return this.internalMasterKey; }
 
     get startLoginRequest() { return this.internalStartLoginRequest; }

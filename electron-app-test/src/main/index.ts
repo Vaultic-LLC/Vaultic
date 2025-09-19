@@ -100,9 +100,7 @@ app.whenReady().then(async () =>
 {
     setupIPC();
 
-    //@ts-ignore
-    const isTest = import.meta.env.VITE_ISTEST === "true";
-    await setupEnvironment(isTest);
+    await setupEnvironment(true);
 
     // Set app user model id for windows
     electronApp.setAppUserModelId('com.electron')
@@ -171,6 +169,7 @@ async function setupEnvironment(isTest: boolean)
     // for testing only
     ipcMain.handle('environment:createNewDatabase', (e, renameCurrentTo: string) => createNewDatabase(renameCurrentTo));
     ipcMain.handle('environment:setDatabaseAsCurrent', (e, name: string) => setDatabaseAsCurrent(name));
+    ipcMain.handle('environment:runLocalQuery', (e, sql: string) => runLocalQuery(sql));
 
     await environment.init({
         isTest,
@@ -240,6 +239,7 @@ function hasConnection(): Promise<boolean>
 let directory = electronAPI.process.env.APPDATA || (electronAPI.process.platform == 'darwin' ? electronAPI.process.env.HOME + '/Library/Preferences' : electronAPI.process.env.HOME + "/.local/share");
 directory += "\\Vaultic\\VTest";
 
+// Copies vaultic.db to renameCurrentTo.db, and then deletes and re sets up vaultic.db
 async function createNewDatabase(renameCurrentTo: string)
 {
     return new Promise((resolve) => 
@@ -253,16 +253,18 @@ async function createNewDatabase(renameCurrentTo: string)
                 return;
             }
 
-            await deleteDatabase();
+            await deleteDatabase(true);
+            
             await environment.setupDatabase();
             resolve(true);
         });
     });
 }
 
+// Will delete vaultic.db, copy name.db to vaultic.db, and then delete name.db
 async function setDatabaseAsCurrent(name: string)
 {
-    await deleteDatabase();
+    await deleteDatabase(true);
     return new Promise<any>((resolve) =>
     {
         fs.copyFile(`${directory}\\${name}.db`, `${directory}\\vaultic.db`, async function (err)
@@ -286,6 +288,17 @@ async function setDatabaseAsCurrent(name: string)
                 await environment.setupDatabase();
                 resolve(true);
             });
+        });
+    });
+}
+
+async function runLocalQuery(sql: string): Promise<any>
+{
+    return new Promise((resolve) =>
+    {
+        environment.databaseDataSouce.transaction(async (manager) =>
+        {
+            resolve(await manager.query(sql));
         });
     });
 }

@@ -49,7 +49,7 @@ const userController: ClientUserController =
     getMFAKey: () => ipcRenderer.invoke('userController:getMFAKey'),
     getUserInfo: () => ipcRenderer.invoke('userController:getUserInfo'),
     startEmailVerification: (email: string) => ipcRenderer.invoke('userController:startEmailVerification', email),
-    finishEmailVerification: (verificationCode: string) => ipcRenderer.invoke('userController:finishEmailVerification', verificationCode)
+    finishEmailVerification: (verificationCode: string) => ipcRenderer.invoke('userController:finishEmailVerification', verificationCode),
 };
 
 const vaultController: ClientVaultController =
@@ -124,7 +124,8 @@ const environment: ClientEnvironment =
     recreateDatabase: () => ipcRenderer.invoke('environment:recreateDatabase'),
     hasConnection: () => ipcRenderer.invoke('environment:hasConnection'),
     createNewDatabase: (renameCurrentTo: string) => ipcRenderer.invoke('environment:createNewDatabase', renameCurrentTo),
-    setDatabaseAsCurrent: (name: string) => ipcRenderer.invoke('environment:setDatabaseAsCurrent', name)
+    setDatabaseAsCurrent: (name: string) => ipcRenderer.invoke('environment:setDatabaseAsCurrent', name),
+    runLocalQuery: (sql: string) => ipcRenderer.invoke('environment:runLocalQuery', sql)
 };
 
 const cache: Promisify<ClientVaulticCache> =
@@ -146,6 +147,7 @@ const userRepository: ClientUserRepository =
     getStoreStates: (masterKey: string, storeStatesToRetrieve: UserData) => ipcRenderer.invoke('userRepository:getStoreStates', masterKey, storeStatesToRetrieve),
     getValidMasterKey: () => ipcRenderer.invoke('userRepository:getValidMasterKey'),
     updateUserEmail: (email: string) => ipcRenderer.invoke('userRepository:updateUserEmail', email),
+    deleteAccount: () => ipcRenderer.invoke('userRepository:deleteAccount')
 };
 
 const vaultRepository: ClientVaultRepository =
