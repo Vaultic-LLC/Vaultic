@@ -10,8 +10,8 @@ cryptUtilityTestSuite.tests.push({
     {
         const testUser = userManager.getCurrentUser()!;
         const test = "testValue";
-        const encryptResponse = await cryptHelper.encrypt(testUser.masterKey, test);
-        const decryptResponse = await cryptHelper.decrypt(testUser.masterKey, encryptResponse.value!);
+        const encryptResponse = await cryptHelper.encrypt(testUser.vaulticKey, test);
+        const decryptResponse = await cryptHelper.decrypt(testUser.vaulticKey, encryptResponse.value!);
 
         ctx.assertEquals("Encryption and Decryption Work", decryptResponse.value, test);
     }

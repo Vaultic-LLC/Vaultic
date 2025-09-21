@@ -316,20 +316,20 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
         }
     }
 
-    public async loadUserData(masterKey: string)
+    public async loadUserData(vaulticKey: string)
     {
         if (this.internaLoadedUser.value)
         {
             return false;
         }
 
-        const success = await this.internalLoadUserData(masterKey, false);
+        const success = await this.internalLoadUserData(vaulticKey, false);
         if (!success)
         {
             return false;
         }
 
-        return this.internalFinishLoadUserData(masterKey);
+        return this.internalFinishLoadUserData(vaulticKey);
     }
 
     async createNewVault(masterKey: string, name: string, shared: boolean, setAsActive: boolean,

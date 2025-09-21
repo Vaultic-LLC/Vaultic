@@ -1,6 +1,5 @@
-import { AllowSharingFrom } from '@vaultic/shared/Types/ClientServerTypes';
-import { RequireMFAOn } from '@vaultic/shared/Types/Device';
 import axios, { AxiosInstance } from 'axios';
+import { FilterStoreState, GroupStoreState, PasswordStoreState, User, UserData, UserVault, ValueStoreState, Vault, VaultPreferencesStoreState, VaultStoreState } from './types/serverSchema';
 
 type QueryResult<T = any> = 
 {
@@ -8,59 +7,6 @@ type QueryResult<T = any> =
     rows: T[];
     rowCount: number;
     fields: { name: string; dataTypeID: number }[];
-}
-
-type SchemaObject =
-{
-    CreatedTime: number | undefined;
-    LastModifiedTime: number | undefined;
-}
-
-type User = SchemaObject &
-{
-    UserID: number | undefined;
-    FirstName: string | undefined;
-    LastName: string | undefined;
-    Email: string | undefined;
-    Username: string | undefined;
-
-    RegistrationRecord: string | undefined;
-    UserIdentifier: string | undefined;
-
-    // public License License { get; set; }
-    // public Session Session { get; set; }
-    // public StripeData StripeData { get; set; }
-}
-
-type UserData = SchemaObject &
-{
-    UserDataID: number | undefined;
-    UserID: number | undefined;
-
-    CurrentSignature: string | undefined;
-    MasterKeyEncryptionAlgorithm: string | undefined;
-    PublicSigningKey: string | undefined;
-    PrivateSigningKey: string | undefined;
-    PublicEncryptingKey: string | undefined;
-    PrivateEncryptingKey: string | undefined;
-    AllowSharedVaultsFromOthers: string | undefined;
-    KSFParams: string | undefined;
-
-    DeviceSalt: string | undefined;
-
-    AllowSharingFrom: AllowSharingFrom | undefined;
-    RequireMFAOn: RequireMFAOn | undefined;
-
-    LastLoadedChangeTrackingVersion: number | undefined;
-}
-
-type Vault = SchemaObject &
-{
-    VaultID: number | undefined;
-    CurrentSignature: string | undefined;
-    Name: string | undefined;
-    IsArchived: boolean | undefined;
-    IsShared: boolean | undefined;
 }
 
 /**
@@ -139,6 +85,30 @@ class PublicServerDatabaseBridge extends ServerDatabaseBridge
 
         return result[0];
     }
+
+    async getAllVaultDataByID(userVaultID: number): Promise<(UserVault & VaultPreferencesStoreState & Vault &
+        VaultStoreState & PasswordStoreState & ValueStoreState & FilterStoreState & GroupStoreState) | undefined>
+    {
+        const result = await this.query<User & UserData>(`
+            SELECT * 
+            FROM "UserVaults" AS uv
+            INNER JOIN "VaultPreferencesStoreStates" vp ON "uv"."UserVaultID" = "vp"."UserVaultID"
+            INNER JOIN "OrganizationVaults" ov ON "ov"."UserVaultID" = "vp"."UserVaultID"
+            INNER JOIN "Vaults" v ON "ov"."VaultID" = "v"."VaultID"
+            INNER JOIN "VaultStoreStates" vss ON "vss"."VaultID" = "v"."VaultID"
+            INNER JOIN "PasswordStoreStates" pss ON "pss"."VaultID" = "v"."VaultID"
+            INNER JOIN "ValueStoreStates" vass ON "vass"."VaultID" = "v"."VaultID"
+            INNER JOIN "FilterStoreStates" fss ON "fss"."VaultID" = "v"."VaultID"
+            INNER JOIN "GroupStoreStates" gss ON "gss"."VaultID" = "v"."VaultID"
+            WHERE "uv"."UserVaultID" = ${userVaultID}`);
+
+        if (result.length === 0)
+        {
+            return undefined;
+        }
+
+        return result[0];
+    } 
 
     async getVaultIDsForUser(userID: number): Promise<{ VaultID: Number, UserVaultID: Number, UserOrganizationID: number}[]>
     {

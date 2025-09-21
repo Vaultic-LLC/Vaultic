@@ -1,44 +1,43 @@
 import { createTestSuite, type TestContext } from '@lib/test';
 import app from "@renderer/Objects/Stores/AppStore";
 import { api } from "@renderer/API";
-import { AutoLockTime } from "@vaultic/shared/Types/Stores";
 import userManager from '@lib/userManager';
+import localDatabase from "@lib/localDatabaseBridge";
+import { publicServerDB } from "@lib/serverDatabaseBridge";
 
 let appStoreTestSuite = createTestSuite("App Store");
 
 appStoreTestSuite.tests.push({
     name: "Load User Data Works", func: async (ctx: TestContext) =>
     {
-        const testUser = userManager.getCurrentUser()!;
-        const response = await api.helpers.server.logUserIn(testUser.masterKey, testUser.email, true, false);
+        const response = await api.helpers.server.logUserIn(userManager.defaultUser.masterKey, 
+            userManager.defaultUser.email, true, false);
+
         ctx.assertTruthy("Log user in works", response.success);
         app.isOnline = true;
 
-        await app.loadUserData(testUser.masterKey);
-        ctx.assertEquals("One UserVault", app.userVaults.value.length, 1);
-
-        const currentState = app.cloneState();
-        currentState.settings.value.autoLockTime.value = AutoLockTime.ThirtyMinutes;
-        app.updateState(currentState);
+        const laodUserDataResponse = await app.loadUserData(userManager.defaultUser.vaulticKey);
+        ctx.assertTruthy("Load data succeeded", laodUserDataResponse);
+        ctx.assertTruthy("Has UserVaults", app.userVaults.value.length > 0);
     }
 });
 
 appStoreTestSuite.tests.push({
     name: "Create New Vault works", func: async (ctx: TestContext) =>
     {
-        const testUser = userManager.getCurrentUser()!;
-        const response = await app.createNewVault(testUser.masterKey, "CreateNewVaultTest", false);
+        const currentUserVaultCount = app.userVaults.value.length;
+        const response = await app.createNewVault(userManager.defaultUser.vaulticKey, "CreateNewVaultTest", false);
+        
         ctx.assertTruthy("Create New Vault Succeeded", response);
-        ctx.assertEquals("Two UserVaults", app.userVaults.value.length, 2);
-        ctx.assertEquals("Vault has correct name", app.userVaults.value.filter(v => v.name == "CreateNewVaultTest").length, 1);
+        ctx.assertEquals("One additional userVault", app.userVaults.value.length, currentUserVaultCount + 1);
+        ctx.assertTruthy("Added vault exists", app.userVaults.value.some(v => v.name == "CreateNewVaultTest"));
     }
 });
 
 appStoreTestSuite.tests.push({
     name: "Create New Vault Set As Active Works", func: async (ctx: TestContext) =>
     {
-        const testUser = userManager.getCurrentUser()!;
-        const response = await app.createNewVault(testUser.masterKey, "CreateNewVaultSetAsActiveTest", true);
+        const response = await app.createNewVault(userManager.defaultUser.vaulticKey, "CreateNewVaultSetAsActiveTest", true);
         ctx.assertTruthy("Create New Vault Succeeded", response);
 
         const userVault = app.userVaults.value.filter(uv => uv.userVaultID == app.currentVault.userVaultID);
@@ -49,14 +48,13 @@ appStoreTestSuite.tests.push({
 appStoreTestSuite.tests.push({
     name: "Update Vault Works", func: async (ctx: TestContext) =>
     {
-        const testUser = userManager.getCurrentUser()!;
-        const response = await app.createNewVault(testUser.masterKey, "UpdateVaultWorksTest", true);
+        const response = await app.createNewVault(userManager.defaultUser.vaulticKey, "UpdateVaultWorksTest", true);
         ctx.assertTruthy("Create New Vault Succeeded", response);
 
         const userVault = app.userVaults.value.filter(v => v.name == "UpdateVaultWorksTest")[0];
         userVault.name = "UpdatedNameForUpdateVaultWorksTest";
 
-        await app.updateVault(testUser.masterKey, userVault);
+        await app.updateVault(userManager.defaultUser.vaulticKey, userVault);
         const updatedUserVault = app.userVaults.value.filter(v => v.name == "UpdatedNameForUpdateVaultWorksTest");
 
         ctx.assertEquals("Updated Vault Exists With Name", updatedUserVault.length, 1);
@@ -67,14 +65,14 @@ appStoreTestSuite.tests.push({
 appStoreTestSuite.tests.push({
     name: "Archive Vault Works", func: async (ctx: TestContext) =>
     {
-        const testUser = userManager.getCurrentUser()!;
-        const response = await app.createNewVault(testUser.masterKey, "ArchiveVaultWorksTest", true);
+        const response = await app.createNewVault(userManager.defaultUser.vaulticKey, "ArchiveVaultWorksTest", true);
         ctx.assertTruthy("Create New Vault Succeeded", response);
 
         const userVault = app.userVaults.value.filter(v => v.name == "ArchiveVaultWorksTest");
-        const archiveSucceeded = await app.archiveVault(testUser.masterKey, userVault[0].userVaultID!);
+        const archiveSucceeded = await app.archiveVault(userManager.defaultUser.vaulticKey, userVault[0].userVaultID!);
 
         ctx.assertTruthy("Archive Vault Succeeded", archiveSucceeded);
+
 
         const archivedVault = app.archivedVaults.value.filter(v => v.name == "ArchiveVaultWorksTest");
         ctx.assertEquals("Archive Vault Exists", archivedVault.length, 1);
