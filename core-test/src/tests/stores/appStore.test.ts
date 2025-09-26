@@ -266,7 +266,7 @@ appStoreTestSuite.tests.push({
         ctx.assertEquals("Un Archive Vault does not exist in Archived Vaults", app.archivedVaults.value.filter(v => v.name == "UnArchiveVaultWorksTest").length, 0);
 
         localVault = (await localDatabase.query(`SELECT * FROM "Vaults" WHERE "VaultID" = ${archivedUserVault[0].vaultID}`))[0];
-        ctx.assertTruthy("Local vault is not archived", !localVault.IsArchived);
+        ctx.assertTruthy("Local vault is not archived", !localVault.isArchived);
 
         serverVault = (await publicServerDB.query<Vault>(`SELECT * FROM "Vaults" WHERE "VaultID" = ${archivedUserVault[0].vaultID}`))[0];
         ctx.assertTruthy("Server vault is not archived", !serverVault.IsArchived);
