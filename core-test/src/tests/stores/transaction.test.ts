@@ -1,7 +1,6 @@
 import { TestContext, createTestSuite } from "@lib/test";
 import app from "@renderer/Objects/Stores/AppStore";
 import { defaultFilter, DataType, FilterConditionType, defaultGroup, defaultPassword } from "@renderer/Types/DataTypes";
-import { Field } from "@vaultic/shared/Types/Fields";
 
 let transactionTestSuite = createTestSuite("Transaction");
 

@@ -2,7 +2,7 @@ import { createTestSuite, type TestContext } from '@lib/test';
 import app from "@renderer/Objects/Stores/AppStore";
 import { DataType, Filter, defaultFilter, FilterConditionType, IFilterable, defaultPassword, defaultValue, FilterCondition } from "@renderer/Types/DataTypes";
 import { DuplicateDataTypes } from "@vaultic/shared/Types/DataTypes";
-import { Field, IIdentifiable, KnownMappedFields } from '@vaultic/shared/Types/Fields';
+import { IIdentifiable } from '@vaultic/shared/Types/Fields';
 
 let filterStoreSuite = createTestSuite("Filter Store");
 
@@ -12,16 +12,17 @@ filterStoreSuite.tests.push({
     name: "FilterStore Add Works", func: async (ctx: TestContext) =>
     {
         const name = "FilterStore Add Works";
-        async function testFilterAdd(type: DataType, property: string, getFilters: () => Field<Filter>[])
+        async function testFilterAdd(type: DataType, property: string, getFilters: () => Filter[])
         {
             const filter: Filter = defaultFilter(type);
             filter.name.value = name;
-            filter.conditions.value.set(name, Field.create({
-                id: Field.create(name),
-                property: Field.create(property),
-                filterType: Field.create(FilterConditionType.EqualTo),
-                value: Field.create(name)
-            }));
+            filter.conditions.value.set(name,
+            {
+                id: name,
+                property: property,
+                filterType: FilterConditionType.EqualTo,
+                value: name
+            });
 
             await app.currentVault.filterStore.addFilter(masterKey, filter);
             const retrievedFilter = getFilters().filter(f => f.value.id.value == filter.id.value)[0];
@@ -42,16 +43,17 @@ filterStoreSuite.tests.push({
         async function testFilterAdd<T extends IIdentifiable & IFilterable>(
             type: DataType,
             conditionProperty: string,
-            getFilters: () => Field<Filter>[],
-            getPrimaryObject: () => Field<T>)
+            getFilters: () => Filter[],
+            getPrimaryObject: () => T)
         {
             const filter: Filter = defaultFilter(type);
-            filter.conditions.value.set("Hi", Field.create({
-                id: Field.create("Hi"),
-                property: Field.create(conditionProperty),
-                filterType: Field.create(FilterConditionType.EqualTo),
-                value: Field.create("FilterStore Add With Current Primary Objects Works")
-            }));
+            filter.conditions.value.set("Hi",
+            {
+                id: "Hi",
+                property: conditionProperty,
+                filterType: FilterConditionType.EqualTo,
+                value: "FilterStore Add With Current Primary Objects Works"
+            });
 
             await app.currentVault.filterStore.addFilter(masterKey, filter);
 
@@ -84,9 +86,9 @@ filterStoreSuite.tests.push({
         async function testFilterAdd(
             type: DataType,
             conditionProperty: string,
-            getFilters: () => Field<Filter>[],
-            getEmptyFilters: () => Field<Map<string, Field<string>>>,
-            getDuplicateFilters: () => Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>)
+            getFilters: () => Filter[],
+            getEmptyFilters: () => Map<string, string>,
+            getDuplicateFilters: () => Map<string, DuplicateDataTypes>)
         {
             const emptyFilter = defaultFilter(type);
             await app.currentVault.filterStore.addFilter(masterKey, emptyFilter);
@@ -98,20 +100,22 @@ filterStoreSuite.tests.push({
             ctx.assertTruthy(`Empty Filter is included in empty filters for ${type}`, hasEmptyFilter);
 
             const duplicateFilterOne: Filter = defaultFilter(type);
-            duplicateFilterOne.conditions.value.set("Hi", Field.create({
-                id: Field.create("Hi"),
-                property: Field.create(conditionProperty),
-                filterType: Field.create(FilterConditionType.EqualTo),
-                value: Field.create("FilterStore Add With Current Primary Objects Works")
-            }));
+            duplicateFilterOne.conditions.value.set("Hi",
+            {
+                id: "Hi",
+                property: conditionProperty,
+                filterType: FilterConditionType.EqualTo,
+                value: "FilterStore Add With Current Primary Objects Works"
+            });
 
             const duplicateFilterTwo: Filter = defaultFilter(type);
-            duplicateFilterTwo.conditions.value.set("Hii", Field.create({
-                id: Field.create("Hii"),
-                property: Field.create(conditionProperty),
-                filterType: Field.create(FilterConditionType.EqualTo),
-                value: Field.create("FilterStore Add With Current Primary Objects Works")
-            }));
+            duplicateFilterTwo.conditions.value.set("Hii",
+            {
+                id: "Hii",
+                property: conditionProperty,
+                filterType: FilterConditionType.EqualTo,
+                value: "FilterStore Add With Current Primary Objects Works"
+            });
 
             await app.currentVault.filterStore.addFilter(masterKey, duplicateFilterOne);
             await app.currentVault.filterStore.addFilter(masterKey, duplicateFilterTwo);
@@ -151,7 +155,7 @@ filterStoreSuite.tests.push({
 filterStoreSuite.tests.push({
     name: "FilterStore Update Works", func: async (ctx: TestContext) =>
     {
-        async function testFilterUpdate(type: DataType, getFilters: () => Field<Filter>[])
+        async function testFilterUpdate(type: DataType, getFilters: () => Filter[])
         {
             const originalName = "FilterStoreUpdateWorks";
             const filter: Filter = defaultFilter(type);
@@ -185,19 +189,19 @@ filterStoreSuite.tests.push({
 filterStoreSuite.tests.push({
     name: "FilterStore Update Condition Works", func: async (ctx: TestContext) =>
     {
-        async function testUpdateFilterCondition(type: DataType, getFilters: () => Field<Filter>[], originalProperty: string, newProperty: string)
+        async function testUpdateFilterCondition(type: DataType, getFilters: () => Filter[], originalProperty: string, newProperty: string)
         {
             const originalFilterValue = "UpdateFilterConditionWorks"
             const filter: Filter = defaultFilter(type);
             let filterCondition: FilterCondition =
             {
-                id: Field.create("Condition"),
-                filterType: Field.create(FilterConditionType.EqualTo),
-                property: Field.create(originalProperty),
-                value: Field.create(originalFilterValue)
+                id: "Condition",
+                filterType: FilterConditionType.EqualTo,
+                property: originalProperty,
+                value: originalFilterValue
             };
 
-            filter.conditions.value.set("Condition", Field.create(filterCondition));
+            filter.conditions.value.set("Condition", filterCondition);
 
             await app.currentVault.filterStore.addFilter(masterKey, filter);
 
@@ -234,16 +238,17 @@ filterStoreSuite.tests.push({
         async function testFilterAdd<T extends IIdentifiable & IFilterable>(
             type: DataType,
             conditionProperty: string,
-            getFilters: () => Field<Filter>[],
-            getPrimaryObject: () => Field<T>)
+            getFilters: () => Filter[],
+            getPrimaryObject: () => T)
         {
             const filter: Filter = defaultFilter(type);
-            filter.conditions.value.set("Hi", Field.create({
-                id: Field.create("Hi"),
-                property: Field.create(conditionProperty),
-                filterType: Field.create(FilterConditionType.EqualTo),
-                value: Field.create(filterValue)
-            }));
+            filter.conditions.value.set("Hi",
+            {
+                id: "Hi",
+                property: conditionProperty,
+                filterType: FilterConditionType.EqualTo,
+                value: filterValue
+            });
 
             await app.currentVault.filterStore.addFilter(masterKey, filter);
 
@@ -290,16 +295,17 @@ filterStoreSuite.tests.push({
         async function testFilterAdd(
             type: DataType,
             conditionProperty: string,
-            getFilters: () => Field<Filter>[],
-            getEmptyFilters: () => Field<Map<string, Field<string>>>,
-            getDuplicateFilters: () => Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>)
+            getFilters: () => Filter[],
+            getEmptyFilters: () => Map<string, string>,
+            getDuplicateFilters: () => Map<string, DuplicateDataTypes>)
         {
-            const condition: Field<FilterCondition> = Field.create({
-                id: Field.create("Hi"),
-                property: Field.create(conditionProperty),
-                filterType: Field.create(FilterConditionType.EqualTo),
-                value: Field.create(filterValue)
-            });
+            const condition: FilterCondition =
+            {
+                id: "Hi",
+                property: conditionProperty,
+                filterType: FilterConditionType.EqualTo,
+                value: filterValue
+            };
 
             const emptyFilter = defaultFilter(type);
             await app.currentVault.filterStore.addFilter(masterKey, emptyFilter);
@@ -389,7 +395,7 @@ filterStoreSuite.tests.push({
 filterStoreSuite.tests.push({
     name: "FilterStore Delete Works", func: async (ctx: TestContext) =>
     {
-        async function testFilterDelete(type: DataType, getFilters: () => Field<Filter>[])
+        async function testFilterDelete(type: DataType, getFilters: () => Filter[])
         {
             const filter: Filter = defaultFilter(type);
 
@@ -410,16 +416,16 @@ filterStoreSuite.tests.push({
 filterStoreSuite.tests.push({
     name: "FilterStore Delete Condition Works", func: async (ctx: TestContext) =>
     {
-        async function testFilterConditionDelete(type: DataType, getFilters: () => Field<Filter>[], property: string)
+        async function testFilterConditionDelete(type: DataType, getFilters: () => Filter[], property: string)
         {
             const filter: Filter = defaultFilter(type);
-            let filterCondition: Field<FilterCondition> = Field.create(
-                {
-                    id: Field.create("Condition"),
-                    filterType: Field.create(FilterConditionType.EqualTo),
-                    property: Field.create(property),
-                    value: Field.create("Value")
-                });
+            let filterCondition: FilterCondition =
+            {
+                id: "Condition",
+                filterType: FilterConditionType.EqualTo,
+                property: property,
+                value: "Value"
+            };
 
             filter.conditions.value.set("Condition", filterCondition);
 
@@ -447,16 +453,17 @@ filterStoreSuite.tests.push({
         async function testFilterAdd<T extends IIdentifiable & IFilterable>(
             type: DataType,
             conditionProperty: string,
-            getFilters: () => Field<Filter>[],
-            getPrimaryObject: () => Field<T>)
+            getFilters: () => Filter[],
+            getPrimaryObject: () => T)
         {
             const filter: Filter = defaultFilter(type);
-            filter.conditions.value.set("Hi", Field.create({
-                id: Field.create("Hi"),
-                property: Field.create(conditionProperty),
-                filterType: Field.create(FilterConditionType.EqualTo),
-                value: Field.create(filterValue)
-            }));
+            filter.conditions.value.set("Hi",
+            {
+                id: "Hi",
+                property: conditionProperty,
+                filterType: FilterConditionType.EqualTo,
+                value: filterValue
+            });
 
             await app.currentVault.filterStore.addFilter(masterKey, filter);
 
@@ -495,16 +502,17 @@ filterStoreSuite.tests.push({
         async function testFilterAdd(
             type: DataType,
             conditionProperty: string,
-            getFilters: () => Field<Filter>[],
-            getEmptyFilters: () => Field<Map<string, Field<string>>>,
-            getDuplicateFilters: () => Field<Map<string, Field<KnownMappedFields<DuplicateDataTypes>>>>)
+            getFilters: () => Filter[],
+            getEmptyFilters: () => Map<string, string>,
+            getDuplicateFilters: () => Map<string, DuplicateDataTypes>)
         {
-            const condition: Field<FilterCondition> = Field.create({
-                id: Field.create("Hi"),
-                property: Field.create(conditionProperty),
-                filterType: Field.create(FilterConditionType.EqualTo),
-                value: Field.create(filterValue)
-            });
+            const condition: FilterCondition =
+            {
+                id: "Hi",
+                property: conditionProperty,
+                filterType: FilterConditionType.EqualTo,
+                value: filterValue
+            };
 
             const emptyFilter = defaultFilter(type);
             await app.currentVault.filterStore.addFilter(masterKey, emptyFilter);

@@ -1,5 +1,3 @@
-import { Field, IFieldedObject } from "./Fields";
-
 export interface TableColorScheme
 {
     /** Primary Color */

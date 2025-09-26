@@ -137,7 +137,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
         return condensedDecryptedUserVaults;
     }
 
-    public async saveUserVault(masterKey: string, userVaultID: number, changes: string): Promise<TypedMethodResponse<boolean | undefined>>
+    public async saveUserVault(masterKey: string, userVaultID: number, changes: string, hintID?: string): Promise<TypedMethodResponse<boolean | undefined>>
     {
         return await safetifyMethod(this, internalSaveUserVault);
 
@@ -175,7 +175,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
             const transaction = new Transaction();
 
             ChangeTracking.creteAndInsert(masterKey, ClientChangeTrackingType.UserVault, changes, transaction,
-                environment.cache.currentUser.userID, userVaults[0].userVaultID, userVaults[0].vaultID);
+                environment.cache.currentUser.userID, userVaults[0].userVaultID, userVaults[0].vaultID, hintID);
 
             const saved = await transaction.commit();
             if (!saved)

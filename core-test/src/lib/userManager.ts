@@ -3,16 +3,22 @@ import app, { AppSettings } from "@renderer/Objects/Stores/AppStore";
 import { Algorithm } from "@vaultic/shared/Types/Keys";
 import { TestContext } from "./test";
 import StoreUpdateTransaction from "@renderer/Objects/StoreUpdateTransaction";
-import { AutoLockTime, DictionaryAsList } from "@vaultic/shared/Types/Stores";
+import { AutoLockTime, DictionaryAsList, PendingStoreState } from "@vaultic/shared/Types/Stores";
 import { ServerAllowSharingFrom, ServerPermissions } from "@vaultic/shared/Types/ClientServerTypes";
 import { publicServerDB } from "./serverDatabaseBridge";
 import { Member } from "@vaultic/shared/Types/DataTypes";
 import localDatabase from "./localDatabaseBridge";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { DataType, Filter, FilterCondition, Group, NameValuePair, Password, SecurityQuestion } from "@renderer/Types/DataTypes";
-import { UpdatePasswordResponse } from "@renderer/Objects/Stores/PasswordStore";
+import { IPasswordStoreState, PasswordStoreStateKeys, UpdatePasswordResponse } from "@renderer/Objects/Stores/PasswordStore";
 import { ReactivePassword } from "@renderer/Objects/Stores/ReactivePassword";
 import { ReactiveValue } from "@renderer/Objects/Stores/ReactiveValue";
+import { EditableDataType } from "./types/store";
+import { PrimarydataTypeStoreStateKeys, SecondarydataTypeStoreStateKeys } from "@renderer/Objects/Stores/Base";
+import { IValueStoreState } from "@renderer/Objects/Stores/ValueStore";
+import { FilterStoreStateKeys, IFilterStoreState } from "@renderer/Objects/Stores/FilterStore";
+import { IGroupStoreState } from "@renderer/Objects/Stores/GroupStore";
+import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
 export class User
 {
@@ -74,6 +80,23 @@ export class User
         }
     }
 
+    getEditablePassword(id: string): EditableDataType<ReactivePassword, IPasswordStoreState, PasswordStoreStateKeys>
+    {
+        const pendingPasswordStoreState = app.currentVault.passwordStore.getPendingState()!;
+        let password = app.currentVault.passwordStore.passwordsByID[id];
+
+        if (!password)
+        {
+            throw new Error(`Password with id ${id} not found`);
+        }
+
+        password = pendingPasswordStoreState.createCustomRef('dataTypesByID.dataType', password, password.id);
+        return {
+            dataType: password,
+            pendingStoreState: pendingPasswordStoreState
+        }
+    }
+
     async addPassword(testName: string,ctx: TestContext, password: Password, addedSecurityQuestions: SecurityQuestion[] = []): Promise<Password>
     {
         const pendingPasswordStoreState = app.currentVault.passwordStore.getPendingState()!;
@@ -90,7 +113,7 @@ export class User
     async updatePassword(
         testName: string, 
         ctx: TestContext, 
-        updatingPassword: Password,
+        updatingPassword: EditableDataType<Password, IPasswordStoreState, PasswordStoreStateKeys>,
         passwordWasUpdated: boolean,
         addedSecurityQuestions: SecurityQuestion[],
         updatedSecurityQuestionQuestions: SecurityQuestion[],
@@ -98,13 +121,12 @@ export class User
         deletedSecurityQuestions: string[],
         groups: DictionaryAsList): Promise<Password>
     {
-        const pendingPasswordStoreState = app.currentVault.passwordStore.getPendingState()!;
-        const updatePasswordSucceeded = await app.currentVault.passwordStore.updatePassword(this._vaulticKey, updatingPassword, passwordWasUpdated, 
-            addedSecurityQuestions, updatedSecurityQuestionQuestions, updatedSecurityQuestionAnswers, deletedSecurityQuestions, groups, pendingPasswordStoreState);
+        const updatePasswordSucceeded = await app.currentVault.passwordStore.updatePassword(this._vaulticKey, updatingPassword.dataType, passwordWasUpdated, 
+            addedSecurityQuestions, updatedSecurityQuestionQuestions, updatedSecurityQuestionAnswers, deletedSecurityQuestions, groups, updatingPassword.pendingStoreState);
 
         ctx.assertTruthy("Update Password succeeded for " + testName, updatePasswordSucceeded == UpdatePasswordResponse.Success);
 
-        let retrievedPassword = app.currentVault.passwordStore.passwordsByID[updatingPassword.id];
+        let retrievedPassword = app.currentVault.passwordStore.passwordsByID[updatingPassword.dataType.id];
         ctx.assertTruthy("Retrieved password succeeded for " + testName, retrievedPassword);
 
         return retrievedPassword;
@@ -121,6 +143,23 @@ export class User
         return deletePasswordSucceeded && !retrievedPassword;
     }
 
+    getEditableNameValuePair(id: string): EditableDataType<ReactiveValue, IValueStoreState, PrimarydataTypeStoreStateKeys>
+    {
+        const pendingValueStoreState = app.currentVault.valueStore.getPendingState()!;
+        let value = app.currentVault.valueStore.nameValuePairsByID[id];
+
+        if (!value)
+        {
+            throw new Error(`Value with id ${id} not found`);
+        }
+
+        value = pendingValueStoreState.createCustomRef('dataTypesByID.dataType', value, value.id);
+        return {
+            dataType: value,
+            pendingStoreState: pendingValueStoreState
+        }
+    }
+
     async addNameValuePair(testName: string, ctx: TestContext, value: NameValuePair): Promise<NameValuePair>
     {
         const pendingValueStoreState = app.currentVault.valueStore.getPendingState()!;
@@ -133,13 +172,18 @@ export class User
         return retrievedNameValuePair;
     }
 
-    async updateNameValuePair(testName: string, ctx: TestContext, updatedNameValuePair: NameValuePair, valueWasUpdated: boolean, updatedPrimaryObjects: DictionaryAsList): Promise<NameValuePair>
+    async updateNameValuePair(
+        testName: string, 
+        ctx: TestContext, 
+        updatedNameValuePair: EditableDataType<NameValuePair, IValueStoreState, PrimarydataTypeStoreStateKeys>,
+        valueWasUpdated: boolean, 
+        updatedGroups: DictionaryAsList): Promise<NameValuePair>
     {
-        const pendingValueStoreState = app.currentVault.valueStore.getPendingState()!;
-        const updateNameValuePairSucceeded = await app.currentVault.valueStore.updateNameValuePair(this._vaulticKey, updatedNameValuePair, valueWasUpdated, updatedPrimaryObjects, pendingValueStoreState);
+        const updateNameValuePairSucceeded = await app.currentVault.valueStore.updateNameValuePair(this._vaulticKey, updatedNameValuePair.dataType, 
+            valueWasUpdated, updatedGroups, updatedNameValuePair.pendingStoreState);
         ctx.assertTruthy("Update Name Value Pair succeeded for " + testName, updateNameValuePairSucceeded);
 
-        let retrievedNameValuePair = app.currentVault.valueStore.nameValuePairsByID[updatedNameValuePair.id];
+        let retrievedNameValuePair = app.currentVault.valueStore.nameValuePairsByID[updatedNameValuePair.dataType.id];
         ctx.assertTruthy("Retrieved Name Value Pair succeeded for " + testName, retrievedNameValuePair);
 
         return retrievedNameValuePair;
@@ -156,6 +200,32 @@ export class User
         return deleteNameValuePairSucceeded && !retrievedNameValuePair;
     }
 
+    getEditableFilter(id: string, dataType: DataType): EditableDataType<Filter, IFilterStoreState, FilterStoreStateKeys>
+    {
+        const pendingFilterStoreState = app.currentVault.filterStore.getPendingState()!;
+        let filter = dataType == DataType.Passwords ? app.currentVault.filterStore.passwordFiltersByID[id] :
+            app.currentVault.filterStore.nameValuePairFiltersByID[id];
+
+        if (!filter)
+        {
+            throw new Error(`Value with id ${id} not found`);
+        }
+
+        const filterPath = dataType == DataType.Passwords ? 'passwordDataTypesByID.dataType' : 'valueDataTypesByID.dataType';
+        const conditionPath = dataType == DataType.Passwords ? 'passwordDataTypes.conditions.condition' : 'valueDataTypes.conditions.condition';
+        filter = pendingFilterStoreState.createCustomRef(filterPath, filter, filter.id);
+
+        OH.forEachValue(filter.c, (c) =>
+        {
+            filter.c[c.id] = pendingFilterStoreState.createCustomRef(conditionPath, c, filter.id, c.id);
+        });
+
+        return {
+            dataType: filter,
+            pendingStoreState: pendingFilterStoreState
+        }
+    }
+
     async addFilter(testName: string, ctx: TestContext, filter: Filter): Promise<Filter>
     {
         const pendingFilterStoreState = app.currentVault.filterStore.getPendingState()!;
@@ -169,14 +239,19 @@ export class User
         return retrievedFilter;
     }
 
-    async updateFilter(testName: string, ctx: TestContext, updatedFilter: Filter, addedFilterConditions: FilterCondition[], removedConditions: string[]): Promise<Filter>
+    async updateFilter(
+        testName: string, 
+        ctx: TestContext, 
+        updatedFilter: EditableDataType<Filter, IFilterStoreState, FilterStoreStateKeys>, 
+        addedFilterConditions: FilterCondition[], 
+        removedConditions: string[]): Promise<Filter>
     {
-        const pendingFilterStoreState = app.currentVault.filterStore.getPendingState()!;
-        const updateFilterSucceeded = await app.currentVault.filterStore.updateFilter(this._vaulticKey, updatedFilter, addedFilterConditions, removedConditions, pendingFilterStoreState);
+        const updateFilterSucceeded = await app.currentVault.filterStore.updateFilter(this._vaulticKey, updatedFilter.dataType,
+             addedFilterConditions, removedConditions, updatedFilter.pendingStoreState);
         ctx.assertTruthy("Update Filter succeeded for " + testName, updateFilterSucceeded);
 
-        let retrievedFilter = updatedFilter.t == DataType.Passwords ? app.currentVault.filterStore.passwordFiltersByID[updatedFilter.id] :
-            app.currentVault.filterStore.nameValuePairFiltersByID[updatedFilter.id];
+        let retrievedFilter = updatedFilter.dataType.t == DataType.Passwords ? app.currentVault.filterStore.passwordFiltersByID[updatedFilter.dataType.id] :
+            app.currentVault.filterStore.nameValuePairFiltersByID[updatedFilter.dataType.id];
 
         ctx.assertTruthy("Retrieved filter succeeded for " + testName, retrievedFilter);
         return retrievedFilter;
@@ -194,6 +269,27 @@ export class User
         return deleteFilterSucceeded && !retrievedFilter;
     }
 
+    getEditableGroup(id: string, dataType: DataType): EditableDataType<Group, IGroupStoreState, SecondarydataTypeStoreStateKeys>
+    {
+        const pendingGroupStoreState = app.currentVault.groupStore.getPendingState()!;
+        let group = dataType == DataType.Passwords ? app.currentVault.groupStore.passwordGroupsByID[id] :
+            app.currentVault.groupStore.valueGroupsByID[id];
+
+        if (!group)
+        {
+            throw new Error(`Group with id ${id} not found`);
+        }
+
+        const key = dataType == DataType.Passwords ? 'passwordDataTypesByID.dataType' : 'valueDataTypesByID.dataType';
+        group = pendingGroupStoreState.createCustomRef(key, group, group.id);
+
+        return {
+            dataType: group,
+            pendingStoreState: pendingGroupStoreState
+        }
+    }
+
+
     async addGroup(testName: string, ctx: TestContext, group: Group): Promise<Group>
     {
         const pendingGroupStoreState = app.currentVault.groupStore.getPendingState()!;
@@ -207,14 +303,18 @@ export class User
         return retrievedGroup;
     }
 
-    async updateGroup(testName: string, ctx: TestContext, updatedGroup: Group, updatedPrimaryObjects: DictionaryAsList): Promise<Group>
+    async updateGroup(
+        testName: string,
+        ctx: TestContext,
+        updatedGroup: EditableDataType<Group, IGroupStoreState, SecondarydataTypeStoreStateKeys>, 
+        updatedPrimaryObjects: DictionaryAsList): Promise<Group>
     {
-        const pendingGroupStoreState = app.currentVault.groupStore.getPendingState()!;
-        const updateGroupSucceeded = await app.currentVault.groupStore.updateGroup(this._vaulticKey, updatedGroup, updatedPrimaryObjects, pendingGroupStoreState);
+        const updateGroupSucceeded = await app.currentVault.groupStore.updateGroup(this._vaulticKey, updatedGroup.dataType, 
+            updatedPrimaryObjects, updatedGroup.pendingStoreState);
         ctx.assertTruthy("Update Group succeeded for " + testName, updateGroupSucceeded);
 
-        let retrievedGroup = updatedGroup.t == DataType.Passwords ? app.currentVault.groupStore.passwordGroupsByID[updatedGroup.id] :
-            app.currentVault.groupStore.valueGroupsByID[updatedGroup.id];
+        let retrievedGroup = updatedGroup.dataType.t == DataType.Passwords ? app.currentVault.groupStore.passwordGroupsByID[updatedGroup.dataType.id] :
+            app.currentVault.groupStore.valueGroupsByID[updatedGroup.dataType.id];
 
         ctx.assertTruthy("Retrieved group succeeded for " + testName, retrievedGroup);
         return retrievedGroup;

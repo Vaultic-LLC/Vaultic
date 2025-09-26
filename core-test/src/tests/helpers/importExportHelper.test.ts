@@ -5,7 +5,6 @@ import { CSVHeaderPropertyMapperModel } from "@renderer/Types/Models";
 import { DataType, defaultGroup, defaultPassword, defaultValue, NameValuePair, NameValuePairType, Password } from "@renderer/Types/DataTypes";
 import cryptHelper from "@renderer/Helpers/cryptHelper";
 import app from "@renderer/Objects/Stores/AppStore";
-import { Field } from "@vaultic/shared/Types/Fields";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 import { DictionaryAsList } from "@vaultic/shared/Types/Stores";
 
@@ -156,7 +155,7 @@ importExportHelperTestSuite.tests.push({
         groupTwo.n = "Mary's Group";
         await app.currentVault.groupStore.addGroup(masterKey, groupTwo);
 
-        await createPassword("John", "facebook.com", "john@google.com", "JohnP", "Facebook", "", [], [], new Map([[groupOne.id.value, Field.create(groupOne.id.value)]]));
+        await createPassword("John", "facebook.com", "john@google.com", "JohnP", "Facebook", "", [], [], new Map([[groupOne.id.value, groupOne.id.value]]));
         await createPassword("Mary", "google.com", "maryL@outlook.com", "VJweiohgoinu2ith29hiodg", "Google", "For google",
             ["What is your first name", "Where were you born"], ["Maryelis", "Alaska"],
             new Map([[groupOne.id, groupOne.id], [groupTwo.id, groupTwo.id]]));
@@ -306,9 +305,9 @@ importExportHelperTestSuite.tests.push({
         groupTwo.name.value = "Banks";
         await app.currentVault.groupStore.addGroup(masterKey, groupTwo);
 
-        await createValue("Phone Code", "1234", NameValuePairType.Passcode, "", new Map([[groupOne.id.value, Field.create(groupOne.id.value)]]));
+        await createValue("Phone Code", "1234", NameValuePairType.Passcode, "", new Map([[groupOne.id.value, groupOne.id.value]]));
         await createValue("Bank Verbal Code", "sleepy time", NameValuePairType.Passcode, "For the bank",
-            new Map([[groupOne.id.value, Field.create(groupOne.id.value)], [groupTwo.id.value, Field.create(groupTwo.id.value)]]));
+            new Map([[groupOne.id.value, groupOne.id.value], [groupTwo.id.value, groupTwo.id.value]]));
 
         const formattedValues = await getExportableValues('', masterKey);
         const rows = formattedValues.split('\n');
@@ -373,7 +372,7 @@ importExportHelperTestSuite.tests.push({
         ctx.assertEquals("Exported all values", app.currentVault.valueStore.nameValuePairs.length, exportedCount);
         app.popups.hideLoadingIndicator();
 
-        async function createValue(name: string, value: string, valueType: NameValuePairType, additionalInfo: string, groups: Map<string, Field<string>>)
+        async function createValue(name: string, value: string, valueType: NameValuePairType, additionalInfo: string, groups: Map<string, string>)
         {
             let testValue = defaultValue();
             testValue.name.value = name;

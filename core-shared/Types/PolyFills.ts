@@ -1,5 +1,3 @@
-import { Field } from "./Fields";
-
 declare global 
 {
     interface Object

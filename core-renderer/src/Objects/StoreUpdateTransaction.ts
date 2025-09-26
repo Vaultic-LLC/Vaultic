@@ -27,10 +27,12 @@ export default class StoreUpdateTransaction
     private vaultStoreUpdateStates: Dictionary<StoreUpdateState>;
 
     private userVaultID: number | undefined;
+    private hintID: string | undefined;
 
-    constructor(userVaultID?: number)
+    constructor(userVaultID?: number, hintID?: string)
     {
         this.userVaultID = userVaultID;
+        this.hintID = hintID;
 
         this.userStoreUpdateStates = {};
         this.userVaultStoreUpdateStates = {};
@@ -108,13 +110,13 @@ export default class StoreUpdateTransaction
         switch (entity)
         {
             case Entity.User:
-                response = await api.repositories.users.saveUser(masterKey, JSON.stringify(changes));
+                response = await api.repositories.users.saveUser(masterKey, JSON.stringify(changes), this.hintID);
                 break;
             case Entity.UserVault:
-                response = await api.repositories.userVaults.saveUserVault(masterKey, this.userVaultID!, JSON.stringify(changes));
+                response = await api.repositories.userVaults.saveUserVault(masterKey, this.userVaultID!, JSON.stringify(changes), this.hintID);
                 break;
             case Entity.Vault:
-                response = await api.repositories.vaults.saveVaultData(masterKey, this.userVaultID!, JSON.stringify(changes));
+                response = await api.repositories.vaults.saveVaultData(masterKey, this.userVaultID!, JSON.stringify(changes), this.hintID);
                 break;
         }
 

@@ -3,7 +3,6 @@ import { createTestSuite, type TestContext } from '@lib/test';
 import createReactiveValue from "@renderer/Objects/Stores/ReactiveValue";
 import app from "@renderer/Objects/Stores/AppStore";
 import { NameValuePair, defaultValue, NameValuePairType, Group, defaultGroup, DataType, Filter, defaultFilter, FilterConditionType } from "@renderer/Types/DataTypes";
-import { Field } from '@vaultic/shared/Types/Fields';
 
 let valueStoreSuite = createTestSuite("Value Store");
 

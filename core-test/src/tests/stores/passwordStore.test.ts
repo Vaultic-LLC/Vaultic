@@ -3,7 +3,6 @@ import createReactivePassword from '@renderer/Objects/Stores/ReactivePassword';
 import { createTestSuite, type TestContext } from '@lib/test';
 import app from "@renderer/Objects/Stores/AppStore";
 import { Password, defaultPassword, Group, defaultGroup, DataType, Filter, defaultFilter, FilterConditionType, SecurityQuestion } from '@renderer/Types/DataTypes';
-import { Field } from '@vaultic/shared/Types/Fields';
 
 let passwordStoreSuite = createTestSuite("Password Store");
 

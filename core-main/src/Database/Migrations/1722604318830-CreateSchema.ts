@@ -366,6 +366,11 @@ export class CreateSchema1722604318830 implements MigrationInterface
                 {
                     name: "changeTime",
                     type: "integer"
+                },
+                {
+                    name: "hintID",
+                    type: "text",
+                    isNullable: true
                 }
             ]
         }));

@@ -30,6 +30,15 @@ export class ChangeTracking extends VaulticEntity
     @Column('integer')
     changeTime: number;
 
+    /**
+     * ID Used to identify what object caused this change. EX: it'll be the ID of the password that was deleted during a delete password change.
+     * This is used to prevent related data objects being changed even when the main object (password in this case) wasn't. EX: deleting a password
+     * locally, but then it's updated on another device after. Locally, all duplicates passwords, filters, groups, etc. will be updated as well even
+     * when we keep the password. 
+     */
+    @Column('text')
+    hintID: string;
+
     identifier(): number 
     {
         throw this.changeTrackingID;
@@ -52,7 +61,8 @@ export class ChangeTracking extends VaulticEntity
             nameof<ChangeTracking>("userVaultID"),
             nameof<ChangeTracking>("vaultID"),
             nameof<ChangeTracking>("clientTrackingType"),
-            nameof<ChangeTracking>('changeTime')
+            nameof<ChangeTracking>('changeTime'),
+            nameof<ChangeTracking>('hintID')
         ];
     }
 
@@ -70,7 +80,8 @@ export class ChangeTracking extends VaulticEntity
         ];
     }
 
-    public static creteAndInsert(key: string, clientTrackingType: ClientChangeTrackingType, changes: string, transaction: Transaction, userID: number, userVaultID?: number, vaultID?: number)
+    public static creteAndInsert(key: string, clientTrackingType: ClientChangeTrackingType, changes: string, 
+        transaction: Transaction, userID: number, userVaultID?: number, vaultID?: number, hintID?: string)
     {
         const changeTracking = new ChangeTracking().makeReactive();
         changeTracking.clientTrackingType = clientTrackingType;
@@ -79,6 +90,7 @@ export class ChangeTracking extends VaulticEntity
         changeTracking.userVaultID = userVaultID ?? -1;
         changeTracking.vaultID = vaultID ?? -1;
         changeTracking.changeTime = Date.now();
+        changeTracking.hintID = hintID ?? "";
 
         transaction.insertEntity(changeTracking, key, () => environment.repositories.changeTrackings);
     }

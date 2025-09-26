@@ -3,7 +3,6 @@ import { defaultInputColor, defaultInputTextColor } from "./Colors";
 import { Device } from "@vaultic/shared/Types/Device";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ImportableDisplayField } from "./Fields";
-import { Field, IIdentifiable } from "@vaultic/shared/Types/Fields";
 import { SortedCollection } from "../Objects/DataStructures/SortedCollections";
 
 export interface ComponentSizeModel 

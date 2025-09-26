@@ -5,9 +5,9 @@ import { api } from "../../API";
 import { DataType, IGroupable, AtRiskType, Group, RelatedDataTypeChanges } from "../../Types/DataTypes";
 import { IIdentifiable, PrimaryDataObjectCollection } from "@vaultic/shared/Types/Fields";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
-import { PasswordStoreState, PasswordStoreStateKeys } from "./PasswordStore";
-import { ValueStoreState } from "./ValueStore";
-import { FilterStoreState, FilterStoreStateKeys } from "./FilterStore";
+import { IPasswordStoreState, PasswordStoreStateKeys } from "./PasswordStore";
+import { IValueStoreState } from "./ValueStore";
+import { IFilterStoreState, FilterStoreStateKeys } from "./FilterStore";
 import { defaultGroupStoreState, DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
@@ -108,9 +108,9 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
     async addGroupToStores(
         group: Group,
         pendingGroupStoreState: PendingStoreState<GroupStoreState, SecondarydataTypeStoreStateKeys>,
-        pendingFilterStoreState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>,
-        pendingPasswordStoreState?: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>,
-        pendingValueStoreState?: PendingStoreState<ValueStoreState, PrimarydataTypeStoreStateKeys>): Promise<boolean>
+        pendingFilterStoreState: PendingStoreState<IFilterStoreState, FilterStoreStateKeys>,
+        pendingPasswordStoreState?: PendingStoreState<IPasswordStoreState, PasswordStoreStateKeys>,
+        pendingValueStoreState?: PendingStoreState<IValueStoreState, PrimarydataTypeStoreStateKeys>): Promise<boolean>
     {
         if (group.t == DataType.Passwords)
         {
@@ -226,7 +226,7 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
 
     async deleteGroup(masterKey: string, group: Group): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
+        const transaction = new StoreUpdateTransaction(this.vault.userVaultID, group.id);
         const pendingState = this.getPendingState()!;
 
         if (!OH.has(pendingState.state.p, group.id) && !OH.has(pendingState.state.v, group.id))

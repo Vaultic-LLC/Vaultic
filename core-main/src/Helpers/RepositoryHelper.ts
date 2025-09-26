@@ -218,7 +218,7 @@ export async function checkMergeMissingData(
         user = await environment.repositories.users.findByEmail(masterKey, email);
     }
 
-    let userChangeTrackings = [];
+    let userChangeTrackings: ChangeTracking[] = [];
     if (user)
     {
         userChangeTrackings = await environment.repositories.changeTrackings.getChangeTrackingsForUser(masterKey, user.userID);

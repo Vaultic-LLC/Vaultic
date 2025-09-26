@@ -1,5 +1,3 @@
-import { Field } from "@vaultic/shared/Types/Fields";
-
 // tests whether an object `tester` is the same type as another `actual`.
 // Actual must be a concrete type, i.e. any nested objects must have all properties that it can have. Otherwise this will give 
 // false negatives when comparing those nested objects

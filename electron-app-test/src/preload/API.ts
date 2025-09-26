@@ -143,7 +143,7 @@ const userRepository: ClientUserRepository =
     setCurrentUser: (masterKey: string, email: string) => ipcRenderer.invoke("userRepository:setCurrentUser", masterKey, email),
     getCurrentUserData: (masterKey: string) => ipcRenderer.invoke('userRepository:getCurrentUserData', masterKey),
     verifyUserMasterKey: (masterKey: string, email?: string, isVaulticKey?: boolean) => ipcRenderer.invoke('userRepository:verifyUserMasterKey', masterKey, email, isVaulticKey),
-    saveUser: (masterKey: string, changes: string) => ipcRenderer.invoke('userRepository:saveUser', masterKey, changes),
+    saveUser: (masterKey: string, changes: string, hintID?: string) => ipcRenderer.invoke('userRepository:saveUser', masterKey, changes, hintID),
     getStoreStates: (masterKey: string, storeStatesToRetrieve: UserData) => ipcRenderer.invoke('userRepository:getStoreStates', masterKey, storeStatesToRetrieve),
     getValidMasterKey: () => ipcRenderer.invoke('userRepository:getValidMasterKey'),
     updateUserEmail: (email: string) => ipcRenderer.invoke('userRepository:updateUserEmail', email),
@@ -154,7 +154,7 @@ const vaultRepository: ClientVaultRepository =
 {
     updateVault: (masterKey: string, updateVaultData: string) => ipcRenderer.invoke('vaultRepository:updateVault', masterKey, updateVaultData),
     setActiveVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultRepository:setActiveVault', masterKey, userVaultID),
-    saveVaultData: (masterKey: string, userVaultID: number, changes: string) => ipcRenderer.invoke('vaultRepository:saveVaultData', masterKey, userVaultID, changes),
+    saveVaultData: (masterKey: string, userVaultID: number, changes: string, hintID?: string) => ipcRenderer.invoke('vaultRepository:saveVaultData', masterKey, userVaultID, changes, hintID),
     createNewVaultForUser: (masterKey: string, updateVaultData: string) => ipcRenderer.invoke('vaultRepository:createNewVaultForUser', masterKey, updateVaultData),
     getStoreStates: (masterKey: string, userVaultID: number, storeStatesToRetrieve: CondensedVaultData) => ipcRenderer.invoke('vaultRepository:getStoreStates', masterKey, userVaultID, storeStatesToRetrieve),
     deleteVault: (masterKey: string, userVaultID: number) => ipcRenderer.invoke('vaultRepository:deleteVault', masterKey, userVaultID),
@@ -163,7 +163,7 @@ const vaultRepository: ClientVaultRepository =
 
 const userVaultRepository: ClientUserVaultRepository =
 {
-    saveUserVault: (masterKey: string, userVaultID: number, changes: string) => ipcRenderer.invoke('userVaultRepository:saveUserVault', masterKey, userVaultID, changes),
+    saveUserVault: (masterKey: string, userVaultID: number, changes: string, hintID?: string) => ipcRenderer.invoke('userVaultRepository:saveUserVault', masterKey, userVaultID, changes, hintID),
     getStoreStates: (masterKey: string, userVaultID: number, storeStatesToRetrieve: CondensedVaultData) => ipcRenderer.invoke('userVaultRepository:getStoreStates', masterKey, userVaultID, storeStatesToRetrieve)
 };
 

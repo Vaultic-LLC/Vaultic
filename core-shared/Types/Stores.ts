@@ -1,6 +1,5 @@
 import { getObjectFromPath, PropertyManagerConstructor } from "../Utilities/PropertyManagers";
 import { defaultColorPalettes, emptyUserColorPalettes } from "./Color";
-import { Field, FieldMap, IFieldedObject, NonArrayType, Primitive } from "./Fields";
 import { computed, Reactive, reactive, ref } from "vue";
 
 export enum AutoLockTime
@@ -45,10 +44,6 @@ export enum StoreType
     VaultDataBreach = "9",
     Organization = "10"
 }
-
-// Enforced to ensure the logic to track changes always works
-// Note: Every nested Object should be wrapped in KnownMappdFields<>
-type StoreStateProperty = Field<NonArrayType<Primitive>> | FieldMap | Field<NonArrayType<IFieldedObject>>;
 
 export interface StoreState
 {

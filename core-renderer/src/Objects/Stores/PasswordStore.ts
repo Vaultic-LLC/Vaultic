@@ -7,9 +7,8 @@ import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import app from "./AppStore";
 import { VaultStoreParameter } from "./VaultStore";
 import { AtRiskType, IPrimaryDataObject, Password, RelatedDataTypeChanges, SecurityQuestion } from "../../Types/DataTypes";
-import { KnownMappedFields } from "@vaultic/shared/Types/Fields";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
-import { FilterStoreState, FilterStoreStateKeys } from "./FilterStore";
+import { IFilterStoreState, FilterStoreStateKeys } from "./FilterStore";
 import { GroupStoreState } from "./GroupStore";
 import { CurrentAndSafeStructure, defaultPasswordStoreState, DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
@@ -64,16 +63,15 @@ const PasswordStorePathRetriever: StorePathRetriever<PasswordStoreStateKeys> =
 };
 
 export type PasswordStoreEvents = StoreEvents | "onCheckPasswordBreach" | "onCheckPasswordsForBreach";
-export type PasswordStoreState = KnownMappedFields<IPasswordStoreState>;
 
-export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, PasswordStoreStateKeys, PasswordStoreEvents>
+export class PasswordStore extends PrimaryDataTypeStore<IPasswordStoreState, PasswordStoreStateKeys, PasswordStoreEvents>
 {
     constructor(vault: VaultStoreParameter)
     {
         super(vault, StoreType.Password, PasswordStorePathRetriever);
     }
 
-    protected getPrimaryDataTypesByID(state: KnownMappedFields<IPasswordStoreState>): { [key: string]: IPrimaryDataObject }
+    protected getPrimaryDataTypesByID(state: IPasswordStoreState): { [key: string]: IPrimaryDataObject }
     {
         return state.p;
     }
@@ -87,7 +85,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         masterKey: string,
         password: Password,
         addedSecurityQuestions: SecurityQuestion[],
-        pendingPasswordStoreState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>): Promise<boolean>
+        pendingPasswordStoreState: PendingStoreState<IPasswordStoreState, PasswordStoreStateKeys>): Promise<boolean>
     {
         const filterStoreState = app.currentVault.filterStore.getPendingState()!;
         const groupStoreState = app.currentVault.groupStore.getPendingState()!;
@@ -103,8 +101,8 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
     async commitPasswordEdits(
         masterKey: string,
         addedPasswords: Password[],
-        pendingPasswordStoreState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>,
-        pendingFilterStoreState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>,
+        pendingPasswordStoreState: PendingStoreState<IPasswordStoreState, PasswordStoreStateKeys>,
+        pendingFilterStoreState: PendingStoreState<IFilterStoreState, FilterStoreStateKeys>,
         pendingGroupStoreState: PendingStoreState<GroupStoreState, SecondarydataTypeStoreStateKeys>): Promise<boolean>
     {
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
@@ -134,16 +132,17 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         masterKey: string,
         password: Password,
         addedSecurityQuestions: SecurityQuestion[],
-        pendingPasswordState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>,
-        pendingFilterStoreState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>,
+        pendingPasswordState: PendingStoreState<IPasswordStoreState, PasswordStoreStateKeys>,
+        pendingFilterStoreState: PendingStoreState<IFilterStoreState, FilterStoreStateKeys>,
         pendingGroupStoreState: PendingStoreState<GroupStoreState, SecondarydataTypeStoreStateKeys>): Promise<boolean>
     {
         password.id = uniqueIDGenerator.generate();
 
-        await this.updateValuesByHash(pendingPasswordState, "p", password, undefined);
-
-        // doing this before adding saves us from having to remove the current password from the list of potential duplicates
-        await this.checkUpdateDuplicatePrimaryObjects(masterKey, password, "p", pendingPasswordState);
+        const result = await this.updateSecretValueDependencies(masterKey, "p", pendingPasswordState, password, undefined);
+        if (!result)
+        {
+            return false;
+        }
 
         if (!(await this.setPasswordProperties(masterKey, password)))
         {
@@ -176,7 +175,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         updatedSecurityQuestionAnswers: SecurityQuestion[],
         deletedSecurityQuestions: string[],
         addingGroups: DictionaryAsList,
-        pendingPasswordState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>): Promise<UpdatePasswordResponse>
+        pendingPasswordState: PendingStoreState<IPasswordStoreState, PasswordStoreStateKeys>): Promise<UpdatePasswordResponse>
     {
         const currentPassword: ReactivePassword | undefined = pendingPasswordState.getObject('dataTypesByID.dataType', updatingPassword.id);
         if (!currentPassword)
@@ -197,15 +196,19 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
                 {
                     updatingPassword.p = currentPassword.p;
                 }
-
-                await this.updateValuesByHash(pendingPasswordState, "p", updatingPassword, currentPassword);
-
-                // do this before re encrypting the password
-                await this.checkUpdateDuplicatePrimaryObjects(masterKey, updatingPassword, "p", pendingPasswordState);
-
-                if (!(await this.setPasswordProperties(masterKey, updatingPassword)))
+                else
                 {
-                    return UpdatePasswordResponse.Failed;
+
+                    const result = await this.updateSecretValueDependencies(masterKey, "p", pendingPasswordState, updatingPassword, currentPassword);
+                    if (!result)
+                    {
+                        return UpdatePasswordResponse.Failed;
+                    }
+    
+                    if (!(await this.setPasswordProperties(masterKey, updatingPassword)))
+                    {
+                        return UpdatePasswordResponse.Failed;
+                    }
                 }
             }
             else if (!updatingPassword.v)
@@ -324,9 +327,12 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
             return false;
         }
 
-        await this.updateValuesByHash(pendingPasswordState, "p", undefined, currentPassword);
+        const result = await this.updateSecretValueDependencies(masterKey, "p", pendingPasswordState, undefined, currentPassword);
+        if (!result)
+        {
+            return false;
+        }
 
-        this.checkRemoveFromDuplicate(password, pendingPasswordState);
         pendingPasswordState.deleteValue('dataTypesByID', currentPassword.id);
         this.updatePasswordsByDomain(pendingPasswordState, currentPassword.id, undefined, currentPassword.d);
 
@@ -338,7 +344,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         const pendingFilterState = this.vault.filterStore.getPendingState()!;
         this.vault.filterStore.removePasswordFromFilters(password.id, pendingFilterState);
 
-        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
+        const transaction = new StoreUpdateTransaction(this.vault.userVaultID, currentPassword.id);
         transaction.updateVaultStore(this, pendingPasswordState);
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
         transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
@@ -353,7 +359,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
     }
 
     private updatePasswordsByDomain(
-        pendingPasswordState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>,
+        pendingPasswordState: PendingStoreState<IPasswordStoreState, PasswordStoreStateKeys>,
         id: string,
         newDomain?: string,
         oldDomain?: string)
@@ -437,7 +443,7 @@ export class PasswordStore extends PrimaryDataTypeStore<PasswordStoreState, Pass
         updatedSecurityQuestionQuestions: SecurityQuestion[],
         updatedSecurityQuestionAnswers: SecurityQuestion[],
         deletedSecurityQuestions: string[],
-        pendingPasswordState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>)
+        pendingPasswordState: PendingStoreState<IPasswordStoreState, PasswordStoreStateKeys>)
     {
         for (let i = 0; i < addedSecurityQuestions.length; i++)
         {
@@ -521,7 +527,7 @@ export class ReactivePasswordStore extends PasswordStore
             this.passwords.filter(p => app.vaultDataBreaches.vaultDataBreaches.filter(b => b.PasswordID == p.id).length > 0).map(p => p.id));
     }
 
-    protected preAssignState(state: PasswordStoreState): void 
+    protected preAssignState(state: IPasswordStoreState): void 
     {
         for (const [key, value] of Object.entries(state.p))
         {

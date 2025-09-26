@@ -4,14 +4,14 @@ import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { VaultStoreParameter } from "./VaultStore";
 import { api } from "../../API";
 import { Group, Filter, DataType, IGroupable, FilterConditionType, IFilterable, AtRiskType, FilterCondition } from "../../Types/DataTypes";
-import { IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection } from "@vaultic/shared/Types/Fields";
+import { IIdentifiable, PrimaryDataObjectCollection } from "@vaultic/shared/Types/Fields";
 import { ReactivePassword } from "./ReactivePassword";
 import { ReactiveValue } from "./ReactiveValue";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 import { defaultFilterStoreState, DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
-import { PasswordStoreState, PasswordStoreStateKeys } from "./PasswordStore";
-import { ValueStoreState } from "./ValueStore";
+import { IPasswordStoreState, PasswordStoreStateKeys } from "./PasswordStore";
+import { IValueStoreState } from "./ValueStore";
 import app from "./AppStore";
 
 export interface IFilterStoreState extends StoreState
@@ -59,9 +59,8 @@ const FilterStorePathRetriever: StorePathRetriever<FilterStoreStateKeys> =
 };
 
 export type FilterStoreEvents = StoreEvents | "onPasswordFilterUpdated" | "onValueFilterUpdated";
-export type FilterStoreState = KnownMappedFields<IFilterStoreState>;
 
-export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, FilterStoreStateKeys, FilterStoreEvents>
+export class FilterStore extends SecondaryDataTypeStore<IFilterStoreState, FilterStoreStateKeys, FilterStoreEvents>
 {
     constructor(vault: any)
     {
@@ -76,7 +75,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
     async addFilter(
         masterKey: string,
         filter: Filter,
-        pendingFilterState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>): Promise<boolean>
+        pendingFilterState: PendingStoreState<IFilterStoreState, FilterStoreStateKeys>): Promise<boolean>
     {
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         filter.id = uniqueIDGenerator.generate();
@@ -114,7 +113,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
         updatedFilter: Filter,
         addedConditions: FilterCondition[],
         removedConditions: string[],
-        pendingFilterState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>): Promise<boolean>
+        pendingFilterState: PendingStoreState<IFilterStoreState, FilterStoreStateKeys>): Promise<boolean>
     {
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
 
@@ -170,8 +169,11 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
 
     async deleteFilter(masterKey: string, filter: Filter): Promise<boolean>
     {
-        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
+        const transaction = new StoreUpdateTransaction(this.vault.userVaultID, filter.id);
         const pendingState = this.getPendingState()!;
+
+        // This needs to be added first so that the hint is checked against it first
+        transaction.updateVaultStore(this, pendingState);
 
         if (filter.t == DataType.Passwords)
         {
@@ -193,7 +195,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
         }
         else if (filter.t == DataType.NameValuePairs)
         {
-            const currentFilter: Filter | undefined = pendingState.state.p[filter.id];
+            const currentFilter: Filter | undefined = pendingState.state.v[filter.id];
             if (!currentFilter)
             {
                 await api.repositories.logs.log(undefined, `No Filter`, "FilterStore.Delete")
@@ -210,7 +212,6 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
             transaction.updateVaultStore(this.vault.valueStore, pendingValueState);
         }
 
-        transaction.updateVaultStore(this, pendingState);
         return await transaction.commit(masterKey);
     }
 
@@ -220,7 +221,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
         conditionPath: keyof FilterStoreStateKeys,
         addedConditions: FilterCondition[],
         deletedConditions: string[],
-        pendingFilterStoreState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>)
+        pendingFilterStoreState: PendingStoreState<IFilterStoreState, FilterStoreStateKeys>)
     {
         // commit all tracking for upated filter conditions. There were
         // made into proxies in the FilterView so we should just be able to commit them
@@ -251,7 +252,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
     private syncSpecificFiltersForPasswords(
         filtersToSync: { [key: string]: Filter },
         allGroups: { [key: string]: Group },
-        pendingFilterState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>)
+        pendingFilterState: PendingStoreState<IFilterStoreState, FilterStoreStateKeys>)
     {
         const pendingPasswordState = this.vault.passwordStore.getPendingState()!;
 
@@ -266,7 +267,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
     private syncSpecificFiltersForValues(
         filtersToSync: { [key: string]: Filter },
         allGroups: { [key: string]: Group },
-        pendingFilterState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>)
+        pendingFilterState: PendingStoreState<IFilterStoreState, FilterStoreStateKeys>)
     {
         const pendingValueState = this.vault.valueStore.getPendingState()!;
 
@@ -280,9 +281,9 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
     // called externally when adding / updating passwords 
     syncFiltersForPasswords(
         passwordsToSync: ReactivePassword[],
-        pendingPasswordState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>,
+        pendingPasswordState: PendingStoreState<IPasswordStoreState, PasswordStoreStateKeys>,
         allGroups: { [key: string]: Group },
-        pendingFilterState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>)
+        pendingFilterState: PendingStoreState<IFilterStoreState, FilterStoreStateKeys>)
     {
         this.syncFiltersForPrimaryDataObject(pendingFilterState.state.p, passwordsToSync, "p", "passwordDataTypesByID.dataType.passwords", "dataTypesByID.dataType.filters",
             pendingPasswordState, pendingFilterState.state.w, pendingFilterState.state.o, pendingFilterState.state.p, allGroups, "emptyPasswordDataTypes", "duplicatePasswordDataTypes",
@@ -292,22 +293,22 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
     // called externally when adding / updating values 
     syncFiltersForValues(
         valuesToSync: ReactiveValue[],
-        pendingValueState: PendingStoreState<ValueStoreState, PrimarydataTypeStoreStateKeys>,
+        pendingValueState: PendingStoreState<IValueStoreState, PrimarydataTypeStoreStateKeys>,
         allGroups: { [key: string]: Group },
-        pendingFilterState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>)
+        pendingFilterState: PendingStoreState<IFilterStoreState, FilterStoreStateKeys>)
     {
         this.syncFiltersForPrimaryDataObject(pendingFilterState.state.v, valuesToSync, "v", "valueDataTypesByID.dataType.values", "dataTypesByID.dataType.filters",
             pendingValueState, pendingFilterState.state.l, pendingFilterState.state.u, pendingFilterState.state.v, allGroups, "emptyValueDataTypes", "duplicateValueDataTypes",
             "duplicateValueDataTypes.dataTypes", pendingFilterState);
     }
 
-    removePasswordFromFilters(passwordID: string, pendingFilterStore: PendingStoreState<FilterStoreState, FilterStoreStateKeys>)
+    removePasswordFromFilters(passwordID: string, pendingFilterStore: PendingStoreState<IFilterStoreState, FilterStoreStateKeys>)
     {
         this.removePrimaryObjectFromValues(passwordID, "p", "passwordDataTypesByID.dataType.passwords", pendingFilterStore.state.p,
             pendingFilterStore.state.w, pendingFilterStore.state.o, "duplicatePasswordDataTypes", "duplicatePasswordDataTypes.dataTypes", pendingFilterStore);
     }
 
-    removeValuesFromFilters(valueID: string, pendingFilterStore: PendingStoreState<FilterStoreState, FilterStoreStateKeys>)
+    removeValuesFromFilters(valueID: string, pendingFilterStore: PendingStoreState<IFilterStoreState, FilterStoreStateKeys>)
     {
         this.removePrimaryObjectFromValues(valueID, "v", "valueDataTypesByID.dataType.values", pendingFilterStore.state.v,
             pendingFilterStore.state.l, pendingFilterStore.state.u, "duplicateValueDataTypes", "duplicateValueDataTypes.dataTypes", pendingFilterStore);
@@ -330,7 +331,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
         allDuplicateFilters: DoubleKeyedObject,
         duplicateDataTypesPath: keyof FilterStoreStateKeys,
         duplicateDataTypesDataTypesPath: keyof FilterStoreStateKeys,
-        pendingFilterStore: PendingStoreState<FilterStoreState, FilterStoreStateKeys>)
+        pendingFilterStore: PendingStoreState<IFilterStoreState, FilterStoreStateKeys>)
     {
         OH.forEachValue(allFilters, (v) =>
         {
@@ -435,7 +436,7 @@ export class FilterStore extends SecondaryDataTypeStore<FilterStoreState, Filter
         emptySecondaryDataObjectPath: keyof FilterStoreStateKeys,
         duplicateDataTypesPath: keyof FilterStoreStateKeys,
         duplicateDataTypesDataTypePath: keyof FilterStoreStateKeys,
-        pendingFilterStoreState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>)
+        pendingFilterStoreState: PendingStoreState<IFilterStoreState, FilterStoreStateKeys>)
     {
         OH.forEachValue(filtersToSync, f =>
         {

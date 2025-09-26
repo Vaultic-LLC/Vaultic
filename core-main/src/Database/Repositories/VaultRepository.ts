@@ -355,7 +355,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
         }
     }
 
-    public async saveVaultData(masterKey: string, userVaultID: number, changes: string): Promise<TypedMethodResponse<boolean | undefined>>
+    public async saveVaultData(masterKey: string, userVaultID: number, changes: string, hintID?: string): Promise<TypedMethodResponse<boolean | undefined>>
     {
         return await safetifyMethod(this, internalSaveVaultData);
 
@@ -376,7 +376,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             const transaction = new Transaction();
 
             ChangeTracking.creteAndInsert(vaultKey, ClientChangeTrackingType.Vault, changes, transaction, environment.cache.currentUser.userID,
-                userVaults[0][0].userVaultID, userVaults[0][0].vaultID);
+                userVaults[0][0].userVaultID, userVaults[0][0].vaultID, hintID);
 
             const saved = await transaction.commit();
             if (!saved)
@@ -921,11 +921,9 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 }
 
                 return TypedMethodResponse.success(masterKeyVaulticKey);
-
             }
             catch (e)
             {
-                console.log(`Error syncing vaults: ${e}`);
                 await environment.repositories.logs.log(undefined, JSON.stringify(e));
             }
 

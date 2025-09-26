@@ -10,6 +10,8 @@ import { Algorithm } from "@vaultic/shared/Types/Keys";
 import { CurrentAndSafeStructure, DictionaryAsList, DoubleKeyedObject, PendingStoreState, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
+import { UpdatePasswordResponse } from "./PasswordStore";
+import { join } from "path";
 
 export type StoreEvents = "onChanged";
 
@@ -301,154 +303,233 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, K ext
         return {} as any;
     }
 
-    protected async checkUpdateDuplicatePrimaryObjects<D extends IIdentifiable & SecretPropertyType<U>, U extends SecretProperty>(
+    /**
+     * Updates the dependencies for the secret property, the value by hash and duplicates values
+     * @param masterKey 
+     * @param secretProperty 
+     * @param pendingStoreState 
+     * @param updatingPrimaryObject The new value, will be undefined when deleting
+     * @param currentPrimaryObject The current value, will be undefined when adding
+     * @returns true if success, otherwise false
+     */
+    protected async updateSecretValueDependencies<W extends SecretProperty, X extends IIdentifiable & SecretPropertyType<W>>(
         masterKey: string,
-        primaryDataObject: D,
-        secretProperty: U,
-        pendingStoreState: PendingStoreState<T, K>): Promise<void>
+        secretProperty: W,
+        pendingStoreState: PendingStoreState<T, K>,
+        updatingPrimaryObject?: X,
+        currentPrimaryObject?: X): Promise<boolean>
     {
-        const allDuplicates: DoubleKeyedObject = pendingStoreState.getObject('duplicateDataTypes');
-
-        const hashID = await this.getIdentifyingHash(primaryDataObject[secretProperty]);
-        if (!hashID)
+        if (!updatingPrimaryObject && !currentPrimaryObject)
         {
-            await api.repositories.logs.log(undefined, "Failed to hash", Error().stack);
-            return;
+            return false;
         }
 
+        // get a new object so that we don't actually modify the current passwords password
+        let tempCurrentPrimaryObject: X | undefined = undefined;
+        if (currentPrimaryObject)
+        {
+            // need to get our current primary data object in order to re calc the hash for it
+            const decryptedCurrentPassword = await cryptHelper.decrypt(masterKey, currentPrimaryObject[secretProperty]);
+            if (!decryptedCurrentPassword.success || !decryptedCurrentPassword.value)
+            {
+                return false;
+            }
+
+            tempCurrentPrimaryObject = { id: currentPrimaryObject.id, [secretProperty]: decryptedCurrentPassword.value! } as unknown as X;
+        }
+
+        // nothing actually changed
+        if (updatingPrimaryObject && tempCurrentPrimaryObject && updatingPrimaryObject[secretProperty] === tempCurrentPrimaryObject[secretProperty])
+        {
+            return true;
+        }
+
+        await this.updateValuesByHash(pendingStoreState, secretProperty, updatingPrimaryObject, tempCurrentPrimaryObject);
+
+        // deleting, don't need to check for duplicates
+        if (!updatingPrimaryObject)
+        {
+            this.checkRemoveFromDuplicate(currentPrimaryObject!, pendingStoreState);
+        }
+        else
+        {
+            return await this.checkUpdateDuplicatePrimaryObjects(masterKey, secretProperty, pendingStoreState, updatingPrimaryObject, tempCurrentPrimaryObject);
+        }
+
+        return true;
+    }
+
+    private async checkUpdateDuplicatePrimaryObjects<D extends IIdentifiable & SecretPropertyType<U>, U extends SecretProperty>(
+        masterKey: string,
+        secretProperty: U,
+        pendingStoreState: PendingStoreState<T, K>,
+        newPrimaryDataObject?: D,
+        currentPrimaryDataObject?: D): Promise<boolean>
+    {
+        if (newPrimaryDataObject && currentPrimaryDataObject && newPrimaryDataObject.id != currentPrimaryDataObject.id)
+        {
+            return false;
+        }
+
+        const id = newPrimaryDataObject?.id ?? currentPrimaryDataObject?.id;
+        if (!id)
+        {
+            return false;
+        }
+
+        const allDuplicates: DoubleKeyedObject = pendingStoreState.getObject('duplicateDataTypes');
         const allPrimaryObjects: { [key: string]: D } = pendingStoreState.getObject('dataTypesByID');
         const valuesByHash: DoubleKeyedObject = pendingStoreState.getObject('dataTypesByHash');
 
-        const valuesForHash = valuesByHash[hashID];
-        const removedDuplicates: string[] = [];
-
-        if (valuesForHash)
+        if (newPrimaryDataObject)
         {
-            for (const [key, _] of Object.entries(valuesForHash))
+            const hashID = await this.getIdentifyingHash(newPrimaryDataObject[secretProperty]);
+            if (!hashID)
             {
-                let tempPrimaryObject: D | undefined = allPrimaryObjects[key];
-                if (!tempPrimaryObject)
-                {
-                    continue;
-                }
+                await api.repositories.logs.log(undefined, "Failed to hash", Error().stack);
+                return false;
+            }
 
-                const currentId: string = key;
-
-                // don't count our own as a duplicate
-                if (currentId == primaryDataObject.id)
+            const valuesForHash = valuesByHash[hashID];
+            if (valuesForHash)
+            {
+                for (const [key, _] of Object.entries(valuesForHash))
                 {
-                    continue;
-                }
-
-                const response = await cryptHelper.decrypt(masterKey, tempPrimaryObject[secretProperty]);
-                if (!response.success)
-                {
-                    continue;
-                }
-
-                // have duplicate values
-                if (response.value == primaryDataObject[secretProperty])
-                {
-                    // updating the list for the current primaryObject to include the duplicate primaryObjects id
-                    if (!OH.has(allDuplicates, primaryDataObject.id))
+                    let tempPrimaryObject: D | undefined = allPrimaryObjects[key];
+                    if (!tempPrimaryObject)
                     {
-                        const newDuplicate: DictionaryAsList = {};
-                        newDuplicate[currentId] = true;
-
-                        pendingStoreState.addValue('duplicateDataTypes', primaryDataObject.id, newDuplicate);
+                        continue;
                     }
-                    else if (!OH.has(allDuplicates[primaryDataObject.id], currentId))
+    
+                    const currentId: string = key;
+    
+                    // don't count our own as a duplicate
+                    if (currentId == id)
                     {
-                        pendingStoreState.addValue('duplicateDataTypes.dataTypes', currentId, true, primaryDataObject.id);
+                        continue;
                     }
-
-                    // updating the duplciate primaryObjects list to include the current primaryObjects id
-                    if (!OH.has(allDuplicates, currentId))
+    
+                    const response = await cryptHelper.decrypt(masterKey, tempPrimaryObject[secretProperty]);
+                    if (!response.success)
                     {
-                        const newDuplicate: DictionaryAsList = {};
-                        newDuplicate[primaryDataObject.id] = true;
-
-                        pendingStoreState.addValue('duplicateDataTypes', currentId, newDuplicate);
+                        continue;
                     }
-                    else if (!OH.has(allDuplicates[currentId], primaryDataObject.id))
+    
+                    // have duplicate values
+                    if (response.value == newPrimaryDataObject[secretProperty])
                     {
-                        pendingStoreState.addValue('duplicateDataTypes.dataTypes', primaryDataObject.id, true, currentId);
-                    }
-                }
-                else
-                {
-                    // We don't want to remove from our primaryDataObject collection yet since we could be removing all
-                    // of them in which case we want to just delete the object
-                    removedDuplicates.push(currentId);
-
-                    if (OH.has(allDuplicates, currentId) && OH.has(allDuplicates[currentId], primaryDataObject.id))
-                    {
-                        // remove temp primary objects list since it no longer has any duplicates
-                        if (OH.size(allDuplicates[currentId]) == 1)
+                        // updating the list for the current primaryObject to include the duplicate primaryObjects id
+                        if (!OH.has(allDuplicates, id))
                         {
-                            pendingStoreState.deleteValue("duplicateDataTypes.dataTypes", primaryDataObject.id, currentId);
+                            const newDuplicate: DictionaryAsList = {};
+                            newDuplicate[currentId] = true;
+    
+                            pendingStoreState.addValue('duplicateDataTypes', id, newDuplicate);
                         }
-                        else
+                        else if (!OH.has(allDuplicates[id], currentId))
                         {
-                            // remove current primary object from temp primary objects list since it is no loner a duplicate
-                            pendingStoreState.deleteValue("duplicateDataTypes", currentId);
+                            pendingStoreState.addValue('duplicateDataTypes.dataTypes', currentId, true, id);
+                        }
+    
+                        // updating the duplciate primaryObjects list to include the current primaryObjects id
+                        if (!OH.has(allDuplicates, currentId))
+                        {
+                            const newDuplicate: DictionaryAsList = {};
+                            newDuplicate[id] = true;
+    
+                            pendingStoreState.addValue('duplicateDataTypes', currentId, newDuplicate);
+                        }
+                        else if (!OH.has(allDuplicates[currentId], id))
+                        {
+                            pendingStoreState.addValue('duplicateDataTypes.dataTypes', id, true, currentId);
                         }
                     }
                 }
             }
         }
+        
+        const removedDuplicates: string[] = [];
+        if (currentPrimaryDataObject)
+        {
+            const hashID = await this.getIdentifyingHash(currentPrimaryDataObject[secretProperty]);
+            if (!hashID)
+            {
+                await api.repositories.logs.log(undefined, "Failed to hash", Error().stack);
+                return false;
+            }
+
+            const valuesForHash = valuesByHash[hashID];
+            if (valuesForHash)
+            {
+                for (const [key, _] of Object.entries(valuesForHash))
+                {
+                    let tempPrimaryObject: D | undefined = allPrimaryObjects[key];
+                    if (!tempPrimaryObject)
+                    {
+                        continue;
+                    }
+    
+                    const currentId: string = key;
+    
+                    // don't count our own as a duplicate
+                    if (currentId == id)
+                    {
+                        continue;
+                    }
+    
+                    const response = await cryptHelper.decrypt(masterKey, tempPrimaryObject[secretProperty]);
+                    if (!response.success)
+                    {
+                        continue;
+                    }
+    
+                    // Value is equal to our old value, remove it from its duplicates since our new value is now different
+                    if (response.value === currentPrimaryDataObject[secretProperty])
+                    {
+                        // We don't want to remove from our primaryDataObject collection yet since we could be removing all
+                        // of them in which case we want to just delete the object
+                        removedDuplicates.push(currentId);
+    
+                        if (OH.has(allDuplicates, currentId) && OH.has(allDuplicates[currentId], id))
+                        {
+                            // remove temp primary objects list since it no longer has any duplicates
+                            if (OH.size(allDuplicates[currentId]) == 1)
+                            {
+                                pendingStoreState.deleteValue("duplicateDataTypes", currentId);
+                            }
+                            else
+                            {
+                                // remove current primary object from temp primary objects list since it is no loner a duplicate
+                                pendingStoreState.deleteValue("duplicateDataTypes.dataTypes", id, currentId);
+                            }
+                        }
+                    }
+                } 
+            }
+        }
 
         // we are deleting all of our duplicates
-        if (OH.size(allDuplicates[primaryDataObject.id]) == removedDuplicates.length)
+        if (OH.size(allDuplicates[id]) == removedDuplicates.length)
         {
             // remove current primary objects list since it no longer has any entries
-            pendingStoreState.deleteValue("duplicateDataTypes", primaryDataObject.id);
+            pendingStoreState.deleteValue("duplicateDataTypes", id);
         }
         else
         {
             for (let i = 0; i < removedDuplicates.length; i++)
             {
-                pendingStoreState.deleteValue("duplicateDataTypes.dataTypes", removedDuplicates[i], primaryDataObject.id);
+                pendingStoreState.deleteValue("duplicateDataTypes.dataTypes", removedDuplicates[i], id);
             }
         }
+
+        return true;
     }
 
-    protected checkRemoveFromDuplicate<D extends IIdentifiable>(
-        primaryDataObject: D,
-        pendingStoreState: PendingStoreState<T, K>)
-    {
-        const allDuplicates: DoubleKeyedObject = pendingStoreState.getObject('duplicateDataTypes');
-        if (!OH.has(allDuplicates, primaryDataObject.id))
-        {
-            return;
-        }
-
-        OH.forEachKey(allDuplicates[primaryDataObject.id], (k) =>
-        {
-            if (!OH.has(allDuplicates, k))
-            {
-                return;
-            }
-
-            if (OH.size(allDuplicates[k]) == 1)
-            {
-                // This password is the only duplicate for this other password, delete the entire object
-                pendingStoreState.deleteValue('duplicateDataTypes', k);
-            }
-            else
-            {
-                pendingStoreState.deleteValue('duplicateDataTypes.dataTypes', primaryDataObject.id, k);
-            }
-        });
-
-        pendingStoreState.deleteValue('duplicateDataTypes', primaryDataObject.id);
-    }
-
-    protected async updateValuesByHash<W extends IIdentifiable & SecretPropertyType<X>, X extends SecretProperty>(
+    private async updateValuesByHash<W extends IIdentifiable & SecretPropertyType<X>, X extends SecretProperty, Y extends IIdentifiable & SecretPropertyType<X>>(
         pendingStoreState: PendingStoreState<T, K>,
         secretProperty: X,
         newValue?: W,
-        currentValue?: W)
+        currentValue?: Y)
     {
         const dataTypesByHash: DoubleKeyedObject = pendingStoreState.getObject("dataTypesByHash");
 
@@ -501,6 +582,37 @@ export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, K ext
                 }
             }
         }
+    }
+
+    private checkRemoveFromDuplicate<D extends IIdentifiable>(
+        primaryDataObject: D,
+        pendingStoreState: PendingStoreState<T, K>)
+    {
+        const allDuplicates: DoubleKeyedObject = pendingStoreState.getObject('duplicateDataTypes');
+        if (!OH.has(allDuplicates, primaryDataObject.id))
+        {
+            return;
+        }
+
+        OH.forEachKey(allDuplicates[primaryDataObject.id], (k) =>
+        {
+            if (!OH.has(allDuplicates, k))
+            {
+                return;
+            }
+
+            if (OH.size(allDuplicates[k]) == 1)
+            {
+                // This password is the only duplicate for this other password, delete the entire object
+                pendingStoreState.deleteValue('duplicateDataTypes', k);
+            }
+            else
+            {
+                pendingStoreState.deleteValue('duplicateDataTypes.dataTypes', primaryDataObject.id, k);
+            }
+        });
+
+        pendingStoreState.deleteValue('duplicateDataTypes', primaryDataObject.id);
     }
 
     protected async incrementCurrentAndSafe<D>(

@@ -587,7 +587,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
         }
     }
 
-    public async saveUser(masterKey: string, changes: string): Promise<TypedMethodResponse<boolean | undefined>>
+    public async saveUser(masterKey: string, changes: string, hintID?: string): Promise<TypedMethodResponse<boolean | undefined>>
     {
         return await safetifyMethod(this, internalSaveUser);
 
@@ -601,7 +601,8 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 }
 
                 const transaction = new Transaction();
-                ChangeTracking.creteAndInsert(environment.cache.masterKey, ClientChangeTrackingType.User, changes, transaction, environment.cache.currentUser.userID);
+                ChangeTracking.creteAndInsert(environment.cache.masterKey, ClientChangeTrackingType.User, changes, transaction, 
+                    environment.cache.currentUser.userID, undefined, undefined, hintID);
 
                 const saved = await transaction.commit();
                 if (!saved)

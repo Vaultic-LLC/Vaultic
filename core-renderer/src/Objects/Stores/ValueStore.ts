@@ -5,11 +5,9 @@ import cryptHelper from "../../Helpers/cryptHelper";
 import { api } from "../../API"
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { VaultStoreParameter } from "./VaultStore";
-import app from "./AppStore";
 import { NameValuePair, NameValuePairType, AtRiskType, RelatedDataTypeChanges, IPrimaryDataObject } from "../../Types/DataTypes";
-import { KnownMappedFields } from "@vaultic/shared/Types/Fields";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
-import { FilterStoreState, FilterStoreStateKeys } from "./FilterStore";
+import { IFilterStoreState, FilterStoreStateKeys } from "./FilterStore";
 import { GroupStoreState } from "./GroupStore";
 import { CurrentAndSafeStructure, defaultValueStoreState, DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
@@ -42,16 +40,14 @@ const ValueStorePathRetriever: StorePathRetriever<PrimarydataTypeStoreStateKeys>
     'dataTypesByHash.dataTypes': (...ids: string[]) => `h.${ids[0]}`
 };
 
-export type ValueStoreState = KnownMappedFields<IValueStoreState>;
-
-export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, PrimarydataTypeStoreStateKeys>
+export class ValueStore extends PrimaryDataTypeStore<IValueStoreState, PrimarydataTypeStoreStateKeys>
 {
     constructor(vault: VaultStoreParameter)
     {
         super(vault, StoreType.Value, ValueStorePathRetriever);
     }
 
-    protected getPrimaryDataTypesByID(state: KnownMappedFields<IValueStoreState>): { [key: string]: IPrimaryDataObject }
+    protected getPrimaryDataTypesByID(state: IValueStoreState): { [key: string]: IPrimaryDataObject }
     {
         return state.v;
     }
@@ -64,7 +60,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
     async addNameValuePair(
         masterKey: string,
         value: NameValuePair,
-        pendingValueStoreState: PendingStoreState<ValueStoreState, PrimarydataTypeStoreStateKeys>): Promise<boolean>
+        pendingValueStoreState: PendingStoreState<IValueStoreState, PrimarydataTypeStoreStateKeys>): Promise<boolean>
     {
 
         const pendingFilterStoreState = this.vault.filterStore.getPendingState()!;
@@ -86,16 +82,17 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
     async addNameValuePairToStores(
         masterKey: string,
         value: NameValuePair,
-        pendingValueStoreState: PendingStoreState<ValueStoreState, PrimarydataTypeStoreStateKeys>,
-        pendingFilterStoreState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>,
+        pendingValueStoreState: PendingStoreState<IValueStoreState, PrimarydataTypeStoreStateKeys>,
+        pendingFilterStoreState: PendingStoreState<IFilterStoreState, FilterStoreStateKeys>,
         pendingGroupStoreState: PendingStoreState<GroupStoreState, SecondarydataTypeStoreStateKeys>): Promise<boolean>
     {
         value.id = uniqueIDGenerator.generate();
 
-        await this.updateValuesByHash(pendingValueStoreState, "v", value);
-
-        // doing this before adding saves us from having to remove the current value from the list of potential duplicates
-        await this.checkUpdateDuplicatePrimaryObjects(masterKey, value, "v", pendingValueStoreState);
+        const result = await this.updateSecretValueDependencies(masterKey, "v", pendingValueStoreState, value);
+        if (!result)
+        {
+            return false;
+        }
 
         if (!(await this.setValueProperties(masterKey, value)))
         {
@@ -119,7 +116,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
         updatedValue: NameValuePair,
         valueWasUpdated: boolean,
         groups: DictionaryAsList,
-        pendingValueStoreState: PendingStoreState<ValueStoreState, PrimarydataTypeStoreStateKeys>): Promise<boolean>
+        pendingValueStoreState: PendingStoreState<IValueStoreState, PrimarydataTypeStoreStateKeys>): Promise<boolean>
     {
         let currentValue: ReactiveValue | undefined = pendingValueStoreState.getObject('dataTypesByID.dataType', updatedValue.id);
         if (!currentValue)
@@ -133,8 +130,11 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
 
         if (valueWasUpdated)
         {
-            await this.updateValuesByHash(pendingValueStoreState, "v", updatedValue, currentValue);
-            await this.checkUpdateDuplicatePrimaryObjects(masterKey, updatedValue, "v", pendingValueStoreState);
+            const result = await this.updateSecretValueDependencies(masterKey, "v", pendingValueStoreState, updatedValue, currentValue);
+            if (!result)
+            {
+                return false;
+            }
 
             if (!(await this.setValueProperties(masterKey, updatedValue)))
             {
@@ -176,16 +176,19 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
     {
         const pendingState = this.getPendingState()!;
 
-        const currentValue: ReactiveValue | undefined = pendingState?.getObject('dataTypesByID', value.id);
+        const currentValue: ReactiveValue | undefined = pendingState?.getObject('dataTypesByID.dataType', value.id);
         if (!currentValue)
         {
             await api.repositories.logs.log(undefined, `No Value`, "ValueStore.Delete")
             return false;
         }
 
-        await this.updateValuesByHash(pendingState, "v", undefined, currentValue);
+        const result = await this.updateSecretValueDependencies(masterKey, "v", pendingState, undefined, currentValue);
+        if (!result)
+        {
+            return false;
+        }
 
-        this.checkRemoveFromDuplicate(value, pendingState);
         pendingState.deleteValue('dataTypesByID', currentValue.id);
 
         await this.incrementCurrentAndSafe(pendingState, this.valueIsSafe);
@@ -196,7 +199,7 @@ export class ValueStore extends PrimaryDataTypeStore<ValueStoreState, Primarydat
         const pendingFilterState = this.vault.filterStore.getPendingState()!;
         this.vault.filterStore.removeValuesFromFilters(value.id, pendingFilterState);
 
-        const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
+        const transaction = new StoreUpdateTransaction(this.vault.userVaultID, currentValue.id);
         transaction.updateVaultStore(this, pendingState);
         transaction.updateVaultStore(this.vault.groupStore, pendingGroupState);
         transaction.updateVaultStore(this.vault.filterStore, pendingFilterState);
@@ -296,7 +299,7 @@ export class ReactiveValueStore extends ValueStore
         this.internalCurrentAndSaveValuesSafe = computed(() => this.state.c.s);
     }
 
-    protected preAssignState(state: ValueStoreState): void 
+    protected preAssignState(state: IValueStoreState): void 
     {
         for (const [key, value] of Object.entries(state.v))
         {

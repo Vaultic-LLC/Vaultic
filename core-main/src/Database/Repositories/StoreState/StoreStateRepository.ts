@@ -96,7 +96,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                 for (let j = 0; j < storeTypes.length; j++)
                 {
                     await this.checkLoadStoreState(key, loadedStoreStates, storeTypes[j], states);
-                    parsedChanges[storeTypes[j]] = this.mergeChanges(storeTypes[j], loadedStoreStates[storeTypes[j]].state, parsedChanges[storeTypes[j]],
+                    this.mergeChanges(storeTypes[j], loadedStoreStates[storeTypes[j]].state, parsedChanges[storeTypes[j]],
                         serverChanges.allChanges[i].changeTime, false, seenServerChanges);
                 }
             }
@@ -146,15 +146,46 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             {
                 needsToRePushStoreStates = true;
 
+                let didMatchHintID = false;
+
                 const uncompressed = await environment.utilities.data.decryptAndUncompress(key, localChangesToMerge[i].changes);
                 const parsedChanges: { [key in StoreType]: string } = JSON.parse(uncompressed);
                 const storeTypes = Object.keys(parsedChanges) as StoreType[];
 
+                const tempStates: { [key in StoreType]: { state: any, parsedChanges: string } } = {} as
+                 { [key in StoreType]: { state: any, parsedChanges: string } };
+
                 for (let j = 0; j < storeTypes.length; j++)
                 {
                     await this.checkLoadStoreState(key, loadedStoreStates, storeTypes[j], states);
-                    parsedChanges[storeTypes[j]] = this.mergeChanges(storeTypes[j], loadedStoreStates[storeTypes[j]].state, parsedChanges[storeTypes[j]],
-                        localChangesToMerge[i].changeTime, true, seenServerChanges);
+                    const tempState = JSON.parse(JSON.stringify(loadedStoreStates[storeTypes[j]].state));
+                    const [matchedHintID, newParsedChanges] = this.mergeChanges(storeTypes[j], tempState, parsedChanges[storeTypes[j]],
+                        localChangesToMerge[i].changeTime, true, seenServerChanges, localChangesToMerge[i].hintID);
+
+                    if (matchedHintID)
+                    {
+                        didMatchHintID = true;
+                        break;
+                    }
+
+                    // we don't want to commit these yet until we are sure we aren't going to skip the push due to a hintID
+                    tempStates[storeTypes[j]] = 
+                    {
+                        state: tempState,
+                        parsedChanges: newParsedChanges
+                    };
+                }
+
+                if (didMatchHintID)
+                {
+                    continue;
+                }
+
+                // now we can commit the changes
+                for (let j = 0; j < storeTypes.length; j++)
+                {
+                    loadedStoreStates[storeTypes[j]].state = tempStates[storeTypes[j]].state;
+                    parsedChanges[storeTypes[j]] = tempStates[storeTypes[j]].parsedChanges;
                 }
 
                 clientChangesToPushAfter.lastLoadedChangeVersion += 1;
@@ -243,12 +274,24 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
         pathChanges: string,
         changeTime: number,
         forClient: boolean,
-        seenServerChanges: Map<StoreType, Map<string, number>>): string
+        seenServerChanges: Map<StoreType, Map<string, number>>,
+        hintID?: string): [boolean, string]
     {
         const parsedChanges: { [key: string]: PathChange[] } = JSON.parse(pathChanges);
         const paths = Object.keys(parsedChanges);
 
-        console.log(`Type: ${type}, For Client: ${forClient}, Paths: ${JSON.stringify(paths)}`);
+        if (forClient && hintID)
+        {
+            const serverChangeTime = seenServerChanges.get(type)?.get(hintID);
+            if (serverChangeTime && serverChangeTime > changeTime)
+            {
+                // The value was updated on the server after we updted it locally, making the server value the newest.
+                // We don't want to apply this change because it contains changes to related objects when we already
+                // ignored the change to its main object.
+                return [true, ""];
+            }
+        }
+
         for (let i = 0; i < paths.length; i++)
         {
             const pathChange = parsedChanges[paths[i]];
@@ -295,7 +338,6 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                         {
                             // The value was updated on the server after we updted it locally, making the server value the newest.
                             // We don't want to apply this change, nor do we want any other devices to apply it
-                            console.log(`DEL 1 Type: ${type}, For Client: ${forClient}, Deleting path: ${paths[i]}`);
                             delete parsedChanges[paths[i]];
                             continue;
                         }
@@ -304,32 +346,29 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                     const obj = getObjectFromPath(paths[i], current);
                     if (!obj)
                     {
-                        if (forClient)
-                        {
-                            // The object was delete on another device, don't include changes to it
-                            console.log(`DEL 2 Type: ${type}, For Client: ${forClient}, Deleting path: ${paths[i]}`);
-                            delete parsedChanges[paths[i]];
-                        }
+                        // The object was delete on another device, don't include changes to it
+                        delete parsedChanges[paths[i]];
+
+                        continue;
                     }
 
                     const manager = PropertyManagerConstructor.getFor(obj);
                     switch (pathChange[j].t)
                     {
                         case StoreStateChangeType.Add:
-                            console.log(`ADD Type: ${type}, For Client: ${forClient}, Adding path: ${paths[i]}`);
                             manager.set(pathChange[j].p, pathChange[j].v, obj);
+                            updateSeen(false);
                             break;
                         case StoreStateChangeType.Update:
                             manager.set(pathChange[j].p, pathChange[j].v, obj);
-                            updateSeen();
+                            updateSeen(true);
                             break;
                         case StoreStateChangeType.Delete:
                             manager.delete(pathChange[j].p, obj);
-                            console.log(`DEL 3 Type: ${type}, For Client: ${forClient}, Deleting path: ${paths[i]}`);
                             break;
                     }
 
-                    function updateSeen()
+                    function updateSeen(isUpdate: boolean)
                     {
                         if (!forClient)
                         {
@@ -340,6 +379,22 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                                 // but they still need to be checked for when checking to ignore local changes above.
                                 seenChange.set(paths[i], changeTime);
                                 seenChange.set(path, changeTime);
+
+                                if  (isUpdate)
+                                {
+                                    // mostly likely an ID. Set it so that we can prevent related data objects from being deleted
+                                    if (pathChange[j].p.length > 1)
+                                    {
+                                        seenChange.set(pathChange[j].p, changeTime);
+                                    }
+
+                                    // mostly likely an ID. Set it so that we can prevent related data objects from being deleted
+                                    const potentialID = paths[i].split(".").pop();
+                                    if (potentialID && potentialID.length > 1)
+                                    {
+                                        seenChange.set(potentialID, changeTime);
+                                    }
+                                }
 
                                 seenServerChanges.set(type, seenChange);
                             }
@@ -365,6 +420,36 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                                     // we want the newest change to signify when the property was updated
                                     seenChange.set(path, changeTime);
                                 }
+
+                                if (isUpdate)
+                                {
+                                    if (pathChange[j].p.length > 1)
+                                    {
+                                        if (!seenChange.has(pathChange[j].p))
+                                        {
+                                            seenChange.set(pathChange[j].p, changeTime);
+                                        }
+                                        else if (seenChange.get(pathChange[j].p) < changeTime)
+                                        {
+                                            // we want the newest change to signify when the property was updated
+                                            seenChange.set(pathChange[j].p, changeTime);
+                                        }                                  
+                                    }
+
+                                    const potentialID = paths[i].split(".").pop();
+                                    if (potentialID && potentialID.length > 1)
+                                    {
+                                        if (!seenChange.has(potentialID))
+                                        {
+                                            seenChange.set(potentialID, changeTime);
+                                        }
+                                        else if (seenChange.get(potentialID) < changeTime)
+                                        {
+                                            // we want the newest change to signify when the property was updated
+                                            seenChange.set(potentialID, changeTime);
+                                        }                                       
+                                    }
+                                }                     
                             }
                         }
                     }
@@ -372,7 +457,7 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
             }
         }
 
-        return JSON.stringify(parsedChanges);
+        return [false, JSON.stringify(parsedChanges)];
     }
 
     private static checkUpdatAlreadyAppliedChanges(

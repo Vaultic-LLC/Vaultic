@@ -1,8 +1,7 @@
 import { createTestSuite, type TestContext } from '@lib/test';
 import app from "@renderer/Objects/Stores/AppStore";
-import { Dictionary } from '@vaultic/shared/Types/DataStructures';
 import { DataType, defaultGroup, IGroupable, defaultPassword, defaultValue, Group } from "@renderer/Types/DataTypes";
-import { Field, IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection } from '@vaultic/shared/Types/Fields';
+import { IIdentifiable, PrimaryDataObjectCollection } from '@vaultic/shared/Types/Fields';
 
 let groupStoreSuite = createTestSuite("Group Store");
 
