@@ -9,9 +9,9 @@ import { IPrimaryDataObject, DataType, defaultGroup, Password, SecurityQuestion,
 import { ImportableDisplayField } from "../Types/Fields";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 import { GroupStoreState } from "../Objects/Stores/GroupStore";
-import { FilterStoreState, FilterStoreStateKeys } from "../Objects/Stores/FilterStore";
-import { PasswordStoreState, PasswordStoreStateKeys } from "../Objects/Stores/PasswordStore";
-import { ValueStoreState } from "../Objects/Stores/ValueStore";
+import { IFilterStoreState, FilterStoreStateKeys } from "../Objects/Stores/FilterStore";
+import { IPasswordStoreState, PasswordStoreStateKeys } from "../Objects/Stores/PasswordStore";
+import { IValueStoreState } from "../Objects/Stores/ValueStore";
 import StoreUpdateTransaction from "../Objects/StoreUpdateTransaction";
 import { PendingStoreState } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
@@ -246,7 +246,7 @@ class CSVImporter<T extends IPrimaryDataObject>
     dataType: DataType;
 
     pendingGroupStoreState: PendingStoreState<GroupStoreState, SecondarydataTypeStoreStateKeys>;
-    pendingFilterStoreState: PendingStoreState<FilterStoreState, FilterStoreStateKeys>;
+    pendingFilterStoreState: PendingStoreState<IFilterStoreState, FilterStoreStateKeys>;
 
     didFailToSave: boolean;
 
@@ -350,7 +350,7 @@ class CSVImporter<T extends IPrimaryDataObject>
 
                                     if (groupId)
                                     {
-                                        value.groups.set(groupId, groupId);
+                                        value.g[groupId] = true;
                                     }
                                 }
                             }
@@ -394,7 +394,7 @@ class CSVImporter<T extends IPrimaryDataObject>
 
 export class PasswordCSVImporter extends CSVImporter<Password>
 {
-    pendingPasswordStoreState: PendingStoreState<PasswordStoreState, PasswordStoreStateKeys>;
+    pendingPasswordStoreState: PendingStoreState<IPasswordStoreState, PasswordStoreStateKeys>;
     temporarySecurityQuestions: Map<string, SecurityQuestion>;
     addedPasswords: Password[];
 
@@ -515,7 +515,7 @@ export class PasswordCSVImporter extends CSVImporter<Password>
 
 export class ValueCSVImporter extends CSVImporter<NameValuePair>
 {
-    pendingValueStoreState: PendingStoreState<ValueStoreState, PrimarydataTypeStoreStateKeys>;
+    pendingValueStoreState: PendingStoreState<IValueStoreState, PrimarydataTypeStoreStateKeys>;
 
     constructor()
     {

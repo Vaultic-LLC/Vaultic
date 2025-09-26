@@ -1,4 +1,4 @@
-import { AllowSharingFrom } from '@vaultic/shared/Types/ClientServerTypes';
+import { AllowSharingFrom, ServerPermissions } from '@vaultic/shared/Types/ClientServerTypes';
 import { RequireMFAOn } from '@vaultic/shared/Types/Device';
 
 export type SchemaObject = Partial<
@@ -29,6 +29,14 @@ export type User = SchemaObject & Partial<
     // public License License { get; set; }
     // public Session Session { get; set; }
     // public StripeData StripeData { get; set; }
+}>
+
+export type UserOrganization = SchemaObject & Partial<
+{
+    UserOrganizationID: number;
+    UserID: number;
+    OrganizationID: number;
+    Permissions: ServerPermissions;
 }>
 
 export type UserData = SchemaObject & Partial<
@@ -68,6 +76,14 @@ export type VaultPreferencesStoreState = StoreScheamObject & Partial<
 {
     VaultPreferencesStoreStateID: number;
     UserVaultID: number;
+}>
+
+export type Organization = SchemaObject & Partial<
+{
+    OrganizationID: number;
+    Name: string;
+    Type: number;
+    UserIDOwner: number;
 }>
 
 export type OrganizationVault = SchemaObject & Partial<

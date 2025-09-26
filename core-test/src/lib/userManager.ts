@@ -36,7 +36,7 @@ export class User
     get masterKey(): string { return this._masterKey; }
     get publicEncryptingKey(): string | undefined { return this._publicEncryptingKey; }
 
-    constructor(id: number, email: string, masterKey: string, vaulticKey: string)
+    constructor(id: number, email: string, masterKey: string)
     {
         this._id = id;
         this._email = email;
@@ -360,7 +360,7 @@ class UserManager
             return undefined;
         }
 
-        const newUser = new User(registerResponse.value!, emailToUse, masterKeyToUse, vaulticKey);
+        const newUser = new User(registerResponse.value!, emailToUse, masterKeyToUse);
         if (!this._defaultUserID)
         {
             this._defaultUserID = newUser.id;

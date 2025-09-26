@@ -41,6 +41,15 @@ export default async function runAllTests()
     runner.printResults();
 }
 
+export async function runAllAppStoreTests()
+{
+    await runner.runSuite(serverHelperTestSuite);
+    await runner.runSuite(appStoreTestSuite);
+
+    runner.printResults();
+}
+
+
 export async function runAllPasswordTests()
 {
     await runner.runSuite(serverHelperTestSuite);

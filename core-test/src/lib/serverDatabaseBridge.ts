@@ -89,7 +89,7 @@ class PublicServerDatabaseBridge extends ServerDatabaseBridge
     async getAllVaultDataByID(userVaultID: number): Promise<(UserVault & VaultPreferencesStoreState & Vault &
         VaultStoreState & PasswordStoreState & ValueStoreState & FilterStoreState & GroupStoreState) | undefined>
     {
-        const result = await this.query<User & UserData>(`
+        const result = await this.query(`
             SELECT * 
             FROM "UserVaults" AS uv
             INNER JOIN "VaultPreferencesStoreStates" vp ON "uv"."UserVaultID" = "vp"."UserVaultID"

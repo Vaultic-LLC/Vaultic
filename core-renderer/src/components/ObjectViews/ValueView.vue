@@ -57,7 +57,7 @@ import { defaultValue, NameValuePair, NameValuePairType } from '../../Types/Data
 import {RandomValueType } from '@vaultic/shared/Types/Fields';
 import { DictionaryAsList, PendingStoreState } from '@vaultic/shared/Types/Stores';
 import { PrimarydataTypeStoreStateKeys } from '../../Objects/Stores/Base';
-import { ValueStoreState } from '../../Objects/Stores/ValueStore';
+import { IValueStoreState } from '../../Objects/Stores/ValueStore';
 import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
 
 export default defineComponent({
@@ -76,7 +76,7 @@ export default defineComponent({
     props: ['creating', 'model'],
     setup(props)
     {
-        let pendingState: PendingStoreState<ValueStoreState, PrimarydataTypeStoreStateKeys> = app.currentVault.valueStore.getPendingState()!;
+        let pendingState: PendingStoreState<IValueStoreState, PrimarydataTypeStoreStateKeys> = app.currentVault.valueStore.getPendingState()!;
         
         const valueInputField: Ref<EncryptedInputFieldComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref("");

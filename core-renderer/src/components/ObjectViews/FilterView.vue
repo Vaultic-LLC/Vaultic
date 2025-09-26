@@ -36,7 +36,7 @@ import { FilterablePasswordProperties, FilterableValueProperties, PropertySelect
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { uniqueIDGenerator } from '@vaultic/shared/Utilities/UniqueIDGenerator';
 import { PendingStoreState } from '@vaultic/shared/Types/Stores';
-import { FilterStoreState, FilterStoreStateKeys } from '../../Objects/Stores/FilterStore';
+import { IFilterStoreState, FilterStoreStateKeys } from '../../Objects/Stores/FilterStore';
 import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
 
 export default defineComponent({
@@ -51,7 +51,7 @@ export default defineComponent({
     props: ['creating', 'model', 'currentPrimaryDataType'],
     setup(props)
     {
-        let filterStoreState: PendingStoreState<FilterStoreState, FilterStoreStateKeys> = app.currentVault.filterStore.getPendingState()!;
+        let filterStoreState: PendingStoreState<IFilterStoreState, FilterStoreStateKeys> = app.currentVault.filterStore.getPendingState()!;
         
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const refreshKey: Ref<string> = ref("");

@@ -3,7 +3,7 @@ import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { Store } from "./Base";
 import { FilterStore, ReactiveFilterStore } from "./FilterStore";
 import { GroupStore, ReactiveGroupStore } from "./GroupStore";
-import { PasswordStore, PasswordStoreState, ReactivePasswordStore } from "./PasswordStore";
+import { PasswordStore, IPasswordStoreState, ReactivePasswordStore } from "./PasswordStore";
 import { ValueStore, ReactiveValueStore } from "./ValueStore";
 import { VaultPreferencesStore } from "./VaultPreferencesStore";
 import { CondensedVaultData, DisplayVault } from "@vaultic/shared/Types/Entities";
@@ -97,7 +97,7 @@ export class BaseVaultStore<V extends PasswordStore,
         this.internalPermissions.value = data.permissions;
         this.internalShared = data.shared;
         this.internalIsArchived.value = data.isArchived;
-        this.internalPasswordsByDomain = (JSON.parse(data.passwordStoreState) as PasswordStoreState).passwordsByDomain ?? new Map();
+        this.internalPasswordsByDomain = (JSON.parse(data.passwordStoreState) as IPasswordStoreState).passwordsByDomain ?? new Map();
 
         await this.initalizeNewStateFromJSON(data.vaultStoreState);
         await this.internalVaultPreferencesStore.initalizeNewStateFromJSON(data.vaultPreferencesStoreState);

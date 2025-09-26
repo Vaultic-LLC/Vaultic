@@ -10,7 +10,7 @@ import { setupCalendar } from 'v-calendar-tw';
 import PrimeVue from 'primevue-vaultic/config';
 import Aura from '@primevue/themes/aura';
 import ConfirmationService from 'primevue-vaultic/confirmationservice';
-import runAllTests, { runAllDeleteAccountTests, runAllMergingDataTests, runAllPasswordTests, runCryptUtilityTests, runAllValueTests, runAllGroupTests, runAllFilterTests, runAllTransactionTests, runServerHelperTests, runImportExportHelperTests } from "../tests/tests/index"
+import runAllTests, { runAllAppStoreTests, runAllDeleteAccountTests, runAllMergingDataTests, runAllPasswordTests, runCryptUtilityTests, runAllValueTests, runAllGroupTests, runAllFilterTests, runAllTransactionTests, runServerHelperTests, runImportExportHelperTests } from "../tests/tests/index"
 
 api.setAPI(window.api);
 
@@ -128,6 +128,6 @@ function initApp()
     // gives time to set breakpoints if needed
     setTimeout(() =>
     {
-        runAllMergingDataTests();
+        runAllAppStoreTests();
     }, 10000);
 }

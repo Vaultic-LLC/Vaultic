@@ -60,6 +60,8 @@ export interface IVault extends IVaulticEntity
     vaultID: number;
     userVaults: IUserVault[];
     name: string;
+    shared: boolean;
+    isArchived: boolean;
     lastUsed: boolean;
     lastLoadedChangeVersion: number;
     vaultStoreState: IVaultStoreState;

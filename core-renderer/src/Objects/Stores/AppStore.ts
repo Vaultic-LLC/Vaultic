@@ -20,7 +20,7 @@ import { DeviceStore } from "./DeviceStore";
 import { OrganizationStore } from "./OrganizationStore";
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { UpdateVaultData } from "@vaultic/shared/Types/Repositories";
-import { PasswordStoreState } from "./PasswordStore";
+import { IPasswordStoreState } from "./PasswordStore";
 import { LicenseStatus } from "@vaultic/shared/Types/ClientServerTypes";
 import { AutoLockTime, defaultAppStoreState, FilterStatus, PendingStoreState, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { ColorPalette, defaultColorPalettes } from "@vaultic/shared/Types/Color";
@@ -378,7 +378,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
             isReadOnly: vaultData.isReadOnly,
             lastUsed: setAsActive,
             type: getVaultType(vaultData),
-            passwordsByDomain: (JSON.parse(vaultData.passwordStoreState) as PasswordStoreState).o
+            passwordsByDomain: (JSON.parse(vaultData.passwordStoreState) as IPasswordStoreState).o
         });
 
         this.internalUserVaults.value = temp;
