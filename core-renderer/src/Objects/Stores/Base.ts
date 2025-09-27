@@ -5,17 +5,15 @@ import { api } from "../../API";
 import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { AtRiskType, DataType, Filter, Group, IPrimaryDataObject, ISecondaryDataObject, MAX_CURRENT_AND_SAFE_SIZE, RelatedDataTypeChanges } from "../../Types/DataTypes";
 import { SecretProperty, SecretPropertyType } from "../../Types/Fields";
-import { IIdentifiable, KnownMappedFields, PrimaryDataObjectCollection, SecondaryDataObjectCollection } from "@vaultic/shared/Types/Fields";
+import { IIdentifiable, PrimaryDataObjectCollection, SecondaryDataObjectCollection } from "@vaultic/shared/Types/Fields";
 import { Algorithm } from "@vaultic/shared/Types/Keys";
 import { CurrentAndSafeStructure, DictionaryAsList, DoubleKeyedObject, PendingStoreState, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
-import { UpdatePasswordResponse } from "./PasswordStore";
-import { join } from "path";
 
 export type StoreEvents = "onChanged";
 
-export class Store<T extends KnownMappedFields<StoreState>, K extends StateKeys, U extends string = StoreEvents>
+export class Store<T extends StoreState, K extends StateKeys, U extends string = StoreEvents>
 {
     events: Dictionary<{ (...params: any[]): void }[]>;
 
@@ -167,7 +165,7 @@ export class Store<T extends KnownMappedFields<StoreState>, K extends StateKeys,
     }
 }
 
-export class VaultContrainedStore<T extends KnownMappedFields<StoreState>, K extends StateKeys, U extends string = StoreEvents>
+export class VaultContrainedStore<T extends StoreState, K extends StateKeys, U extends string = StoreEvents>
     extends Store<T, K, U>
 {
     protected vault: VaultStoreParameter;
@@ -179,7 +177,7 @@ export class VaultContrainedStore<T extends KnownMappedFields<StoreState>, K ext
     }
 }
 
-export class DataTypeStore<T extends KnownMappedFields<StoreState>, K extends StateKeys, U extends string = StoreEvents>
+export class DataTypeStore<T extends StoreState, K extends StateKeys, U extends string = StoreEvents>
     extends VaultContrainedStore<T, K, U>
 {
     constructor(vault: VaultStoreParameter, storeType: StoreType, retriever: StorePathRetriever<K>)
@@ -276,7 +274,7 @@ export interface PrimarydataTypeStoreStateKeys extends StateKeys
     'currentAndSafeDataTypes.safe': '';
 };
 
-export class PrimaryDataTypeStore<T extends KnownMappedFields<StoreState>, K extends PrimarydataTypeStoreStateKeys, U extends string = StoreEvents>
+export class PrimaryDataTypeStore<T extends StoreState, K extends PrimarydataTypeStoreStateKeys, U extends string = StoreEvents>
     extends DataTypeStore<T, K, U>
 {
     public removeSecondaryObjectFromValues(

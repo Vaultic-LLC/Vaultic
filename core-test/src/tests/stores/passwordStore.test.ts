@@ -3,61 +3,56 @@ import createReactivePassword from '@renderer/Objects/Stores/ReactivePassword';
 import { createTestSuite, TestSuites, type TestContext } from '@lib/test';
 import app from "@renderer/Objects/Stores/AppStore";
 import { Password, defaultPassword, Group, defaultGroup, DataType, Filter, defaultFilter, FilterConditionType, SecurityQuestion } from '@renderer/Types/DataTypes';
+import userManager from '@lib/userManager';
+import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
 
 let passwordStoreSuite = createTestSuite("Password Store", TestSuites.PasswordStore);
 
-const masterKey = "test";
-
 function getSafePasswords()
 {
-    return app.currentVault.passwordStore.passwords.filter(p => !p.value.isWeak.value &&
-        !app.currentVault.passwordStore.duplicatePasswords.value.has(p.value.id.value) &&
-        !p.value.containsLogin.value && !p.value.isOld());
+    return app.currentVault.passwordStore.passwords.filter(p => !p.w &&
+        !app.currentVault.passwordStore.duplicatePasswords[p.id] &&
+        !p.c && !p.isOld());
 }
 
 passwordStoreSuite.tests.push({
     name: "PasswordStore Add Works", func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
-        password.login.value = "PasswordStore Add Works";
-        password.email.value = "Email@Email";
-        password.domain.value = "www.domain.com";
-        password.password.value = "Password";
-        password.passwordFor.value = "PasswordFor";
-        password.additionalInformation.value = "AdditionalInformation";
+        password.l = "PasswordStore Add Works";
+        password.e = "Email@Email";
+        password.d = "www.domain.com";
+        password.p = "Password";
+        password.f = "PasswordFor";
+        password.a = "AdditionalInformation";
 
-        const sequrityQuestion: SecurityQuestion =
+        const securityQuestion: SecurityQuestion =
         {
-            id: Field.create("SecurityQuestion"),
-            question: Field.create("Question"),
-            questionLength: Field.create(0),
-            answer: Field.create("Answer"),
-            answerLength: Field.create(0)
+            id: "SecurityQuestion",
+            q: "Question",
+            a: "Answer",
         };
 
-        password.securityQuestions.value.set("SecurityQuestion", Field.create(sequrityQuestion));
+        password.q[securityQuestion.id] = securityQuestion;
 
-        await app.currentVault.passwordStore.addPassword(masterKey, password);
-        const retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value)[0];
+        await userManager.defaultUser.addPassword("Add Password", ctx, password, [securityQuestion]);
+        const retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.id == password.id)[0];
 
-        const decryptedPassword = await cryptHelper.decrypt(masterKey, retrievedPassword.value.password.value);
-        const decryptedSecurityQuesitonQuestion = await cryptHelper.decrypt(masterKey, retrievedPassword.value.securityQuestions.value.get("SecurityQuestion")!.value.question.value);
-        const decryptedSecurityQuesitonAnswer = await cryptHelper.decrypt(masterKey, retrievedPassword.value.securityQuestions.value.get("SecurityQuestion")!.value.answer.value);
+        const decryptedPassword = await cryptHelper.decrypt(userManager.defaultUser.vaulticKey, retrievedPassword.p);
+        const decryptedSecurityQuesitonQuestion = await cryptHelper.decrypt(userManager.defaultUser.vaulticKey, retrievedPassword.q[securityQuestion.id]!.q);
+        const decryptedSecurityQuesitonAnswer = await cryptHelper.decrypt(userManager.defaultUser.vaulticKey, retrievedPassword.q[securityQuestion.id]!.a);
 
         ctx.assertTruthy("ID is set", retrievedPassword.id);
-        ctx.assertEquals("Login is correct", retrievedPassword.value.login.value, "PasswordStore Add Works");
-        ctx.assertEquals("Email is correct", retrievedPassword.value.email.value, "Email@Email");
-        ctx.assertEquals("Domain is correct", retrievedPassword.value.domain.value, "www.domain.com");
+        ctx.assertEquals("Login is correct", retrievedPassword.l, "PasswordStore Add Works");
+        ctx.assertEquals("Email is correct", retrievedPassword.e, "Email@Email");
+        ctx.assertEquals("Domain is correct", retrievedPassword.d, "www.domain.com");
         ctx.assertEquals("Password is correct", decryptedPassword.value, "Password");
-        ctx.assertEquals("PasswordFor is correct", retrievedPassword.value.passwordFor.value, "PasswordFor");
-        ctx.assertEquals("PasswordLength is correct", retrievedPassword.value.passwordLength.value, 8);
-        ctx.assertEquals("AdditionalInformation is correct", retrievedPassword.value.additionalInformation.value, "AdditionalInformation");
+        ctx.assertEquals("PasswordFor is correct", retrievedPassword.f, "PasswordFor");
+        ctx.assertEquals("AdditionalInformation is correct", retrievedPassword.a, "AdditionalInformation");
 
-        ctx.assertEquals("One Security Question", retrievedPassword.value.securityQuestions.value.size, 1);
+        ctx.assertEquals("One Security Question", OH.size(retrievedPassword.q), 1);
         ctx.assertEquals("Decrypted security question question", decryptedSecurityQuesitonQuestion.value, "Question");
         ctx.assertEquals("Decrypted security question answer", decryptedSecurityQuesitonAnswer.value, "Answer");
-        ctx.assertEquals("Answer Length", retrievedPassword.value.securityQuestions.value.get("SecurityQuestion")!.value.answerLength.value, 6);
-        ctx.assertEquals("Question Length", retrievedPassword.value.securityQuestions.value.get("SecurityQuestion")!.value.questionLength.value, 8);
     }
 });
 
@@ -65,33 +60,33 @@ passwordStoreSuite.tests.push({
     name: "PasswordStore Metrics Work After Add", func: async (ctx: TestContext) =>
     {
         const weakPassword: Password = defaultPassword();
-        weakPassword.login.value = "OJpmbp4on894h89jhog";
-        weakPassword.password.value = "weak";
+        weakPassword.l = "OJpmbp4on894h89jhog";
+        weakPassword.p = "weak";
 
         const duplicatePassword: Password = defaultPassword();
-        duplicatePassword.login.value = "beponjioNSOIGw";
-        duplicatePassword.password.value = "weak";
+        duplicatePassword.l = "beponjioNSOIGw";
+        duplicatePassword.p = "weak";
 
         const containsLoginPassword: Password = defaultPassword();
-        containsLoginPassword.login.value = "PasswordStore Metrics Work After Add";
-        containsLoginPassword.password.value = "PasswordStore Metrics Work After Add Test";
+        containsLoginPassword.l = "PasswordStore Metrics Work After Add";
+        containsLoginPassword.p = "PasswordStore Metrics Work After Add Test";
 
-        await app.currentVault.passwordStore.addPassword(masterKey, weakPassword);
+        await userManager.defaultUser.addPassword("Add Weak Password", ctx, weakPassword);
 
-        const retrievedWeakPassword = app.currentVault.passwordStore.weakPasswords.value.filter(p => p == weakPassword.id.value);
+        const retrievedWeakPassword = app.currentVault.passwordStore.weakPasswords.value.filter(p => p == weakPassword.id);
         ctx.assertEquals("Weak password exists", retrievedWeakPassword.length, 1);
 
-        await app.currentVault.passwordStore.addPassword(masterKey, duplicatePassword);
+        await userManager.defaultUser.addPassword("Add Duplicate Password", ctx, duplicatePassword);
 
-        const duplicatePasswordOne = app.currentVault.passwordStore.duplicatePasswords.value.get(duplicatePassword.id.value);
-        const duplicatePasswordTwo = app.currentVault.passwordStore.duplicatePasswords.value.get(weakPassword.id.value);
+        const duplicatePasswordOne = app.currentVault.passwordStore.duplicatePasswords[duplicatePassword.id];
+        const duplicatePasswordTwo = app.currentVault.passwordStore.duplicatePasswords[weakPassword.id];
 
-        ctx.assertTruthy("Duplicate password one exists", duplicatePasswordOne?.value.duplicateDataTypesByID.value.has(weakPassword.id.value));
-        ctx.assertTruthy("Duplicate password two exists", duplicatePasswordTwo?.value.duplicateDataTypesByID.value.has(duplicatePassword.id.value));
+        ctx.assertTruthy("Duplicate password one exists", duplicatePasswordOne[weakPassword.id]);
+        ctx.assertTruthy("Duplicate password two exists", duplicatePasswordTwo[duplicatePassword.id]);
 
-        await app.currentVault.passwordStore.addPassword(masterKey, containsLoginPassword);
+        await userManager.defaultUser.addPassword("Add Contains Login Password", ctx, containsLoginPassword);
 
-        const retrievedContainsLoginPassword = app.currentVault.passwordStore.containsLoginPasswords.value.filter(p => p == containsLoginPassword.id.value);
+        const retrievedContainsLoginPassword = app.currentVault.passwordStore.containsLoginPasswords.value.filter(p => p == containsLoginPassword.id);
         ctx.assertEquals("Contains Login password exists", retrievedContainsLoginPassword.length, 1);
     }
 });
@@ -100,14 +95,14 @@ passwordStoreSuite.tests.push({
     name: "PasswordStore Add CurrentAndSafe Works", func: async (ctx: TestContext) =>
     {
         const safePassword: Password = defaultPassword();
-        safePassword.login.value = "GLSVBvlinwoigjnioolnguiq3lnneilrun";
-        safePassword.password.value = "FS:nvw2nvioshsoijhvhoVnlweuw159y98hoivGSHLViNSBuign[p[1";
+        safePassword.l = "GLSVBvlinwoigjnioolnguiq3lnneilrun";
+        safePassword.p = "FS:nvw2nvioshsoijhvhoVnlweuw159y98hoivGSHLViNSBuign[p[1";
 
         const unsafePassword: Password = defaultPassword();
-        unsafePassword.login.value = "lnljolwhiwlnSNDfbuiho2tto27";
-        unsafePassword.password.value = "weak";
+        unsafePassword.l = "lnljolwhiwlnSNDfbuiho2tto27";
+        unsafePassword.p = "weak";
 
-        await app.currentVault.passwordStore.addPassword(masterKey, safePassword);
+        await userManager.defaultUser.addPassword("Add Safe Password", ctx, safePassword);
 
         ctx.assertEquals("Safe password correct current",
             app.currentVault.passwordStore.currentAndSafePasswordsCurrent[app.currentVault.passwordStore.currentAndSafePasswordsCurrent.length - 1],
@@ -117,7 +112,7 @@ passwordStoreSuite.tests.push({
             app.currentVault.passwordStore.currentAndSafePasswordsSafe[app.currentVault.passwordStore.currentAndSafePasswordsSafe.length - 1],
             getSafePasswords().length);
 
-        await app.currentVault.passwordStore.addPassword(masterKey, unsafePassword);
+        await userManager.defaultUser.addPassword("Add Unsafe Password", ctx, unsafePassword);
 
         ctx.assertEquals("Unsafe password correct current",
             app.currentVault.passwordStore.currentAndSafePasswordsCurrent[app.currentVault.passwordStore.currentAndSafePasswordsCurrent.length - 1],
@@ -133,25 +128,25 @@ passwordStoreSuite.tests.push({
     name: "PasswordStore Add With Group Works", func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
-        password.login.value = "VNwelnbwiono;imgo;mbio";
+        password.l = "VNwelnbwiono;imgo;mbio";
 
         const group: Group = defaultGroup(DataType.Passwords);
-        group.name.value = "PasswordStore Add With Group Works";
-        group.color.value = "#FFFFFF";
+        group.n = "PasswordStore Add With Group Works";
+        group.c = "#FFFFFF";
 
-        await app.currentVault.groupStore.addGroup(masterKey, group);
+        await userManager.defaultUser.addGroup("Add Group", ctx, group);
 
-        password.groups.value.set(group.id.value, Field.create(group.id.value));
+        password.g[group.id] = true;
 
-        await app.currentVault.passwordStore.addPassword(masterKey, password);
+        await userManager.defaultUser.addPassword("Add Password", ctx, password);
 
-        const retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value)[0];
-        const retrievedGroup = app.currentVault.groupStore.passwordGroups.filter(g => g.value.id.value == group.id.value)[0];
+        const retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.id == password.id)[0];
+        const retrievedGroup = app.currentVault.groupStore.passwordGroups.filter(g => g.id == group.id)[0];
 
         ctx.assertTruthy("Password exists", retrievedPassword);
         ctx.assertTruthy("Group exists", retrievedGroup);
-        ctx.assertTruthy("Password has group id", retrievedPassword.value.groups.value.has(retrievedGroup.value.id.value));
-        ctx.assertTruthy("Group has password id", retrievedGroup.value.passwords.value.has(retrievedPassword.value.id.value));
+        ctx.assertTruthy("Password has group id", retrievedPassword.g[retrievedGroup.id]);
+        ctx.assertTruthy("Group has password id", retrievedGroup.p[retrievedPassword.id]);
     }
 });
 
@@ -159,27 +154,28 @@ passwordStoreSuite.tests.push({
     name: "PasswordStore Add With Filter Works", func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
-        password.login.value = "PasswordStore Add With Filter Works";
+        password.l = "PasswordStore Add With Filter Works";
 
         const filter: Filter = defaultFilter(DataType.Passwords);
-        filter.name.value = "PasswordStore Add With Filter Works";
-        filter.conditions.value.set("PasswordStore Add With Filter Works", Field.create({
-            id: Field.create("PasswordStore Add With Filter Works"),
-            property: Field.create("login"),
-            filterType: Field.create(FilterConditionType.EqualTo),
-            value: Field.create("PasswordStore Add With Filter Works")
-        }));
+        filter.n = "PasswordStore Add With Filter Works";
+        filter.c["PasswordStore Add With Filter Works"] = 
+        {
+            id: "PasswordStore Add With Filter Works",
+            p: "l",
+            t: FilterConditionType.EqualTo,
+            v: "PasswordStore Add With Filter Works"
+        };
 
-        await app.currentVault.filterStore.addFilter(masterKey, filter);
-        await app.currentVault.passwordStore.addPassword(masterKey, password);
+        await userManager.defaultUser.addFilter("Add Filter", ctx, filter);
+        await userManager.defaultUser.addPassword("Add Password", ctx, password);
 
-        const retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value)[0];
-        const retrievedFilter = app.currentVault.filterStore.passwordFilters.filter(f => f.value.id.value == filter.id.value)[0];
+        const retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.id == password.id)[0];
+        const retrievedFilter = app.currentVault.filterStore.passwordFilters.filter(f => f.id == filter.id)[0];
 
         ctx.assertTruthy("Password exists", retrievedPassword);
         ctx.assertTruthy("Filter exists", retrievedFilter);
-        ctx.assertTruthy("Password has filter id", retrievedPassword.value.filters.value.has(retrievedFilter.value.id.value));
-        ctx.assertTruthy("Filter has password id", retrievedFilter.value.passwords.value.has(retrievedPassword.value.id.value));
+        ctx.assertTruthy("Password has filter id", retrievedPassword.i[retrievedFilter.id]);
+        ctx.assertTruthy("Filter has password id", retrievedFilter.p[retrievedPassword.id]);
     }
 });
 
@@ -189,9 +185,9 @@ passwordStoreSuite.tests.push({
         const originalLogin = "TestUpdateWorksLogin";
 
         const password: Password = defaultPassword();
-        password.login.value = originalLogin;
+        password.l = originalLogin;
 
-        await app.currentVault.passwordStore.addPassword(masterKey, password);
+        await userManager.defaultUser.addPassword("Add Password", ctx, password);
 
         const newLogin = "Test Update Works New Login";
         const newDomin = "New Domain";
@@ -199,23 +195,25 @@ passwordStoreSuite.tests.push({
         const newPasswordFor = "New Password For";
         const newAdditionalInfo = "New Additional Info";
 
-        password.login.value = newLogin;
-        password.domain.value = newDomin;
-        password.email.value = newEmail;
-        password.passwordFor.value = newPasswordFor;
-        password.additionalInformation.value = newAdditionalInfo;
+        const editablePassword = userManager.defaultUser.getEditablePassword(password.id);
 
-        await app.currentVault.passwordStore.updatePassword(masterKey, password, false, [], []);
+        editablePassword.dataType.l = newLogin;
+        editablePassword.dataType.d = newDomin;
+        editablePassword.dataType.e = newEmail;
+        editablePassword.dataType.f = newPasswordFor;
+        editablePassword.dataType.a = newAdditionalInfo;
 
-        const oldPassword = app.currentVault.passwordStore.passwords.filter(p => p.value.login.value == originalLogin);
+        await userManager.defaultUser.updatePassword("Update Password", ctx, editablePassword, false, [], [], [], [], editablePassword.dataType.g);
+
+        const oldPassword = app.currentVault.passwordStore.passwords.filter(p => p.l == originalLogin);
         ctx.assertEquals("Password doesn't exist", oldPassword.length, 0);
 
-        const updatedPassword = app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value);
-        ctx.assertEquals("New Login", updatedPassword[0].value.login.value, newLogin);
-        ctx.assertEquals("New Domain", updatedPassword[0].value.domain.value, newDomin);
-        ctx.assertEquals("New Email", updatedPassword[0].value.email.value, newEmail);
-        ctx.assertEquals("New Password For", updatedPassword[0].value.passwordFor.value, newPasswordFor);
-        ctx.assertEquals("New Additional Info", updatedPassword[0].value.additionalInformation.value, newAdditionalInfo);
+        const updatedPassword = app.currentVault.passwordStore.passwords.filter(p => p.id == password.id);
+        ctx.assertEquals("New Login", updatedPassword[0].l, newLogin);
+        ctx.assertEquals("New Domain", updatedPassword[0].d, newDomin);
+        ctx.assertEquals("New Email", updatedPassword[0].e, newEmail);
+        ctx.assertEquals("New Password For", updatedPassword[0].f, newPasswordFor);
+        ctx.assertEquals("New Additional Info", updatedPassword[0].a, newAdditionalInfo);
     }
 });
 
@@ -223,18 +221,20 @@ passwordStoreSuite.tests.push({
     name: 'Update password works', func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
-        password.login.value = "ijvLOSvniowemwmiophjh";
-        password.password.value = "Original Password";
+        password.l = "ijvLOSvniowemwmiophjh";
+        password.p = "Original Password";
 
-        await app.currentVault.passwordStore.addPassword(masterKey, password);
+        await userManager.defaultUser.addPassword("Add Password", ctx, password);
+
+        const editablePassword = userManager.defaultUser.getEditablePassword(password.id);
 
         const newPassword = "New Password";
-        password.password.value = newPassword;
+        editablePassword.dataType.p = newPassword;
 
-        await app.currentVault.passwordStore.updatePassword(masterKey, password, true, [], []);
-        const updatedPassword = app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value);
+        await userManager.defaultUser.updatePassword("Update Password", ctx, editablePassword, true, [], [], [], [], editablePassword.dataType.g);
+        const updatedPassword = app.currentVault.passwordStore.passwords.filter(p => p.id == password.id);
 
-        const decryptedNewPassword = await cryptHelper.decrypt(masterKey, updatedPassword[0].value.password.value);
+        const decryptedNewPassword = await cryptHelper.decrypt(userManager.defaultUser.vaulticKey, updatedPassword[0].p);
         ctx.assertEquals("New Password", decryptedNewPassword.value, newPassword);
     }
 });
@@ -243,53 +243,49 @@ passwordStoreSuite.tests.push({
     name: 'Update security question works', func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
-        password.login.value = "Update security question works 1";
+        password.l = "Update security question works 1";
         const securityQuestion: SecurityQuestion =
         {
-            id: Field.create("SecurityQuestion"),
-            question: Field.create("Question"),
-            questionLength: Field.create(0),
-            answer: Field.create("Answer"),
-            answerLength: Field.create(0)
+            id: "SecurityQuestion",
+            q: "Question",
+            a: "Answer",
         };
 
-        password.securityQuestions.value.set("SecurityQuestion", Field.create(securityQuestion));
+        password.q[securityQuestion.id] = securityQuestion;
 
         const password2: Password = defaultPassword();
-        password2.login.value = "Update security question works 2";
+        password2.l = "Update security question works 2";
         const securityQuestion2: SecurityQuestion =
         {
-            id: Field.create("SecurityQuestion2"),
-            question: Field.create("Question2"),
-            questionLength: Field.create(0),
-            answer: Field.create("Answer2"),
-            answerLength: Field.create(0)
+            id: "SecurityQuestion2",
+            q: "Question2",
+            a: "Answer2",
         };
 
-        password2.securityQuestions.value.set("SecurityQuestion2", Field.create(securityQuestion2));
+        password2.q[securityQuestion2.id] = securityQuestion2;
 
-        await app.currentVault.passwordStore.addPassword(masterKey, password);
-        await app.currentVault.passwordStore.addPassword(masterKey, password2);
+        await userManager.defaultUser.addPassword("Add Password", ctx, password, [securityQuestion]);
+        await userManager.defaultUser.addPassword("Add Password", ctx, password2, [securityQuestion2]);
 
         const newQuesiton = "UpdatedQuesiton";
         const newAnswer = "UpdatedAnswer";
 
-        password.securityQuestions.value.get("SecurityQuestion")!.value.question.value = newQuesiton;
-        password2.securityQuestions.value.get("SecurityQuestion2")!.value.answer.value = newAnswer;
+        const editablePassword = userManager.defaultUser.getEditablePassword(password.id);
+        editablePassword.dataType.q[securityQuestion.id].q = newQuesiton;
+        await userManager.defaultUser.updatePassword("Update Password", ctx, editablePassword, false, [], [editablePassword.dataType.q[securityQuestion.id]], [], [], editablePassword.dataType.g);
+        
+        const editablePassword2 = userManager.defaultUser.getEditablePassword(password2.id);
+        editablePassword2.dataType.q[securityQuestion2.id].a = newAnswer;
+        await userManager.defaultUser.updatePassword("Update Password", ctx, editablePassword2, false, [], [], [editablePassword2.dataType.q[securityQuestion2.id]], [], editablePassword2.dataType.g);
 
-        await app.currentVault.passwordStore.updatePassword(masterKey, password, false, [securityQuestion.id.value], []);
-        await app.currentVault.passwordStore.updatePassword(masterKey, password2, false, [], [securityQuestion2.id.value]);
+        const updatedPassword1 = app.currentVault.passwordStore.passwordsByID[password.id];
+        const updatedPassword2 = app.currentVault.passwordStore.passwordsByID[password2.id];
 
-        const updatedPassword1 = app.currentVault.passwordStore.passwordsByID.value.get(password.id.value);
-        const updatedPassword2 = app.currentVault.passwordStore.passwordsByID.value.get(password2.id.value);
-
-        const decryptedQuestion = await cryptHelper.decrypt(masterKey, updatedPassword1!.value.securityQuestions.value.get("SecurityQuestion")!.value.question.value);
-        const decryptedAnswer = await cryptHelper.decrypt(masterKey, updatedPassword2!.value.securityQuestions.value.get("SecurityQuestion2")!.value.answer.value);
+        const decryptedQuestion = await cryptHelper.decrypt(userManager.defaultUser.vaulticKey, updatedPassword1!.q[securityQuestion.id]!.q);
+        const decryptedAnswer = await cryptHelper.decrypt(userManager.defaultUser.vaulticKey, updatedPassword2!.q[securityQuestion2.id]!.a);
 
         ctx.assertEquals("New Question is correct", decryptedQuestion.value, newQuesiton);
         ctx.assertEquals("New Answer is correct", decryptedAnswer.value, newAnswer);
-        ctx.assertEquals("New Question Length is correct", updatedPassword1!.value.securityQuestions.value.get("SecurityQuestion")!.value.questionLength.value, newQuesiton.length);
-        ctx.assertEquals("new Answer Length is correct", updatedPassword2!.value.securityQuestions.value.get("SecurityQuestion2")!.value.answerLength.value, newAnswer.length);
     }
 });
 
@@ -298,61 +294,65 @@ passwordStoreSuite.tests.push({
     {
         const strongPassword = "VNLinlsdhfklahsn]p][2p359jgjvlSHDGuilhwluihgwuieghl";
         const weakPassword: Password = defaultPassword();
-        weakPassword.password.value = "weak";
-        weakPassword.login.value = "MetricsWorkAfterUpdate";
+        weakPassword.p = "weak";
+        weakPassword.l = "MetricsWorkAfterUpdate";
 
         const duplicatePassword: Password = defaultPassword();
-        duplicatePassword.password.value = strongPassword;
-        duplicatePassword.login.value = "MVowemiogwnoigninlgnqilnhn";
+        duplicatePassword.p = strongPassword;
+        duplicatePassword.l = "MVowemiogwnoigninlgnqilnhn";
 
         const containsLoginPassword: Password = defaultPassword();
-        containsLoginPassword.login.value = "PasswordStore Metrics Work After Update";
-        containsLoginPassword.password.value = "PasswordStore Metrics Work After Update 123";
+        containsLoginPassword.l = "PasswordStore Metrics Work After Update";
+        containsLoginPassword.p = "PasswordStore Metrics Work After Update 123";
 
-        await app.currentVault.passwordStore.addPassword(masterKey, weakPassword);
+        await userManager.defaultUser.addPassword("Add weak Password", ctx, weakPassword);
 
-        let retrievedWeakPassword = app.currentVault.passwordStore.weakPasswords.value.filter(p => p == weakPassword.id.value);
+        let retrievedWeakPassword = app.currentVault.passwordStore.weakPasswords.value.filter(p => p == weakPassword.id);
         ctx.assertEquals("Weak password exists", retrievedWeakPassword.length, 1);
 
-        weakPassword.password.value = "newWeak";
-        await app.currentVault.passwordStore.updatePassword(masterKey, weakPassword, true, [], []);
+        let editableWeakPassword = userManager.defaultUser.getEditablePassword(weakPassword.id);
+        editableWeakPassword.dataType.p = "newWeak";
+        await userManager.defaultUser.updatePassword("Update Password", ctx, editableWeakPassword, true, [], [], [], [], editableWeakPassword.dataType.g);
 
-        retrievedWeakPassword = app.currentVault.passwordStore.weakPasswords.value.filter(p => p == weakPassword.id.value);
+        retrievedWeakPassword = app.currentVault.passwordStore.weakPasswords.value.filter(p => p == weakPassword.id);
         ctx.assertEquals("Weak password exists", retrievedWeakPassword.length, 1);
 
-        weakPassword.password.value = strongPassword;
-        await app.currentVault.passwordStore.updatePassword(masterKey, weakPassword, true, [], []);
+        editableWeakPassword = userManager.defaultUser.getEditablePassword(weakPassword.id);
+        editableWeakPassword.dataType.p = strongPassword;
+        await userManager.defaultUser.updatePassword("Update Password", ctx, editableWeakPassword, true, [], [], [], [], editableWeakPassword.dataType.g);
 
-        retrievedWeakPassword = app.currentVault.passwordStore.weakPasswords.value.filter(p => p == weakPassword.id.value);
+        retrievedWeakPassword = app.currentVault.passwordStore.weakPasswords.value.filter(p => p == weakPassword.id);
         ctx.assertEquals("Weak password doesn't exists", retrievedWeakPassword.length, 0);
 
-        await app.currentVault.passwordStore.addPassword(masterKey, duplicatePassword);
+        await userManager.defaultUser.addPassword("Add duplicate Password", ctx, duplicatePassword);
 
-        let retrievedDuplicatePasswordOne = app.currentVault.passwordStore.duplicatePasswords.value.get(duplicatePassword.id.value);
-        let retrievedDuplicatePasswordTwo = app.currentVault.passwordStore.duplicatePasswords.value.get(weakPassword.id.value);
+        let retrievedDuplicatePasswordOne = app.currentVault.passwordStore.duplicatePasswords[duplicatePassword.id];
+        let retrievedDuplicatePasswordTwo = app.currentVault.passwordStore.duplicatePasswords[weakPassword.id];
 
-        ctx.assertTruthy("Duplicate password one exists", retrievedDuplicatePasswordOne?.value.duplicateDataTypesByID.value.has(weakPassword.id.value));
-        ctx.assertTruthy("Duplicate password two exists", retrievedDuplicatePasswordTwo?.value.duplicateDataTypesByID.value.has(duplicatePassword.id.value));
+        ctx.assertTruthy("Duplicate password one exists", retrievedDuplicatePasswordOne[weakPassword.id]);
+        ctx.assertTruthy("Duplicate password two exists", retrievedDuplicatePasswordTwo[duplicatePassword.id]);
 
-        duplicatePassword.password.value = "VNlowehnglwhgaljksgio;ajsoitjw;ojtoj9285u29utjioijl";
+        let editableDuplicatePassword = userManager.defaultUser.getEditablePassword(duplicatePassword.id);
+        editableDuplicatePassword.dataType.p = "VNlowehnglwhgaljksgio;ajsoitjw;ojtoj9285u29utjioijl";
 
-        await app.currentVault.passwordStore.updatePassword(masterKey, duplicatePassword, true, [], []);
+        await userManager.defaultUser.updatePassword("Update Password", ctx, editableDuplicatePassword, true, [], [], [], [], editableDuplicatePassword.dataType.g);
 
-        retrievedDuplicatePasswordOne = app.currentVault.passwordStore.duplicatePasswords.value.get(duplicatePassword.id.value);
-        retrievedDuplicatePasswordTwo = app.currentVault.passwordStore.duplicatePasswords.value.get(weakPassword.id.value);
+        retrievedDuplicatePasswordOne = app.currentVault.passwordStore.duplicatePasswords[duplicatePassword.id];
+        retrievedDuplicatePasswordTwo = app.currentVault.passwordStore.duplicatePasswords[weakPassword.id];
 
         ctx.assertUndefined("Duplicate password one doesn't exists", retrievedDuplicatePasswordOne);
         ctx.assertUndefined("Duplicate password two doesn't exists", retrievedDuplicatePasswordTwo);
 
-        await app.currentVault.passwordStore.addPassword(masterKey, containsLoginPassword);
+        await userManager.defaultUser.addPassword("Add contains login Password", ctx, containsLoginPassword);
 
-        let retrievedContainsLoginPassword = app.currentVault.passwordStore.containsLoginPasswords.value.filter(p => p == containsLoginPassword.id.value);
+        let retrievedContainsLoginPassword = app.currentVault.passwordStore.containsLoginPasswords.value.filter(p => p == containsLoginPassword.id);
         ctx.assertEquals("Contains Login password exists", retrievedContainsLoginPassword.length, 1);
 
-        containsLoginPassword.password.value = "VNkjnvjkNvkljXNVjkxnvkjnjksdbjksdbkjsbkjbkj2iu52985u28][";
+        let editableContainsLoginPassword = userManager.defaultUser.getEditablePassword(containsLoginPassword.id);
+        editableContainsLoginPassword.dataType.p = "VNkjnvjkNvkljXNVjkxnvkjnjksdbjksdbkjsbkjbkj2iu52985u28][";
+        await userManager.defaultUser.updatePassword("Update Password", ctx, editableContainsLoginPassword, true, [], [], [], [], editableContainsLoginPassword.dataType.g);
 
-        await app.currentVault.passwordStore.updatePassword(masterKey, containsLoginPassword, true, [], []);
-        retrievedContainsLoginPassword = app.currentVault.passwordStore.containsLoginPasswords.value.filter(p => p == containsLoginPassword.id.value);
+        retrievedContainsLoginPassword = app.currentVault.passwordStore.containsLoginPasswords.value.filter(p => p == containsLoginPassword.id);
         ctx.assertEquals("Contains Login password doesn't exists", retrievedContainsLoginPassword.length, 0);
     }
 });
@@ -361,12 +361,14 @@ passwordStoreSuite.tests.push({
     name: "PasswordStore Update CurrentAndSafe Works", func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
-        password.login.value = "Vmwoeipvnio2nhiohnlkng3lnhhi3";
+        password.p = "JSL:KDvjiowno2j0ijsosjsdkS:jvi23hg2uhlsf";
+        password.l = "Vmwoeipvnio2nhiohnlkng3lnhhi3";
 
-        await app.currentVault.passwordStore.addPassword(masterKey, password);
-        password.password.value = "unsafe";
+        await userManager.defaultUser.addPassword("Add Password", ctx, password);
 
-        await app.currentVault.passwordStore.updatePassword(masterKey, password, true, [], []);
+        let editablePassword = userManager.defaultUser.getEditablePassword(password.id);
+        editablePassword.dataType.p = "unsafe";
+        await userManager.defaultUser.updatePassword("Update Password", ctx, editablePassword, true, [], [], [], [], editablePassword.dataType.g);
 
         ctx.assertEquals("Unsafe password correct current",
             app.currentVault.passwordStore.currentAndSafePasswordsCurrent[app.currentVault.passwordStore.currentAndSafePasswordsCurrent.length - 1],
@@ -376,8 +378,9 @@ passwordStoreSuite.tests.push({
             app.currentVault.passwordStore.currentAndSafePasswordsSafe[app.currentVault.passwordStore.currentAndSafePasswordsSafe.length - 1],
             getSafePasswords().length);
 
-        password.password.value = "sdvlaioashvlSDLhbislhi2h892upt9jslinp[k2pop3tk2pyj";
-        await app.currentVault.passwordStore.updatePassword(masterKey, password, true, [], []);
+        editablePassword = userManager.defaultUser.getEditablePassword(password.id);
+        editablePassword.dataType.p = "sdvlaioashvlSDLhbislhi2h892upt9jslinp[k2pop3tk2pyj";
+        await userManager.defaultUser.updatePassword("Update Password", ctx, editablePassword, true, [], [], [], [], editablePassword.dataType.g);
 
         ctx.assertEquals("Safe password correct current",
             app.currentVault.passwordStore.currentAndSafePasswordsCurrent[app.currentVault.passwordStore.currentAndSafePasswordsCurrent.length - 1],
@@ -393,39 +396,37 @@ passwordStoreSuite.tests.push({
     name: "PasswordStore Update With Groups Works", func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
-        password.login.value = "MVpmvio2mbomomjpjgpwjogwhergg";
-        await app.currentVault.passwordStore.addPassword(masterKey, password);
+        password.l = "MVpmvio2mbomomjpjgpwjogwhergg";
+        await userManager.defaultUser.addPassword("Add Password", ctx, password);
 
         const group: Group = defaultGroup(DataType.Passwords);
-        group.name.value = "PasswordStore Update With Group Works";
-        group.color.value = "#FFFFFF";
+        group.n = "PasswordStore Update With Group Works";
+        group.c = "#FFFFFF";
 
-        await app.currentVault.groupStore.addGroup(masterKey, group);
+        await userManager.defaultUser.addGroup("Add Group", ctx, group);
 
-        // clone or else it won't be detected as new since it would be the same object reference
-        const addedGroupPassword: Password = JSON.parse(JSON.stringify(password));
-        addedGroupPassword.groups.value.set(group.id.value, Field.create(group.id.value));
-        await app.currentVault.passwordStore.updatePassword(masterKey, addedGroupPassword, false, [], []);
+        let editablePassword = userManager.defaultUser.getEditablePassword(password.id);
+        editablePassword.dataType.g[group.id] = true;
+        await userManager.defaultUser.updatePassword("Update Password", ctx, editablePassword, false, [], [], [], [], editablePassword.dataType.g);
 
-        let retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == addedGroupPassword.id.value)[0];
-        let retrievedGroup = app.currentVault.groupStore.passwordGroups.filter(g => g.value.id.value == group.id.value)[0];
-
-        ctx.assertTruthy("Password exists", retrievedPassword);
-        ctx.assertTruthy("Group exists", retrievedGroup);
-        ctx.assertTruthy("Password has group id", retrievedPassword.value.groups.value.has(retrievedGroup.value.id.value));
-        ctx.assertTruthy("Group has password id", retrievedGroup.value.passwords.value.has(retrievedPassword.value.id.value));
-
-        const removedGroupPassword: Password = JSON.parse(JSON.stringify(addedGroupPassword));
-        removedGroupPassword.groups.value = new Map();
-        await app.currentVault.passwordStore.updatePassword(masterKey, removedGroupPassword, false, [], []);
-
-        retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == removedGroupPassword.id.value)[0];
-        retrievedGroup = app.currentVault.groupStore.passwordGroups.filter(g => g.value.id.value == group.id.value)[0];
+        let retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.id == password.id)[0];
+        let retrievedGroup = app.currentVault.groupStore.passwordGroups.filter(g => g.id == group.id)[0];
 
         ctx.assertTruthy("Password exists", retrievedPassword);
         ctx.assertTruthy("Group exists", retrievedGroup);
-        ctx.assertTruthy("Password doesn't have group id", !retrievedPassword.value.groups.value.has(retrievedGroup.value.id.value));
-        ctx.assertTruthy("Group doesn't have password id", !retrievedGroup.value.passwords.value.has(retrievedPassword.value.id.value));
+        ctx.assertTruthy("Password has group id", retrievedPassword.g[retrievedGroup.id]);
+        ctx.assertTruthy("Group has password id", retrievedGroup.p[retrievedPassword.id]);
+
+        editablePassword = userManager.defaultUser.getEditablePassword(password.id);
+        await userManager.defaultUser.updatePassword("Update Password", ctx, editablePassword, false, [], [], [], [], {});
+
+        retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.id == password.id)[0];
+        retrievedGroup = app.currentVault.groupStore.passwordGroups.filter(g => g.id == group.id)[0];
+
+        ctx.assertTruthy("Password exists", retrievedPassword);
+        ctx.assertTruthy("Group exists", retrievedGroup);
+        ctx.assertTruthy("Password doesn't have group id", !retrievedPassword.g[retrievedGroup.id]);
+        ctx.assertTruthy("Group doesn't have password id", !retrievedGroup.p[retrievedPassword.id]);
     }
 });
 
@@ -433,42 +434,47 @@ passwordStoreSuite.tests.push({
     name: "PasswordStore Update With Filters Works", func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
-        password.login.value = "UpdateWithFilterWorks--NoFilter";
+        password.l = "UpdateWithFilterWorks--NoFilter";
 
-        await app.currentVault.passwordStore.addPassword(masterKey, password);
+        await userManager.defaultUser.addPassword("Add Password", ctx, password);
 
         const filter: Filter = defaultFilter(DataType.Passwords);
-        filter.name.value = "PasswordStore Update With Filter Works";
-        filter.conditions.value.set("Id", Field.create({
-            id: Field.create("Id"),
-            property: Field.create("login"),
-            filterType: Field.create(FilterConditionType.EqualTo),
-            value: Field.create("UpdateWithFilterWorks--Filter")
-        }));
+        filter.n = "PasswordStore Update With Filter Works";
+        filter.c["Id"] = {
+            id: "Id",
+            p: "l",
+            t: FilterConditionType.EqualTo,
+            v: "UpdateWithFilterWorks--Filter"
+        };
 
-        await app.currentVault.filterStore.addFilter(masterKey, filter);
+        await userManager.defaultUser.addFilter("Add Filter", ctx, filter);
 
-        password.login.value = "UpdateWithFilterWorks--Filter";
-        await app.currentVault.passwordStore.updatePassword(masterKey, password, false, [], []);
+        let retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.id == password.id)[0];
+        ctx.assertUndefined("Password doesn't have filter", retrievedPassword.i[filter.id]);
 
-        let retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value)[0];
-        let retrievedFilter = app.currentVault.filterStore.passwordFilters.filter(f => f.value.id.value == filter.id.value)[0];
+        let editablePassword = userManager.defaultUser.getEditablePassword(password.id);
+        editablePassword.dataType.l = "UpdateWithFilterWorks--Filter";
+        await userManager.defaultUser.updatePassword("Update Password", ctx, editablePassword, false, [], [], [], [], editablePassword.dataType.g);
 
-        ctx.assertTruthy("Password exists", retrievedPassword);
-        ctx.assertTruthy("Filter exists", retrievedFilter);
-        ctx.assertTruthy("Password has filter id", retrievedPassword.value.filters.value.has(retrievedFilter.value.id.value));
-        ctx.assertTruthy("Filter has password id", retrievedFilter.value.passwords.value.has(retrievedPassword.value.id.value));
-
-        password.login.value = "UpdateWithFilterWorks--NoFilter";
-        await app.currentVault.passwordStore.updatePassword(masterKey, password, false, [], []);
-
-        retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value)[0];
-        retrievedFilter = app.currentVault.filterStore.passwordFilters.filter(f => f.value.id.value == filter.id.value)[0];
+        retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.id == password.id)[0];
+        let retrievedFilter = app.currentVault.filterStore.passwordFilters.filter(f => f.id == filter.id)[0];
 
         ctx.assertTruthy("Password exists", retrievedPassword);
         ctx.assertTruthy("Filter exists", retrievedFilter);
-        ctx.assertTruthy("Password doesn't have filter id", !retrievedPassword.value.filters.value.has(retrievedFilter.value.id.value));
-        ctx.assertTruthy("Filter doesn't have password id", !retrievedFilter.value.passwords.value.has(retrievedPassword.value.id.value));
+        ctx.assertTruthy("Password has filter id", retrievedPassword.i[retrievedFilter.id]);
+        ctx.assertTruthy("Filter has password id", retrievedFilter.p[retrievedPassword.id]);
+
+        editablePassword = userManager.defaultUser.getEditablePassword(password.id);
+        editablePassword.dataType.l = "UpdateWithFilterWorks--NoFilter";
+        await userManager.defaultUser.updatePassword("Update Password", ctx, editablePassword, false, [], [], [], [], editablePassword.dataType.g);
+
+        retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.id == password.id)[0];
+        retrievedFilter = app.currentVault.filterStore.passwordFilters.filter(f => f.id == filter.id)[0];
+
+        ctx.assertTruthy("Password exists", retrievedPassword);
+        ctx.assertTruthy("Filter exists", retrievedFilter);
+        ctx.assertTruthy("Password doesn't have filter id", !retrievedPassword.i[retrievedFilter.id]);
+        ctx.assertTruthy("Filter doesn't have password id", !retrievedFilter.p[retrievedPassword.id]);
     }
 });
 
@@ -476,18 +482,52 @@ passwordStoreSuite.tests.push({
     name: 'Delete works', func: async (ctx: TestContext) => 
     {
         const password: Password = defaultPassword();
-        password.login.value = "vmOVKmweopbmoibniohwigh8goho2hti2";
+        password.p = "JSL:KDvjiowno2j0ijsosjsdkS:jvi23hg2uhlsf";
+        password.l = "vmOVKmweopbmoibniohwigh8goho2hti2";
 
-        await app.currentVault.passwordStore.addPassword(masterKey, password);
+        await userManager.defaultUser.addPassword("Add Password", ctx, password);
 
-        const retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value);
+        const retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.id == password.id);
         ctx.assertTruthy("Password Exists", retrievedPassword[0]);
 
-        const reactivePassword = createReactivePassword(password);
-        await app.currentVault.passwordStore.deletePassword(masterKey, reactivePassword);
+        let editablePassword = userManager.defaultUser.getEditablePassword(password.id);
+        await userManager.defaultUser.deletePassword("Delete Password", ctx, editablePassword.dataType);
 
-        const deletedPassword = app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value);
+        const deletedPassword = app.currentVault.passwordStore.passwords.filter(p => p.id == password.id);
         ctx.assertEquals("Password Deleted", deletedPassword.length, 0);
+    }
+});
+
+passwordStoreSuite.tests.push({
+    name: 'Delete security question works', func: async (ctx: TestContext) =>
+    {
+        const password: Password = defaultPassword();
+        password.l = "Update security question works 1";
+        const securityQuestion: SecurityQuestion =
+        {
+            id: "SecurityQuestion",
+            q: "Question",
+            a: "Answer",
+        };
+
+        const securityQuestion2: SecurityQuestion =
+        {
+            id: "SecurityQuestion2",
+            q: "Question2",
+            a: "Answer2",
+        };
+
+        password.q[securityQuestion.id] = securityQuestion;
+        password.q[securityQuestion2.id] = securityQuestion2;
+
+        await userManager.defaultUser.addPassword("Add Password", ctx, password, [securityQuestion, securityQuestion2]);
+
+        const editablePassword = userManager.defaultUser.getEditablePassword(password.id);
+        await userManager.defaultUser.updatePassword("Delete seurity question 1", ctx, editablePassword, false, [], [], [], ["SecurityQuestion"], editablePassword.dataType.g);
+
+        const updatedPassword = app.currentVault.passwordStore.passwordsByID[password.id];
+        ctx.assertTruthy("Security question 1 doesn't exist", !updatedPassword?.q[securityQuestion.id]);
+        ctx.assertTruthy("Security question 2 exists", updatedPassword?.q[securityQuestion2.id]);
     }
 });
 
@@ -495,54 +535,54 @@ passwordStoreSuite.tests.push({
     name: "PasswordStore Metrics Work After Delete", func: async (ctx: TestContext) =>
     {
         const weakPassword: Password = defaultPassword();
-        weakPassword.password.value = "weak";
-        weakPassword.login.value = "MVlsd;mvl;mkln2jtigohgoh";
+        weakPassword.p = "weak";
+        weakPassword.l = "MVlsd;mvl;mkln2jtigohgoh";
 
         const duplicatePassword: Password = defaultPassword();
-        duplicatePassword.password.value = "weak";
-        duplicatePassword.login.value = "uigiwhgshioadsjvoavmobn";
+        duplicatePassword.p = "weak";
+        duplicatePassword.l = "uigiwhgshioadsjvoavmobn";
 
         const containsLoginPassword: Password = defaultPassword();
-        containsLoginPassword.login.value = "PasswordStore Metrics Work After Delete";
-        containsLoginPassword.password.value = "PasswordStore Metrics Work After Delete 123";
+        containsLoginPassword.l = "PasswordStore Metrics Work After Delete";
+        containsLoginPassword.p = "PasswordStore Metrics Work After Delete 123";
 
-        await app.currentVault.passwordStore.addPassword(masterKey, weakPassword);
+        await userManager.defaultUser.addPassword("Add Password", ctx, weakPassword);
 
-        let retrievedWeakPassword = app.currentVault.passwordStore.weakPasswords.value.filter(p => p == weakPassword.id.value);
+        let retrievedWeakPassword = app.currentVault.passwordStore.weakPasswords.value.filter(p => p == weakPassword.id);
         ctx.assertEquals("Weak password exists", retrievedWeakPassword.length, 1);
 
-        await app.currentVault.passwordStore.addPassword(masterKey, duplicatePassword);
+        await userManager.defaultUser.addPassword("Add Password", ctx, duplicatePassword);
 
-        let retrievedDuplicatePasswordOne = app.currentVault.passwordStore.duplicatePasswords.value.get(duplicatePassword.id.value);
-        let retrievedDuplicatePasswordTwo = app.currentVault.passwordStore.duplicatePasswords.value.get(weakPassword.id.value);
+        let retrievedDuplicatePasswordOne = app.currentVault.passwordStore.duplicatePasswords[duplicatePassword.id];
+        let retrievedDuplicatePasswordTwo = app.currentVault.passwordStore.duplicatePasswords[weakPassword.id];
 
-        ctx.assertTruthy("Duplicate password one exists", retrievedDuplicatePasswordOne?.value.duplicateDataTypesByID.value.has(weakPassword.id.value));
-        ctx.assertTruthy("Duplicate password two exists", retrievedDuplicatePasswordTwo?.value.duplicateDataTypesByID.value.has(duplicatePassword.id.value));
+        ctx.assertTruthy("Duplicate password one exists", retrievedDuplicatePasswordOne[weakPassword.id]);
+        ctx.assertTruthy("Duplicate password two exists", retrievedDuplicatePasswordTwo[duplicatePassword.id]);
 
-        const reactiveWeakPassword = createReactivePassword(weakPassword);
-        await app.currentVault.passwordStore.deletePassword(masterKey, reactiveWeakPassword);
+        let editableWeakPassword = userManager.defaultUser.getEditablePassword(weakPassword.id);
+        await userManager.defaultUser.deletePassword("Delete Password", ctx, editableWeakPassword.dataType);
 
-        const reactiveDuplicatePassword = createReactivePassword(duplicatePassword);
-        await app.currentVault.passwordStore.deletePassword(masterKey, reactiveDuplicatePassword);
+        let editableDuplicatePassword = userManager.defaultUser.getEditablePassword(duplicatePassword.id);
+        await userManager.defaultUser.deletePassword("Delete Password", ctx, editableDuplicatePassword.dataType);
 
-        retrievedWeakPassword = app.currentVault.passwordStore.weakPasswords.value.filter(p => p == weakPassword.id.value);
+        retrievedWeakPassword = app.currentVault.passwordStore.weakPasswords.value.filter(p => p == weakPassword.id);
         ctx.assertEquals("Weak password doesn't exists", retrievedWeakPassword.length, 0);
 
-        retrievedDuplicatePasswordOne = app.currentVault.passwordStore.duplicatePasswords.value.get(duplicatePassword.id.value);
-        retrievedDuplicatePasswordTwo = app.currentVault.passwordStore.duplicatePasswords.value.get(weakPassword.id.value);
+        retrievedDuplicatePasswordOne = app.currentVault.passwordStore.duplicatePasswords[duplicatePassword.id];
+        retrievedDuplicatePasswordTwo = app.currentVault.passwordStore.duplicatePasswords[weakPassword.id];
 
         ctx.assertUndefined("Duplicate password one doesn't exists", retrievedDuplicatePasswordOne);
         ctx.assertUndefined("Duplicate password two doesn't exists", retrievedDuplicatePasswordTwo);
 
-        await app.currentVault.passwordStore.addPassword(masterKey, containsLoginPassword);
+        await userManager.defaultUser.addPassword("Add Password", ctx, containsLoginPassword);
 
-        let retrievedContainsLoginPassword = app.currentVault.passwordStore.containsLoginPasswords.value.filter(p => p == containsLoginPassword.id.value);
+        let retrievedContainsLoginPassword = app.currentVault.passwordStore.containsLoginPasswords.value.filter(p => p == containsLoginPassword.id);
         ctx.assertEquals("Contains Login password exists", retrievedContainsLoginPassword.length, 1);
 
-        const reactiveContainsLoginPassword = createReactivePassword(containsLoginPassword);
-        await app.currentVault.passwordStore.deletePassword(masterKey, reactiveContainsLoginPassword);
+        let editableContainsLoginPassword = userManager.defaultUser.getEditablePassword(containsLoginPassword.id);
+        await userManager.defaultUser.deletePassword("Delete Password", ctx, editableContainsLoginPassword.dataType);
 
-        retrievedContainsLoginPassword = app.currentVault.passwordStore.containsLoginPasswords.value.filter(p => p == containsLoginPassword.id.value);
+        retrievedContainsLoginPassword = app.currentVault.passwordStore.containsLoginPasswords.value.filter(p => p == containsLoginPassword.id);
         ctx.assertEquals("Contains Login password doesn't exists", retrievedContainsLoginPassword.length, 0);
     }
 });
@@ -551,13 +591,14 @@ passwordStoreSuite.tests.push({
     name: "PasswordStore Delete CurrentAndSafe Works", func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
-        password.login.value = "lmommoniNVInweuiobwiogbw";
+        password.p = "JSL:KDvjiowno2j0ijsosjsdkS:jvi23hg2uhlsf";
+        password.l = "lmommoniNVInweuiobwiogbw";
 
-        await app.currentVault.passwordStore.addPassword(masterKey, password);
-        password.password.value = "unsafe";
+        await userManager.defaultUser.addPassword("Add Password", ctx, password);
+        password.p = "unsafe";
 
-        const reactivePassword = createReactivePassword(password);
-        await app.currentVault.passwordStore.deletePassword(masterKey, reactivePassword);
+        let editablePassword = userManager.defaultUser.getEditablePassword(password.id);
+        await userManager.defaultUser.deletePassword("Delete Password", ctx, editablePassword.dataType);
 
         ctx.assertEquals("Correct current",
             app.currentVault.passwordStore.currentAndSafePasswordsCurrent[app.currentVault.passwordStore.currentAndSafePasswordsCurrent.length - 1],
@@ -573,33 +614,34 @@ passwordStoreSuite.tests.push({
     name: "PasswordStore Delete With Groups Works", func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
-        password.login.value = "Mqmiovwnvionbigh2uioghoighug";
+        password.p = "JSL:KDvjiowno2j0ijsosjsdkS:jvi23hg2uhlsf";
+        password.l = "Mqmiovwnvionbigh2uioghoighug";
 
         const group: Group = defaultGroup(DataType.Passwords);
-        group.name.value = "PasswordStore Delete With Group Works";
-        group.color.value = "#FFFFFF";
+        group.n = "PasswordStore Delete With Group Works";
+        group.c = "#FFFFFF";
 
-        await app.currentVault.groupStore.addGroup(masterKey, group);
-        password.groups.value.set(group.id.value, Field.create(group.id.value));
-        await app.currentVault.passwordStore.addPassword(masterKey, password);
+        await userManager.defaultUser.addGroup("Add Group", ctx, group);
+        password.g[group.id] = true;
+        await userManager.defaultUser.addPassword("Add Password", ctx, password);
 
-        let retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value);
-        let retrievedGroup = app.currentVault.groupStore.passwordGroups.filter(g => g.value.id.value == group.id.value)[0];
+        let retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.id == password.id);
+        let retrievedGroup = app.currentVault.groupStore.passwordGroups.filter(g => g.id == group.id)[0];
 
         ctx.assertTruthy("Password exists", retrievedPassword[0]);
         ctx.assertTruthy("Group exists", retrievedGroup);
-        ctx.assertTruthy("Password has group id", retrievedPassword[0].value.groups.value.has(retrievedGroup.value.id.value));
-        ctx.assertTruthy("Group has password id", retrievedGroup.value.passwords.value.has(retrievedPassword[0].value.id.value));
+        ctx.assertTruthy("Password has group id", retrievedPassword[0].g[retrievedGroup.id]);
+        ctx.assertTruthy("Group has password id", retrievedGroup.p[retrievedPassword[0].id]);
 
-        const reactivePassword = createReactivePassword(password);
-        await app.currentVault.passwordStore.deletePassword(masterKey, reactivePassword);
+        let editablePassword = userManager.defaultUser.getEditablePassword(password.id);
+        await userManager.defaultUser.deletePassword("Delete Password", ctx, editablePassword.dataType);
 
-        retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value);
-        retrievedGroup = app.currentVault.groupStore.passwordGroups.filter(g => g.value.id.value == group.id.value)[0];
+        retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.id == password.id);
+        retrievedGroup = app.currentVault.groupStore.passwordGroups.filter(g => g.id == group.id)[0];
 
         ctx.assertTruthy("Group exists", retrievedGroup);
         ctx.assertEquals("Password doesn't exists", retrievedPassword.length, 0);
-        ctx.assertEquals("Group doesn't have password id", retrievedGroup.value.passwords.value.size, 0);
+        ctx.assertTruthy("Group doesn't have password id", OH.size(retrievedGroup.p) == 0);
     }
 });
 
@@ -607,37 +649,39 @@ passwordStoreSuite.tests.push({
     name: "PasswordStore Delete With Filters Works", func: async (ctx: TestContext) =>
     {
         const password: Password = defaultPassword();
-        password.login.value = "DeleteWithFilterWorks";
+        password.p = "JSL:KDvjiowno2j0ijsosjsdkS:jvi23hg2uhlsf";
+        password.l = "DeleteWithFilterWorks";
 
         const filter: Filter = defaultFilter(DataType.Passwords);
-        filter.name.value = "PasswordStore Update With Filter Works";
-        filter.conditions.value.set("DeleteWithFilterWorks--Condition", Field.create({
-            id: Field.create("DeleteWithFilterWorks--Condition"),
-            property: Field.create("login"),
-            filterType: Field.create(FilterConditionType.EqualTo),
-            value: Field.create("DeleteWithFilterWorks")
-        }));
+        filter.n = "PasswordStore Update With Filter Works";
+        filter.c["l"] = 
+        {
+            id: "l",
+            p: "l",
+            t: FilterConditionType.EqualTo,
+            v: "DeleteWithFilterWorks"
+        };
 
-        await app.currentVault.filterStore.addFilter(masterKey, filter);
-        await app.currentVault.passwordStore.addPassword(masterKey, password);
+        await userManager.defaultUser.addFilter("Add Filter", ctx, filter);
+        await userManager.defaultUser.addPassword("Add Password", ctx, password);
 
-        let retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value);
-        let retrievedFilter = app.currentVault.filterStore.passwordFilters.filter(f => f.value.id.value == filter.id.value)[0];
+        let retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.id == password.id);
+        let retrievedFilter = app.currentVault.filterStore.passwordFilters.filter(f => f.id == filter.id)[0];
 
         ctx.assertTruthy("Password exists", retrievedPassword);
         ctx.assertTruthy("Filter exists", retrievedFilter);
-        ctx.assertTruthy("Password has filter id", retrievedPassword[0].value.filters.value.has(retrievedFilter.value.id.value));
-        ctx.assertTruthy("Filter has password id", retrievedFilter.value.passwords.value.has(retrievedPassword[0].value.id.value));
+        ctx.assertTruthy("Password has filter id", retrievedPassword[0].i[retrievedFilter.id]);
+        ctx.assertTruthy("Filter has password id", retrievedFilter.p[retrievedPassword[0].id]);
 
-        const reactivePassword = createReactivePassword(password);
-        await app.currentVault.passwordStore.deletePassword(masterKey, reactivePassword);
+        let editablePassword = userManager.defaultUser.getEditablePassword(password.id);
+        await userManager.defaultUser.deletePassword("Delete Password", ctx, editablePassword.dataType);
 
-        retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.value.id.value == password.id.value);
-        retrievedFilter = app.currentVault.filterStore.passwordFilters.filter(f => f.value.id.value == filter.id.value)[0];
+        retrievedPassword = app.currentVault.passwordStore.passwords.filter(p => p.id == password.id);
+        retrievedFilter = app.currentVault.filterStore.passwordFilters.filter(f => f.id == filter.id)[0];
 
         ctx.assertTruthy("Filter exists", retrievedFilter);
         ctx.assertEquals("Password doesn't exists", retrievedPassword.length, 0);
-        ctx.assertEquals("Filter doesn't have password id", retrievedFilter.value.passwords.value.size, 0);
+        ctx.assertTruthy("Filter doesn't have password id", OH.size(retrievedFilter.p) == 0);
     }
 });
 
