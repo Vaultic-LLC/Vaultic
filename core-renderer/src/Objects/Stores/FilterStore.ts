@@ -239,11 +239,15 @@ export class FilterStore extends SecondaryDataTypeStore<IFilterStoreState, Filte
 
         for (let i = 0; i < addedConditions.length; i++)
         {
+            // Add these here as well for when we sync filters after this method call
+            filter.c[addedConditions[i].id] = addedConditions[i];
             pendingFilterStoreState.addValue(allConditionsPath, addedConditions[i].id, addedConditions[i], filter.id);
         }
 
         for (let i = 0; i < deletedConditions.length; i++)
         {
+            // Delete these here as well for when we sync filters after this method call
+            delete filter.c[deletedConditions[i]];
             pendingFilterStoreState.deleteValue(allConditionsPath, deletedConditions[i], filter.id);
         }
     }
@@ -263,7 +267,7 @@ export class FilterStore extends SecondaryDataTypeStore<IFilterStoreState, Filte
         return pendingPasswordState;
     }
 
-    // called internally when adding / updating a filter to sync passwords
+    // called internally when adding / updating a filter to sync values
     private syncSpecificFiltersForValues(
         filtersToSync: { [key: string]: Filter },
         allGroups: { [key: string]: Group },

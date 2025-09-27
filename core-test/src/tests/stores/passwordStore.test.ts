@@ -1,10 +1,10 @@
 import cryptHelper from '@renderer/Helpers/cryptHelper';
 import createReactivePassword from '@renderer/Objects/Stores/ReactivePassword';
-import { createTestSuite, type TestContext } from '@lib/test';
+import { createTestSuite, TestSuites, type TestContext } from '@lib/test';
 import app from "@renderer/Objects/Stores/AppStore";
 import { Password, defaultPassword, Group, defaultGroup, DataType, Filter, defaultFilter, FilterConditionType, SecurityQuestion } from '@renderer/Types/DataTypes';
 
-let passwordStoreSuite = createTestSuite("Password Store");
+let passwordStoreSuite = createTestSuite("Password Store", TestSuites.PasswordStore);
 
 const masterKey = "test";
 

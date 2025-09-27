@@ -1,38 +1,22 @@
-import { createTestSuite, type TestContext } from '@lib/test';
+import { createTestSuite, TestSuites, type TestContext } from '@lib/test';
 import app from "@renderer/Objects/Stores/AppStore";
-import { api } from "@renderer/API";
+import userManager from '@lib/userManager';
 
-let vaultStoreTestSuite = createTestSuite("Vault Store");
-
-const masterKey = "test";
-const email = "test@gmail.com";
+let vaultStoreTestSuite = createTestSuite("Vault Store", TestSuites.VaultStore);
 
 vaultStoreTestSuite.tests.push({
     name: "Logging in records login", func: async (ctx: TestContext) =>
     {
-        const dateObj = new Date(Date.now());
-        const todayKey = `${dateObj.getFullYear()}-${dateObj.getMonth()}-${dateObj.getDate()}`;
+        const logInRecords = app.currentVault.loginHistory.length;
 
-        const logInRecords = app.currentVault.loginHistory.value.get(todayKey);
-        await app.lock();
+        await userManager.logCurrentUserOut();
+        await userManager.logUserIn(ctx, userManager.defaultUser.id);
 
-        const response = await api.helpers.server.logUserIn(masterKey, email, false, false);
-        ctx.assertTruthy("Log in was successful", response.success);
-
-        app.isOnline = true;
-        await app.loadUserData(masterKey, response.value!.UserDataPayload);
-
-        const newLogInRecords = app.currentVault.loginHistory.value.get(todayKey);
-
-        const addedLogin = newLogInRecords?.value.daysLogin.value.difference(logInRecords!.value.daysLogin.value);
-        ctx.assertEquals("New log in record", addedLogin?.size, 1);
+        const newLogInRecords = app.currentVault.loginHistory.length;
+        ctx.assertEquals("New log in record", newLogInRecords, logInRecords + 1);
 
         const oneMinutesAgo = Date.now() - (1000 * 60);
-
-        for (const [key, value] of addedLogin!.entries())
-        {
-            ctx.assertTruthy("New log in happened less than a minute ago", key > oneMinutesAgo);
-        }
+        ctx.assertTruthy("New log in happened less than a minute ago", app.currentVault.loginHistory[app.currentVault.loginHistory.length - 1] > oneMinutesAgo);
     }
 });
 

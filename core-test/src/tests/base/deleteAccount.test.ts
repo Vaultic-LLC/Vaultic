@@ -1,13 +1,13 @@
 import localDatabase from "@lib/localDatabaseBridge";
 import { privateServerDB, publicServerDB } from "@lib/serverDatabaseBridge";
-import { createTestSuite, TestContext } from "@lib/test";
+import { createTestSuite, TestContext, TestSuites } from "@lib/test";
 import userManager, { User } from "@lib/userManager";
 import { api } from "@renderer/API";
 import app from "@renderer/Objects/Stores/AppStore";
 import { Organization } from "@vaultic/shared/Types/DataTypes";
 import { UserVaultIDAndVaultID } from "@vaultic/shared/Types/Entities";
 
-let deleteAccountTestSuite = createTestSuite("Delete Account");
+let deleteAccountTestSuite = createTestSuite("Delete Account", TestSuites.DeleteAccount);
 
 type TestState =
 {

@@ -1,9 +1,9 @@
-import { createTestSuite, type TestContext } from '@lib/test';
+import { createTestSuite, TestSuites, type TestContext } from '@lib/test';
 import app from "@renderer/Objects/Stores/AppStore";
 import { DataType, defaultGroup, IGroupable, defaultPassword, defaultValue, Group } from "@renderer/Types/DataTypes";
 import { IIdentifiable, PrimaryDataObjectCollection } from '@vaultic/shared/Types/Fields';
 
-let groupStoreSuite = createTestSuite("Group Store");
+let groupStoreSuite = createTestSuite("Group Store", TestSuites.GroupStore);
 
 const masterKey = "test";
 

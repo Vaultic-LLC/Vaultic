@@ -1,12 +1,12 @@
 import { DataType, defaultFilter, defaultGroup, defaultPassword, defaultValue, Filter, FilterConditionType, Group, NameValuePair, NameValuePairType, Password } from "@renderer/Types/DataTypes";
 import { api } from "@renderer/API";
 import app from "@renderer/Objects/Stores/AppStore";
-import { createTestSuite, TestContext } from "@lib/test";
+import { createTestSuite, TestContext, TestSuites } from "@lib/test";
 import cryptHelper from "@renderer/Helpers/cryptHelper";
 import userManager from "@lib/userManager";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
-let mergingDataTestSuite = createTestSuite("Merging Data");
+let mergingDataTestSuite = createTestSuite("Merging Data", TestSuites.MergingData);
 
 // copies vaultic.db to vaultic2.db and the logs into a fresh vaultic.db
 async function copyDatabaseAndLogIntoOnlineMode(forTest: string, ctx: TestContext)

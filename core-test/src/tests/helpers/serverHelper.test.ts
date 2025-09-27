@@ -1,8 +1,8 @@
 import { api } from "@renderer/API";
-import { createTestSuite, TestContext } from "@lib/test";
+import { createTestSuite, TestContext, TestSuites } from "@lib/test";
 import userManager, { User } from "@lib/userManager";
 
-let serverHelperTestSuite = createTestSuite("Server Helper");
+let serverHelperTestSuite = createTestSuite("Server Helper", TestSuites.ServerHelper);
 
 serverHelperTestSuite.tests.push({
     name: "Register and First Log In Works", func: async (ctx: TestContext) =>
@@ -34,5 +34,7 @@ serverHelperTestSuite.tests.push({
         ctx.assertTruthy("Log in works", logInResponse);
     }
 });
+
+// TODO: should test the other options for logging in like resetting all of the users data
 
 export default serverHelperTestSuite;

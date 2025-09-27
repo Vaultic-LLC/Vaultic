@@ -769,7 +769,8 @@ export class SecondaryDataTypeStore<T extends StoreState, K extends Secondarydat
             }
 
             // remove current secondary object from removed secondary object's list
-            if (OH.size(currentDuplicateSecondaryObjects[o]) == 0)
+            // This is the last duplicate for this secondary object, delete the entire object
+            if (OH.size(currentDuplicateSecondaryObjects[o]) == 1)
             {
                 pendingStoreState.deleteValue(duplicateDataTypesPath, o);
             }

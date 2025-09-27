@@ -21,9 +21,9 @@ import app from "@renderer/Objects/Stores/AppStore";
 import { createTestSuite, TestContext } from "@lib/test";
 
 // run the entire app with a few tests in docker (each container would be like a differnt device)?
-let backupTestSuite = createTestSuite("Backup");
+// let backupTestSuite = createTestSuite("Backup");
 
-const masterKey = "test";
-const email = "test@gmail.com"
+// const masterKey = "test";
+// const email = "test@gmail.com"
 
-export default backupTestSuite;
+// export default backupTestSuite;

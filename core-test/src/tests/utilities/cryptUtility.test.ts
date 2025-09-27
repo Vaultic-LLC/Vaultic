@@ -1,9 +1,9 @@
 import cryptHelper from "@renderer/Helpers/cryptHelper";
 import { api } from "@renderer/API";
-import { createTestSuite, TestContext } from "@lib/test";
+import { createTestSuite, TestContext, TestSuites } from "@lib/test";
 import userManager from "@lib/userManager";
 
-let cryptUtilityTestSuite = createTestSuite("Crypt Utility");
+let cryptUtilityTestSuite = createTestSuite("Crypt Utility", TestSuites.CryptUtility);
 
 cryptUtilityTestSuite.tests.push({
     name: "Encrypt / Decrypt", func: async (ctx: TestContext) =>

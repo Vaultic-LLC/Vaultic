@@ -1,10 +1,10 @@
 import cryptHelper from '@renderer/Helpers/cryptHelper';
-import { createTestSuite, type TestContext } from '@lib/test';
+import { createTestSuite, TestSuites, type TestContext } from '@lib/test';
 import createReactiveValue from "@renderer/Objects/Stores/ReactiveValue";
 import app from "@renderer/Objects/Stores/AppStore";
 import { NameValuePair, defaultValue, NameValuePairType, Group, defaultGroup, DataType, Filter, defaultFilter, FilterConditionType } from "@renderer/Types/DataTypes";
 
-let valueStoreSuite = createTestSuite("Value Store");
+let valueStoreSuite = createTestSuite("Value Store", TestSuites.ValueStore);
 
 const masterKey = "test";
 

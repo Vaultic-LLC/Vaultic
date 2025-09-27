@@ -1,4 +1,4 @@
-import { createTestSuite, type TestContext } from '@lib/test';
+import { createTestSuite, TestSuites, type TestContext } from '@lib/test';
 import app from "@renderer/Objects/Stores/AppStore";
 import { api } from "@renderer/API";
 import userManager from '@lib/userManager';
@@ -7,7 +7,7 @@ import { publicServerDB } from "@lib/serverDatabaseBridge";
 import { FilterStoreState, GroupStoreState, Organization, OrganizationVault, PasswordStoreState, UserOrganization, UserVault, ValueStoreState, Vault, VaultPreferencesStoreState, VaultStoreState } from '@lib/types/serverSchema';
 import { IFilterStoreState, IGroupStoreState, IPasswordStoreState, IUserVault, IValueStoreState, IVault, IVaultPreferencesStoreState, IVaultStoreState } from '@vaultic/shared/Types/Entities';
 
-let appStoreTestSuite = createTestSuite("App Store");
+let appStoreTestSuite = createTestSuite("App Store", TestSuites.AppStore);
 
 async function verifyAllVaultDataInDatabases(test: string, ctx: TestContext, exists: boolean, userVaultID: number, vaultID: number, organizationVaultID?: number)
 {

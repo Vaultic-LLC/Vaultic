@@ -2,6 +2,25 @@ export interface TestSuite
 {
     name: string;
     tests: ITest[];
+    suite: TestSuites;
+}
+
+export enum TestSuites
+{
+    All,
+    DeleteAccount,
+    MergingData,
+    ImportExportHelper,
+    ServerHelper,
+    AppStore,
+    FilterStore,
+    GroupStore,
+    PasswordStore,
+    Transaction,
+    UserPreferencesStore,
+    ValueStore,
+    VaultStore,
+    CryptUtility
 }
 
 export interface ITest 
@@ -18,11 +37,12 @@ export interface TestContext<T = any>
     assertUndefined(description: string, value: any): void;
 }
 
-export function createTestSuite(name: string): TestSuite
+export function createTestSuite(name: string, suite: TestSuites): TestSuite
 {
     return {
         name,
-        tests: []
+        tests: [],
+        suite
     }
 }
 

@@ -1,4 +1,4 @@
-import { TestRunner } from "../lib/test";
+import { TestRunner, TestSuite, TestSuites } from "../lib/test";
 
 import appStoreTestSuite from "./stores/appStore.test";
 import vaultStoreTestSuite from "./stores/vaultStore.test";
@@ -13,123 +13,42 @@ import importExportHelperTestSuite from "./helpers/importExportHelper.test";
 
 import cryptUtilityTestSuite from "./utilities/cryptUtility.test";
 
-import backupTestSuite from "./base/backup.test";
 import mergingDataTestSuite from "./base/mergingData.test";
 import deleteAccountTestSuite from "./base/deleteAccount.test";
 
 const runner = new TestRunner();
 
-export default async function runAllTests()
+const testSuites: Map<TestSuites, TestSuite> = new Map([
+    [TestSuites.MergingData, mergingDataTestSuite],
+    [TestSuites.ImportExportHelper, importExportHelperTestSuite],
+    [TestSuites.AppStore, appStoreTestSuite],
+    [TestSuites.FilterStore, filterStoreSuite],
+    [TestSuites.GroupStore, groupStoreSuite],
+    [TestSuites.PasswordStore, passwordStoreSuite],
+    [TestSuites.ValueStore, valueStoreSuite],
+    [TestSuites.Transaction, transactionTestSuite],
+    [TestSuites.VaultStore, vaultStoreTestSuite],
+    [TestSuites.CryptUtility, cryptUtilityTestSuite],
+    [TestSuites.DeleteAccount, deleteAccountTestSuite],
+]);
+
+export default async function runTests(suite: TestSuites)
 {
-    // These should go first since they mess with logging in
-    await runner.runSuite(serverHelperTestSuite);
-    //await runTests(backupTestSuite);
-    await runner.runSuite(mergingDataTestSuite);
-    await runner.runSuite(appStoreTestSuite);
-    await runner.runSuite(vaultStoreTestSuite);
-
-    await runner.runSuite(passwordStoreSuite);
-    await runner.runSuite(valueStoreSuite);
-    await runner.runSuite(groupStoreSuite);
-    await runner.runSuite(filterStoreSuite);
-    await runner.runSuite(transactionTestSuite);
-    await runner.runSuite(importExportHelperTestSuite);
-    await runner.runSuite(cryptUtilityTestSuite);
-
-    await runner.runSuite(deleteAccountTestSuite);
-
-    runner.printResults();
-}
-
-export async function runAllAppStoreTests()
-{
-    await runner.runSuite(serverHelperTestSuite);
-    await runner.runSuite(appStoreTestSuite);
-
-    runner.printResults();
-}
-
-
-export async function runAllPasswordTests()
-{
-    await runner.runSuite(serverHelperTestSuite);
-    await runner.runSuite(passwordStoreSuite);
-
-    runner.printResults();
-}
-
-export async function runAllValueTests()
-{
-    await runner.runSuite(valueStoreSuite);
-
-    runner.printResults();
-}
-
-export async function runAllGroupTests()
-{
-    await runner.runSuite(serverHelperTestSuite);
-    await runner.runSuite(groupStoreSuite);
-
-    runner.printResults();
-}
-
-export async function runAllFilterTests()
-{
-    await runner.runSuite(filterStoreSuite);
-
-    runner.printResults();
-}
-
-export async function runAllTransactionTests()
-{
-    await runner.runSuite(transactionTestSuite);
-
-    runner.printResults();
-}
-
-export async function runServerHelperTests()
-{
+    // Always run first to setup some data
     await runner.runSuite(serverHelperTestSuite);
 
-    runner.printResults();
-}
-
-export async function runImportExportHelperTests()
-{
-    await runner.runSuite(serverHelperTestSuite);
-    await runner.runSuite(importExportHelperTestSuite);
-
-    runner.printResults();
-}
-
-export async function runCryptUtilityTests()
-{
-    await runner.runSuite(serverHelperTestSuite);
-    await runner.runSuite(cryptUtilityTestSuite);
+    if (suite == TestSuites.All)
+    {
+        for (const testSuite of testSuites.values())
+        {
+            await runner.runSuite(testSuite);
+        }
+    }
+    else
+    {
+        await runner.runSuite(testSuites.get(suite)!);
+    }
 
     runner.printResults();
-}
 
-export async function runAllBackupTests()
-{
-    await runner.runSuite(serverHelperTestSuite);
-    await runner.runSuite(backupTestSuite);
-
-    runner.printResults();
-}
-
-export async function runAllMergingDataTests()
-{
-    await runner.runSuite(serverHelperTestSuite);
-    await runner.runSuite(mergingDataTestSuite);
-
-    runner.printResults();
-}
-
-export async function runAllDeleteAccountTests()
-{
-    await runner.runSuite(serverHelperTestSuite);
-    await runner.runSuite(deleteAccountTestSuite);
-
-    runner.printResults();
 }

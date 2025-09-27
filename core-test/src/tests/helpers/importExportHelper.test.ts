@@ -1,5 +1,5 @@
 import { buildCSVPropertyMappers, getExportablePasswords, getExportableValues, importablePasswordProperties, importableValueProperties, PasswordCSVImporter, ValueCSVImporter } from "@renderer/Helpers/ImportExportHelper";
-import { createTestSuite, TestContext } from "@lib/test";
+import { createTestSuite, TestContext, TestSuites } from "@lib/test";
 import { parse } from "csv-parse/browser/esm/sync";
 import { CSVHeaderPropertyMapperModel } from "@renderer/Types/Models";
 import { DataType, defaultGroup, defaultPassword, defaultValue, NameValuePair, NameValuePairType, Password, SecurityQuestion } from "@renderer/Types/DataTypes";
@@ -9,7 +9,7 @@ import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 import { DictionaryAsList } from "@vaultic/shared/Types/Stores";
 import userManager from "@lib/userManager";
 
-let importExportHelperTestSuite = createTestSuite("Import / Export");
+let importExportHelperTestSuite = createTestSuite("Import / Export", TestSuites.ImportExportHelper);
 
 importExportHelperTestSuite.tests.push({
     name: "Import Passwords Works", func: async (ctx: TestContext) =>
