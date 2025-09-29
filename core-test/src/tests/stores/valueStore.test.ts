@@ -1,41 +1,38 @@
 import cryptHelper from '@renderer/Helpers/cryptHelper';
 import { createTestSuite, TestSuites, type TestContext } from '@lib/test';
-import createReactiveValue from "@renderer/Objects/Stores/ReactiveValue";
 import app from "@renderer/Objects/Stores/AppStore";
 import { NameValuePair, defaultValue, NameValuePairType, Group, defaultGroup, DataType, Filter, defaultFilter, FilterConditionType } from "@renderer/Types/DataTypes";
+import userManager from '@lib/userManager';
 
 let valueStoreSuite = createTestSuite("Value Store", TestSuites.ValueStore);
 
-const masterKey = "test";
-
 function getSafeValues()
 {
-    return app.currentVault.valueStore.nameValuePairs.filter(v => !v.value.isWeak.value &&
-        !app.currentVault.valueStore.duplicateNameValuePairs.value.has(v.value.id.value) && !v.value.isOld());
+    return app.currentVault.valueStore.nameValuePairs.filter(v => !v.w &&
+        !app.currentVault.valueStore.duplicateNameValuePairs[v.id] && !v.isOld());
 }
 
 valueStoreSuite.tests.push({
     name: "ValueStore Add Works", func: async (ctx: TestContext) =>
     {
         const value: NameValuePair = defaultValue();
-        value.name.value = "ValueStore Add Works";
-        value.notifyIfWeak.value = true;
-        value.valueType.value = NameValuePairType.Information;
-        value.value.value = "Value";
-        value.additionalInformation.value = "AdditionalInformation";
+        value.n = "ValueStore Add Works";
+        value.o = true;
+        value.y = NameValuePairType.Information;
+        value.v = "Value";
+        value.a = "AdditionalInformation";
 
-        await app.currentVault.valueStore.addNameValuePair(masterKey, value);
-        const retrievedValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.value.id.value == value.id.value)[0];
+        await userManager.defaultUser.addNameValuePair("Add Value", ctx, value);
+        const retrievedValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.id == value.id)[0];
 
-        const decryptedValue = await cryptHelper.decrypt(masterKey, retrievedValue.value.value.value);
+        const decryptedValue = await cryptHelper.decrypt(userManager.defaultUser.vaulticKey, retrievedValue.v);
 
         ctx.assertTruthy("Value Exists", retrievedValue);
-        ctx.assertEquals("Name is correct", retrievedValue.value.name.value, "ValueStore Add Works");
-        ctx.assertEquals("NotifyIfWeak is correct", retrievedValue.value.notifyIfWeak.value, true);
-        ctx.assertEquals("ValueType is correct", retrievedValue.value.valueType.value, NameValuePairType.Information);
+        ctx.assertEquals("Name is correct", retrievedValue.n, "ValueStore Add Works");
+        ctx.assertEquals("NotifyIfWeak is correct", retrievedValue.o, true);
+        ctx.assertEquals("ValueType is correct", retrievedValue.y, NameValuePairType.Information);
         ctx.assertEquals("Value is correct", decryptedValue.value, "Value");
-        ctx.assertEquals("Value length is correct", retrievedValue.value.valueLength.value, 5);
-        ctx.assertEquals("Additional Information is correct", retrievedValue.value.additionalInformation.value, "AdditionalInformation");
+        ctx.assertEquals("Additional Information is correct", retrievedValue.a, "AdditionalInformation");
     }
 });
 
@@ -43,33 +40,33 @@ valueStoreSuite.tests.push({
     name: "ValueStore Metrics Work After Add", func: async (ctx: TestContext) =>
     {
         const weakPhraseValue: NameValuePair = defaultValue();
-        weakPhraseValue.name.value = "Mvosnviowengwegnwilgnl";
-        weakPhraseValue.valueType.value = NameValuePairType.Passphrase;
-        weakPhraseValue.value.value = "weakduplicate";
+        weakPhraseValue.n = "Mvosnviowengwegnwilgnl";
+        weakPhraseValue.y = NameValuePairType.Passphrase;
+        weakPhraseValue.v = "weakduplicate";
 
         const weakPasscodeValue: NameValuePair = defaultValue();
-        weakPhraseValue.name.value = "MV;lmlvnqlbguilwhguilghwlig";
-        weakPasscodeValue.valueType.value = NameValuePairType.Passcode;
-        weakPasscodeValue.value.value = "weak";
+        weakPhraseValue.n = "MV;lmlvnqlbguilwhguilghwlig";
+        weakPasscodeValue.y = NameValuePairType.Passcode;
+        weakPasscodeValue.v = "weak";
 
         const duplicateValue: NameValuePair = defaultValue();
-        duplicateValue.name.value = "MLKZNlkdnfijlbguiweguilhgiwelgw";
-        duplicateValue.value.value = "weakduplicate";
+        duplicateValue.n = "MLKZNlkdnfijlbguiweguilhgiwelgw";
+        duplicateValue.v = "weakduplicate";
 
-        await app.currentVault.valueStore.addNameValuePair(masterKey, weakPhraseValue);
+        await userManager.defaultUser.addNameValuePair("Add Weak Phrase Value", ctx, weakPhraseValue);
 
-        const retrievedWeakPhraseValue = app.currentVault.valueStore.weakPassphraseValues.value.filter(v => v == weakPhraseValue.id.value);
+        const retrievedWeakPhraseValue = app.currentVault.valueStore.weakPassphraseValues.value.filter(v => v == weakPhraseValue.id);
         ctx.assertEquals("Weak pass phrase value exists", retrievedWeakPhraseValue.length, 1);
 
-        await app.currentVault.valueStore.addNameValuePair(masterKey, weakPasscodeValue);
+        await userManager.defaultUser.addNameValuePair("Add Weak Passcode Value", ctx, weakPasscodeValue);
 
-        const retrievedWeaCodeValue = app.currentVault.valueStore.weakPasscodeValues.value.filter(v => v == weakPasscodeValue.id.value);
+        const retrievedWeaCodeValue = app.currentVault.valueStore.weakPasscodeValues.value.filter(v => v == weakPasscodeValue.id);
         ctx.assertEquals("Weak pass code value exists", retrievedWeaCodeValue.length, 1);
 
-        await app.currentVault.valueStore.addNameValuePair(masterKey, duplicateValue);
+        await userManager.defaultUser.addNameValuePair("Add Duplicate Value", ctx, duplicateValue);
 
-        ctx.assertTruthy("Duplicate value one exists", app.currentVault.valueStore.duplicateNameValuePairs.value.has(duplicateValue.id.value));
-        ctx.assertTruthy("Duplicate value two exists", app.currentVault.valueStore.duplicateNameValuePairs.value.has(weakPhraseValue.id.value));
+        ctx.assertTruthy("Duplicate value one exists", app.currentVault.valueStore.duplicateNameValuePairs[duplicateValue.id]);
+        ctx.assertTruthy("Duplicate value two exists", app.currentVault.valueStore.duplicateNameValuePairs[weakPhraseValue.id]);
     }
 });
 
@@ -77,14 +74,14 @@ valueStoreSuite.tests.push({
     name: "ValueStore Add CurrentAndSafe Works", func: async (ctx: TestContext) =>
     {
         const safeValue: NameValuePair = defaultValue();
-        safeValue.name.value = "mamlsnlwniogwegilwgiowgg";
-        safeValue.value.value = "FS:nvw2nvioshsoijhvhoVnlweuw159y98hoivGSHLViNSBuign[p[1";
+        safeValue.n = "mamlsnlwniogwegilwgiowgg";
+        safeValue.v = "FS:nvw2nvioshsoijhvhoVnlweuw159y98hoivGSHLViNSBuign[p[1";
 
         const unsafeValue: NameValuePair = defaultValue();
-        unsafeValue.name.value = "mnwiughqwuighq4uighilghnelgng";
-        unsafeValue.value.value = "weak";
+        unsafeValue.n = "mnwiughqwuighq4uighilghnelgng";
+        unsafeValue.v = "weak";
 
-        await app.currentVault.valueStore.addNameValuePair(masterKey, safeValue);
+        await userManager.defaultUser.addNameValuePair("Add Safe Value", ctx, safeValue);
 
         ctx.assertEquals("Safe value correct current",
             app.currentVault.valueStore.currentAndSafeValuesCurrent[app.currentVault.valueStore.currentAndSafeValuesCurrent.length - 1],
@@ -94,7 +91,7 @@ valueStoreSuite.tests.push({
             app.currentVault.valueStore.currentAndSafeValuesSafe[app.currentVault.valueStore.currentAndSafeValuesSafe.length - 1],
             getSafeValues().length);
 
-        await app.currentVault.valueStore.addNameValuePair(masterKey, unsafeValue);
+        await userManager.defaultUser.addNameValuePair("Add Unsafe Value", ctx, unsafeValue);
 
         ctx.assertEquals("Unsafe value correct current",
             app.currentVault.valueStore.currentAndSafeValuesCurrent[app.currentVault.valueStore.currentAndSafeValuesCurrent.length - 1],
@@ -110,25 +107,25 @@ valueStoreSuite.tests.push({
     name: "ValueStore Add With Group Works", func: async (ctx: TestContext) =>
     {
         const value: NameValuePair = defaultValue();
-        value.name.value = "amsldkvnwlbuweibgwukgbeauilglg";
+        value.n = "amsldkvnwlbuweibgwukgbeauilglg";
 
         const group: Group = defaultGroup(DataType.NameValuePairs);
-        group.name.value = "ValueStore Add With Group Works";
-        group.color.value = "#FFFFFF";
+        group.n = "ValueStore Add With Group Works";
+        group.c = "#FFFFFF";
 
-        await app.currentVault.groupStore.addGroup(masterKey, group);
+        await userManager.defaultUser.addGroup("Add Group", ctx, group);
 
-        value.groups.value.set(group.id.value, Field.create(group.id.value));
+        value.g[group.id] = true;
 
-        await app.currentVault.valueStore.addNameValuePair(masterKey, value);
+        await userManager.defaultUser.addNameValuePair("Add Value", ctx, value);
 
-        const retrieveValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.value.id.value == value.id.value)[0];
-        const retrievedGroup = app.currentVault.groupStore.valuesGroups.filter(g => g.value.id.value == group.id.value)[0];
+        const retrieveValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.id == value.id)[0];
+        const retrievedGroup = app.currentVault.groupStore.valuesGroups.filter(g => g.id == group.id)[0];
 
         ctx.assertTruthy("Value exists", retrieveValue);
         ctx.assertTruthy("Group exists", retrievedGroup);
-        ctx.assertTruthy("Value has group id", retrieveValue.value.groups.value.has(retrievedGroup.value.id.value));
-        ctx.assertTruthy("Group has value id", retrievedGroup.value.values.value.has(retrieveValue.value.id.value));
+        ctx.assertTruthy("Value has group id", retrieveValue.g[retrievedGroup.id]);
+        ctx.assertTruthy("Group has value id", retrievedGroup.v[retrieveValue.id]);
     }
 });
 
@@ -136,28 +133,29 @@ valueStoreSuite.tests.push({
     name: "ValueStore Add With Filter Works", func: async (ctx: TestContext) =>
     {
         const value: NameValuePair = defaultValue();
-        value.name.value = "ValueStore Add With Filter Works";
+        value.n = "ValueStore Add With Filter Works";
 
         const filter: Filter = defaultFilter(DataType.NameValuePairs);
-        filter.name.value = "ValueStore Add With Filter Works";
+        filter.n = "ValueStore Add With Filter Works";
 
-        filter.conditions.value.set("ValueStore Add With Filter Works", Field.create({
-            id: Field.create("ValueStore Add With Filter Works"),
-            property: Field.create("name"),
-            filterType: Field.create(FilterConditionType.EqualTo),
-            value: Field.create("ValueStore Add With Filter Works")
-        }));
+        filter.c["n"] = 
+        {
+            id: "n",
+            p: "n",
+            t: FilterConditionType.EqualTo,
+            v: "ValueStore Add With Filter Works"
+        };
 
-        await app.currentVault.filterStore.addFilter(masterKey, filter);
-        await app.currentVault.valueStore.addNameValuePair(masterKey, value);
+        await userManager.defaultUser.addFilter("Add Filter", ctx, filter);
+        await userManager.defaultUser.addNameValuePair("Add Value", ctx, value);
 
-        const retrievedValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.value.id.value == value.id.value)[0];
-        const retrievedFilter = app.currentVault.filterStore.nameValuePairFilters.filter(f => f.value.id.value == filter.id.value)[0];
+        const retrievedValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.id == value.id)[0];
+        const retrievedFilter = app.currentVault.filterStore.nameValuePairFilters.filter(f => f.id == filter.id)[0];
 
         ctx.assertTruthy("Value exists", retrievedValue);
         ctx.assertTruthy("Filter exists", retrievedFilter);
-        ctx.assertTruthy("Value has filter id", retrievedValue.value.filters.value.has(retrievedFilter.value.id.value));
-        ctx.assertTruthy("Filter has value id", retrievedFilter.value.values.value.has(retrievedValue.value.id.value));
+        ctx.assertTruthy("Value has filter id", retrievedValue.i[retrievedFilter.id]);
+        ctx.assertTruthy("Filter has value id", retrievedFilter.v[retrievedValue.id]);
     }
 });
 
@@ -166,32 +164,34 @@ valueStoreSuite.tests.push({
     {
         const originalName = "ValueStoreUpdateWorks";
         const value: NameValuePair = defaultValue();
-        value.name.value = originalName;
-        value.notifyIfWeak.value = true;
+        value.n = originalName;
+        value.o = true;
 
-        await app.currentVault.valueStore.addNameValuePair(masterKey, value);
+        await userManager.defaultUser.addNameValuePair("Add Value", ctx, value);
 
         const newName = "ValueStoreUpdateWorks--New";
         const newValueType = NameValuePairType.Safe;
         const newNotifyIfWeak = false;
         const newAdditionalInfo = "NewAdditionalInfo";
 
-        value.name.value = newName;
-        value.valueType.value = newValueType;
-        value.notifyIfWeak.value = newNotifyIfWeak;
-        value.additionalInformation.value = newAdditionalInfo;
+        const editableValue = userManager.defaultUser.getEditableNameValuePair(value.id);
 
-        await app.currentVault.valueStore.updateNameValuePair(masterKey, value, false);
+        editableValue.dataType.n = newName;
+        editableValue.dataType.y = newValueType;
+        editableValue.dataType.o = newNotifyIfWeak;
+        editableValue.dataType.a = newAdditionalInfo;
 
-        const originalValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.value.name.value == originalName);
+        await userManager.defaultUser.updateNameValuePair("Update Value", ctx, editableValue, false, editableValue.dataType.g);
+
+        const originalValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.n == originalName);
         ctx.assertEquals("Original value doesn't exist", originalValue.length, 0);
 
-        const retrievedValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.value.id.value == value.id.value)[0];
+        const retrievedValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.id == value.id)[0];
         ctx.assertTruthy("Value Exists", retrievedValue);
-        ctx.assertEquals("Name was updated", retrievedValue.value.name.value, newName);
-        ctx.assertEquals("Type was updated", retrievedValue.value.valueType.value, newValueType);
-        ctx.assertEquals("NotifyIfWeak was updated", retrievedValue.value.notifyIfWeak.value, newNotifyIfWeak);
-        ctx.assertEquals("AdditionalInformation was updated", retrievedValue.value.additionalInformation.value, newAdditionalInfo);
+        ctx.assertEquals("Name was updated", retrievedValue.n, newName);
+        ctx.assertEquals("Type was updated", retrievedValue.y, newValueType);
+        ctx.assertEquals("NotifyIfWeak was updated", retrievedValue.o, newNotifyIfWeak);
+        ctx.assertEquals("AdditionalInformation was updated", retrievedValue.a, newAdditionalInfo);
     }
 });
 
@@ -199,19 +199,21 @@ valueStoreSuite.tests.push({
     name: "ValueStore Update Value Works", func: async (ctx: TestContext) =>
     {
         const value: NameValuePair = defaultValue();
-        value.value.value = "Value";
-        value.name.value = "vms;alvnwklnweigwligewg";
+        value.v = "Value";
+        value.n = "vms;alvnwklnweigwligewg";
 
-        await app.currentVault.valueStore.addNameValuePair(masterKey, value);
+        await userManager.defaultUser.addNameValuePair("Add Value", ctx, value);
+
+        const editableValue = userManager.defaultUser.getEditableNameValuePair(value.id);
 
         const newValue = "New Value";
-        value.value.value = newValue;
-        await app.currentVault.valueStore.updateNameValuePair(masterKey, value, true);
+        editableValue.dataType.v = newValue;
+        await userManager.defaultUser.updateNameValuePair("Update Value", ctx, editableValue, true, editableValue.dataType.g);
 
-        const retrievedValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.value.id.value == value.id.value)[0];
+        const retrievedValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.id == value.id)[0];
         ctx.assertTruthy("Value Exists", retrievedValue);
 
-        const decryptedValue = await cryptHelper.decrypt(masterKey, retrievedValue.value.value.value);
+        const decryptedValue = await cryptHelper.decrypt(userManager.defaultUser.vaulticKey, retrievedValue.v);
         ctx.assertEquals("Value was updated", decryptedValue.value, newValue);
     }
 });
@@ -220,76 +222,85 @@ valueStoreSuite.tests.push({
     name: "ValueStore Metrics Work After Update", func: async (ctx: TestContext) =>
     {
         const notWeakValue = "s123hgsjhLS HDHFp[]p[L ihsgh lh hsh hwe SLHF shgskljhwkg eghuiSSHGL SDh";
+        const notWeakPasscode = "f;jvioweoigjsSDfsiojio 26234}|[;][;joiS fiosjfios j SIOjsojsO Ojslj OL fj Ljsdl sdjiwewogI josj ojosi j fsfs fs fsweg ef";
         const weakPhraseValue: NameValuePair = defaultValue();
-        weakPhraseValue.name.value = "ms;lvknklvenilwbguilwgwlgwg";
-        weakPhraseValue.valueType.value = NameValuePairType.Passphrase;
-        weakPhraseValue.value.value = notWeakValue;
+        weakPhraseValue.n = "ms;lvknklvenilwbguilwgwlgwg";
+        weakPhraseValue.y = NameValuePairType.Passphrase;
+        weakPhraseValue.v = notWeakValue;
 
-        await app.currentVault.valueStore.addNameValuePair(masterKey, weakPhraseValue);
+        await userManager.defaultUser.addNameValuePair("Add Weak Phrase Value", ctx, weakPhraseValue);
 
-        let retrievedWeakPhraseValue = app.currentVault.valueStore.weakPassphraseValues.value.filter(v => v == weakPhraseValue.id.value);
+        let retrievedWeakPhraseValue = app.currentVault.valueStore.weakPassphraseValues.value.filter(v => v == weakPhraseValue.id);
         ctx.assertEquals("Weak pass phrase value doesn't exists", retrievedWeakPhraseValue.length, 0);
 
-        weakPhraseValue.value.value = "weak";
-        await app.currentVault.valueStore.updateNameValuePair(masterKey, weakPhraseValue, true);
+        let editableWeakPhraseValue = userManager.defaultUser.getEditableNameValuePair(weakPhraseValue.id);
 
-        retrievedWeakPhraseValue = app.currentVault.valueStore.weakPassphraseValues.value.filter(v => v == weakPhraseValue.id.value);
+        editableWeakPhraseValue.dataType.v = "weak";
+        await userManager.defaultUser.updateNameValuePair("Update Weak Phrase Value", ctx, editableWeakPhraseValue, true, editableWeakPhraseValue.dataType.g);
+
+        retrievedWeakPhraseValue = app.currentVault.valueStore.weakPassphraseValues.value.filter(v => v == weakPhraseValue.id);
         ctx.assertEquals("Weak pass phrase value exists", retrievedWeakPhraseValue.length, 1);
 
-        weakPhraseValue.value.value = notWeakValue;
-        await app.currentVault.valueStore.updateNameValuePair(masterKey, weakPhraseValue, true);
+        editableWeakPhraseValue = userManager.defaultUser.getEditableNameValuePair(weakPhraseValue.id);
 
-        retrievedWeakPhraseValue = app.currentVault.valueStore.weakPassphraseValues.value.filter(v => v == weakPhraseValue.id.value);
+        editableWeakPhraseValue.dataType.v = notWeakValue;
+        await userManager.defaultUser.updateNameValuePair("Update Weak Phrase Value", ctx, editableWeakPhraseValue, true, editableWeakPhraseValue.dataType.g);
+
+        retrievedWeakPhraseValue = app.currentVault.valueStore.weakPassphraseValues.value.filter(v => v == weakPhraseValue.id);
         ctx.assertEquals("Weak pass phrase value doesn't exist after update", retrievedWeakPhraseValue.length, 0);
 
         const weakPasscodeValue: NameValuePair = defaultValue();
-        weakPasscodeValue.name.value = "qwuiegfuiwqvkabvljksdbvmbmansdjklgna";
-        weakPasscodeValue.valueType.value = NameValuePairType.Passcode;
-        weakPasscodeValue.value.value = notWeakValue;
+        weakPasscodeValue.n = "qwuiegfuiwqvkabvljksdbvmbmansdjklgna";
+        weakPasscodeValue.y = NameValuePairType.Passcode;
+        weakPasscodeValue.v = notWeakPasscode;
 
-        await app.currentVault.valueStore.addNameValuePair(masterKey, weakPasscodeValue);
+        await userManager.defaultUser.addNameValuePair("Add Weak Passcode Value", ctx, weakPasscodeValue);
 
-        let retrievedWeakCodeValue = app.currentVault.valueStore.weakPasscodeValues.value.filter(v => v == weakPasscodeValue.id.value);
+        let retrievedWeakCodeValue = app.currentVault.valueStore.weakPasscodeValues.value.filter(v => v == weakPasscodeValue.id);
         ctx.assertEquals("Weak pass code value doesn't exists", retrievedWeakCodeValue.length, 0);
 
-        weakPasscodeValue.value.value = "weak";
-        await app.currentVault.valueStore.updateNameValuePair(masterKey, weakPasscodeValue, true);
+        let editableWeakPasscodeValue = userManager.defaultUser.getEditableNameValuePair(weakPasscodeValue.id);
 
-        retrievedWeakCodeValue = app.currentVault.valueStore.weakPasscodeValues.value.filter(v => v == weakPasscodeValue.id.value);
+        editableWeakPasscodeValue.dataType.v = "weak";
+        await userManager.defaultUser.updateNameValuePair("Update Weak Passcode Value", ctx, editableWeakPasscodeValue, true, editableWeakPasscodeValue.dataType.g);
+
+        retrievedWeakCodeValue = app.currentVault.valueStore.weakPasscodeValues.value.filter(v => v == weakPasscodeValue.id);
         ctx.assertEquals("Weak pass code value exists", retrievedWeakCodeValue.length, 1);
 
-        weakPasscodeValue.value.value = notWeakValue;
-        await app.currentVault.valueStore.updateNameValuePair(masterKey, weakPasscodeValue, true);
+        editableWeakPasscodeValue = userManager.defaultUser.getEditableNameValuePair(weakPasscodeValue.id);
 
-        retrievedWeakCodeValue = app.currentVault.valueStore.weakPasscodeValues.value.filter(v => v == weakPasscodeValue.id.value);
+        editableWeakPasscodeValue.dataType.v = notWeakPasscode;
+        await userManager.defaultUser.updateNameValuePair("Update Weak Passcode Value", ctx, editableWeakPasscodeValue, true, editableWeakPasscodeValue.dataType.g);
+
+        retrievedWeakCodeValue = app.currentVault.valueStore.weakPasscodeValues.value.filter(v => v == weakPasscodeValue.id);
         ctx.assertEquals("Weak pass code value doesn't exists after update", retrievedWeakCodeValue.length, 0);
 
         const duplicateValue: NameValuePair = defaultValue();
-        duplicateValue.name.value = "zxncvlashijhgweilghweroipghwro;igwrg";
-        duplicateValue.value.value = "notDuplicate";
+        duplicateValue.n = "zxncvlashijhgweilghweroipghwro;igwrg";
+        duplicateValue.v = "notDuplicate";
 
-        await app.currentVault.valueStore.addNameValuePair(masterKey, duplicateValue);
+        await userManager.defaultUser.addNameValuePair("Add Duplicate Value", ctx, duplicateValue);
 
-        let retrievedDuplicateValueOne = app.currentVault.valueStore.duplicateNameValuePairs.value.get(duplicateValue.id.value);
-        ctx.assertTruthy("Duplicate value doesn't exists", retrievedDuplicateValueOne == undefined);
+        let retrievedDuplicateValueOne = app.currentVault.valueStore.duplicateNameValuePairs[duplicateValue.id];
+        ctx.assertUndefined("Duplicate value doesn't exists", retrievedDuplicateValueOne);
 
-        duplicateValue.value.value = notWeakValue;
-        await app.currentVault.valueStore.updateNameValuePair(masterKey, duplicateValue, true);
+        let editableDuplicateValue = userManager.defaultUser.getEditableNameValuePair(duplicateValue.id);
 
-        retrievedDuplicateValueOne = app.currentVault.valueStore.duplicateNameValuePairs.value.get(duplicateValue.id.value);
-        let retrievedDuplicateValueTwo = app.currentVault.valueStore.duplicateNameValuePairs.value.get(weakPhraseValue.id.value);
+        editableDuplicateValue.dataType.v = notWeakValue;
+        await userManager.defaultUser.updateNameValuePair("Update Duplicate Value", ctx, editableDuplicateValue, true, editableDuplicateValue.dataType.g);
 
-        ctx.assertTruthy("Duplicate value one exists", retrievedDuplicateValueOne?.value.duplicateDataTypesByID.value.has(weakPhraseValue.id.value));
-        ctx.assertTruthy("Duplicate value two exists", retrievedDuplicateValueTwo?.value.duplicateDataTypesByID.value.has(duplicateValue.id.value));
+        retrievedDuplicateValueOne = app.currentVault.valueStore.duplicateNameValuePairs[duplicateValue.id];
+        let retrievedDuplicateValueTwo = app.currentVault.valueStore.duplicateNameValuePairs[weakPhraseValue.id];
 
-        duplicateValue.value.value = "notDuplicate";
-        weakPasscodeValue.value.value = "alsoNotDuplicate";
+        ctx.assertTruthy("Duplicate value one exists", retrievedDuplicateValueOne[weakPhraseValue.id]);
+        ctx.assertTruthy("Duplicate value two exists", retrievedDuplicateValueTwo[duplicateValue.id]);
 
-        await app.currentVault.valueStore.updateNameValuePair(masterKey, duplicateValue, true);
-        await app.currentVault.valueStore.updateNameValuePair(masterKey, weakPasscodeValue, true);
+        editableDuplicateValue = userManager.defaultUser.getEditableNameValuePair(duplicateValue.id);
+        editableDuplicateValue.dataType.v = "notDuplicate";
+        await userManager.defaultUser.updateNameValuePair("Update Duplicate Value", ctx, editableDuplicateValue, true, editableDuplicateValue.dataType.g);
 
-        retrievedDuplicateValueOne = app.currentVault.valueStore.duplicateNameValuePairs.value.get(duplicateValue.id.value);
-        retrievedDuplicateValueTwo = app.currentVault.valueStore.duplicateNameValuePairs.value.get(weakPhraseValue.id.value);
+        retrievedDuplicateValueOne = app.currentVault.valueStore.duplicateNameValuePairs[duplicateValue.id];
+        retrievedDuplicateValueTwo = app.currentVault.valueStore.duplicateNameValuePairs[weakPhraseValue.id];
 
         ctx.assertUndefined("Duplicate value one doesn't exists", retrievedDuplicateValueOne);
         ctx.assertUndefined("Duplicate value two doesn't exists", retrievedDuplicateValueTwo);
@@ -300,17 +311,18 @@ valueStoreSuite.tests.push({
     name: "ValueStore Update CurrentAndSafe Works", func: async (ctx: TestContext) =>
     {
         const safeValue: NameValuePair = defaultValue();
-        safeValue.name.value = "sm;lwanvwjekgbwuighwuighwigwh";
-        safeValue.value.value = "weak";
+        safeValue.n = "sm;lwanvwjekgbwuighwuighwigwh";
+        safeValue.v = "weak";
 
         const unsafeValue: NameValuePair = defaultValue();
-        unsafeValue.name.value = "uhweoghisvklsdabvkwehlkebgleibg";
-        unsafeValue.value.value = "aviowanlviwah uilwngui2ht thiohblago][lpy['kymiopyhp9h";
+        unsafeValue.n = "uhweoghisvklsdabvkwehlkebgleibg";
+        unsafeValue.v = "aviowanlviwah uilwngui2ht thiohblago][lpy['kymiopyhp9h";
 
-        await app.currentVault.valueStore.addNameValuePair(masterKey, safeValue);
+        await userManager.defaultUser.addNameValuePair("Add Safe Value", ctx, safeValue);
 
-        safeValue.value.value = "aviowanlviwah uilwngui2ht thiohblago][lpy['kymiopyhp9h";
-        await app.currentVault.valueStore.updateNameValuePair(masterKey, safeValue, true);
+        let editableSafeValue = userManager.defaultUser.getEditableNameValuePair(safeValue.id);
+        editableSafeValue.dataType.v = "aviowanlviwah uilwngui2ht thiohblago][lpy['kymiopyhp9h";
+        await userManager.defaultUser.updateNameValuePair("Update Safe Value", ctx, editableSafeValue, true, editableSafeValue.dataType.g);
 
         ctx.assertEquals("Safe value correct current",
             app.currentVault.valueStore.currentAndSafeValuesCurrent[app.currentVault.valueStore.currentAndSafeValuesCurrent.length - 1],
@@ -320,10 +332,11 @@ valueStoreSuite.tests.push({
             app.currentVault.valueStore.currentAndSafeValuesSafe[app.currentVault.valueStore.currentAndSafeValuesSafe.length - 1],
             getSafeValues().length);
 
-        await app.currentVault.valueStore.addNameValuePair(masterKey, unsafeValue);
+        await userManager.defaultUser.addNameValuePair("Add Unsafe Value", ctx, unsafeValue);
 
-        unsafeValue.value.value = "weak";
-        await app.currentVault.valueStore.updateNameValuePair(masterKey, unsafeValue, true);
+        let editableUnsafeValue = userManager.defaultUser.getEditableNameValuePair(unsafeValue.id);
+        editableUnsafeValue.dataType.v = "weak";
+        await userManager.defaultUser.updateNameValuePair("Update Unsafe Value", ctx, editableUnsafeValue, true, editableUnsafeValue.dataType.g);
 
         ctx.assertEquals("Unsafe value correct current",
             app.currentVault.valueStore.currentAndSafeValuesCurrent[app.currentVault.valueStore.currentAndSafeValuesCurrent.length - 1],
@@ -339,38 +352,35 @@ valueStoreSuite.tests.push({
     name: "ValueStore Update With Group Works", func: async (ctx: TestContext) =>
     {
         const value: NameValuePair = defaultValue();
-        value.name.value = "msal;vkwanvwebuiogwbguiwhgilenle";
+        value.n = "msal;vkwanvwebuiogwbguiwhgilenle";
 
         const group: Group = defaultGroup(DataType.NameValuePairs);
-        group.name.value = "ValueStore Add With Group Works";
-        group.color.value = "#FFFFFF";
+        group.n = "ValueStore Add With Group Works";
+        group.c = "#FFFFFF";
 
-        await app.currentVault.groupStore.addGroup(masterKey, group);
-        await app.currentVault.valueStore.addNameValuePair(masterKey, value);
+        await userManager.defaultUser.addGroup("Add Group", ctx, group);
+        await userManager.defaultUser.addNameValuePair("Add Value", ctx, value);
 
-        const valueWithGroup: NameValuePair = JSON.parse(JSON.stringify(value));
-        valueWithGroup.groups.value.set(group.id.value, Field.create(group.id.value));
+        let editableValue = userManager.defaultUser.getEditableNameValuePair(value.id);
+        editableValue.dataType.g[group.id] = true;
+        await userManager.defaultUser.updateNameValuePair("Update Value", ctx, editableValue, false, editableValue.dataType.g);
 
-        await app.currentVault.valueStore.updateNameValuePair(masterKey, valueWithGroup, false);
-
-        let retrieveValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.value.id.value == value.id.value)[0];
-        let retrievedGroup = app.currentVault.groupStore.valuesGroups.filter(g => g.value.id.value == group.id.value)[0];
+        let retrieveValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.id == value.id)[0];
+        let retrievedGroup = app.currentVault.groupStore.valuesGroups.filter(g => g.id == group.id)[0];
 
         ctx.assertTruthy("Value exists", retrieveValue);
         ctx.assertTruthy("Group exists", retrievedGroup);
-        ctx.assertTruthy("Value has group id", retrieveValue.value.groups.value.has(retrievedGroup.value.id.value));
-        ctx.assertTruthy("Group has value id", retrievedGroup.value.values.value.has(retrieveValue.value.id.value));
+        ctx.assertTruthy("Value has group id", retrieveValue.g[retrievedGroup.id]);
+        ctx.assertTruthy("Group has value id", retrievedGroup.v[retrieveValue.id]);
 
-        const valueWithoutGroup: NameValuePair = JSON.parse(JSON.stringify(valueWithGroup));
-        valueWithoutGroup.groups.value = new Map();
+        editableValue = userManager.defaultUser.getEditableNameValuePair(value.id);
+        await userManager.defaultUser.updateNameValuePair("Update Value", ctx, editableValue, false, {});
 
-        await app.currentVault.valueStore.updateNameValuePair(masterKey, valueWithoutGroup, false);
+        retrieveValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.id == value.id)[0];
+        retrievedGroup = app.currentVault.groupStore.valuesGroups.filter(g => g.id == group.id)[0];
 
-        retrieveValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.value.id.value == value.id.value)[0];
-        retrievedGroup = app.currentVault.groupStore.valuesGroups.filter(g => g.value.id.value == group.id.value)[0];
-
-        ctx.assertTruthy("Value doens't have group id", !retrieveValue.value.groups.value.has(retrievedGroup.value.id.value));
-        ctx.assertTruthy("Group doesn't have value id", !retrievedGroup.value.values.value.has(retrieveValue.value.id.value));
+        ctx.assertUndefined("Value doens't have group id", retrieveValue.g[retrievedGroup.id]);
+        ctx.assertUndefined("Group doesn't have value id", retrievedGroup.v[retrieveValue.id]);
     }
 });
 
@@ -379,46 +389,49 @@ valueStoreSuite.tests.push({
     {
         const name = "ValueStore Update With Filter Works";
         const value: NameValuePair = defaultValue();
-        value.name.value = name + "--noFilter";
+        value.n = name + "--noFilter";
 
         const filter: Filter = defaultFilter(DataType.NameValuePairs);
-        filter.name.value = "ValueStore Update With Filter Works";
+        filter.n = "ValueStore Update With Filter Works";
 
-        filter.conditions.value.set("ValueStore Update With Filter Works", Field.create({
-            id: Field.create("ValueStore Update With Filter Works"),
-            property: Field.create("name"),
-            filterType: Field.create(FilterConditionType.EqualTo),
-            value: Field.create("ValueStore Update With Filter Works")
-        }));
+        filter.c["ValueStore Update With Filter Works"] = 
+        {
+            id: "ValueStore Update With Filter Works",
+            p: "n",
+            t: FilterConditionType.EqualTo,
+            v: "ValueStore Update With Filter Works"
+        };
 
-        await app.currentVault.filterStore.addFilter(masterKey, filter);
-        await app.currentVault.valueStore.addNameValuePair(masterKey, value);
+        await userManager.defaultUser.addFilter("Add Filter", ctx, filter);
+        await userManager.defaultUser.addNameValuePair("Add Value", ctx, value);
 
-        let retrievedValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.value.id.value == value.id.value)[0];
-        let retrievedFilter = app.currentVault.filterStore.nameValuePairFilters.filter(f => f.value.id.value == filter.id.value)[0];
+        let retrievedValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.id == value.id)[0];
+        let retrievedFilter = app.currentVault.filterStore.nameValuePairFilters.filter(f => f.id == filter.id)[0];
 
         ctx.assertTruthy("Value exists", retrievedValue);
         ctx.assertTruthy("Filter exists", retrievedFilter);
-        ctx.assertTruthy("Value doesn't has filter id", !retrievedValue.value.filters.value.has(retrievedFilter.value.id.value));
-        ctx.assertTruthy("Filter doesn't has value id", !retrievedFilter.value.values.value.has(retrievedValue.value.id.value));
+        ctx.assertUndefined("Value doesn't has filter id", retrievedValue.i[retrievedFilter.id]);
+        ctx.assertUndefined("Filter doesn't has value id", retrievedFilter.v[retrievedValue.id]);
 
-        value.name.value = name;
-        await app.currentVault.valueStore.updateNameValuePair(masterKey, value, false);
+        let editableValue = userManager.defaultUser.getEditableNameValuePair(value.id);
+        editableValue.dataType.n = name;
+        await userManager.defaultUser.updateNameValuePair("Update Value", ctx, editableValue, false, {});
 
-        retrievedValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.value.id.value == value.id.value)[0];
-        retrievedFilter = app.currentVault.filterStore.nameValuePairFilters.filter(f => f.value.id.value == filter.id.value)[0];
+        retrievedValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.id == value.id)[0];
+        retrievedFilter = app.currentVault.filterStore.nameValuePairFilters.filter(f => f.id == filter.id)[0];
 
-        ctx.assertTruthy("Value has filter id", retrievedValue.value.filters.value.has(retrievedFilter.value.id.value));
-        ctx.assertTruthy("Filter has value id", retrievedFilter.value.values.value.has(retrievedValue.value.id.value));
+        ctx.assertTruthy("Value has filter id", retrievedValue.i[retrievedFilter.id]);
+        ctx.assertTruthy("Filter has value id", retrievedFilter.v[retrievedValue.id]);
 
-        value.name.value = name + "--noFilter";
-        await app.currentVault.valueStore.updateNameValuePair(masterKey, value, false);
+        editableValue = userManager.defaultUser.getEditableNameValuePair(value.id);
+        editableValue.dataType.n = name + "--noFilter";
+        await userManager.defaultUser.updateNameValuePair("Update Value", ctx, editableValue, false, {});
 
-        retrievedValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.value.id.value == value.id.value)[0];
-        retrievedFilter = app.currentVault.filterStore.nameValuePairFilters.filter(f => f.value.id.value == filter.id.value)[0];
+        retrievedValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.id == value.id)[0];
+        retrievedFilter = app.currentVault.filterStore.nameValuePairFilters.filter(f => f.id == filter.id)[0];
 
-        ctx.assertTruthy("Value doesn't has filter after update", !retrievedValue.value.filters.value.has(retrievedFilter.value.id.value));
-        ctx.assertTruthy("Filter doesn't has value after update", !retrievedFilter.value.values.value.has(retrievedValue.value.id.value));
+        ctx.assertUndefined("Value doesn't has filter after update", retrievedValue.i[retrievedFilter.id]);
+        ctx.assertUndefined("Filter doesn't has value after update", retrievedFilter.v[retrievedValue.id]);
     }
 });
 
@@ -426,17 +439,18 @@ valueStoreSuite.tests.push({
     name: "ValueStore Delete Works", func: async (ctx: TestContext) =>
     {
         const value: NameValuePair = defaultValue();
-        value.name.value = "skmklwVIEBWUIAGBILGBLBKLBNERLKGBLER";
+        value.v = "weak";
+        value.n = "skmklwVIEBWUIAGBILGBLBKLBNERLKGBLER";
 
-        await app.currentVault.valueStore.addNameValuePair(masterKey, value);
+        await userManager.defaultUser.addNameValuePair("Add Value", ctx, value);
 
-        const retrievedValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.value.id.value == value.id.value)[0];
+        const retrievedValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.id == value.id)[0];
         ctx.assertTruthy("Value Exists", retrievedValue);
 
-        const reactiveValue = createReactiveValue(value);
-        await app.currentVault.valueStore.deleteNameValuePair(masterKey, reactiveValue);
+        const reactiveValue = userManager.defaultUser.getEditableNameValuePair(value.id);
+        await userManager.defaultUser.deleteNameValuePair("Delete Value", ctx, reactiveValue.dataType);
 
-        const deletedValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.value.id.value == value.id.value);
+        const deletedValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.id == value.id);
         ctx.assertEquals("Value does not exist", deletedValue.length, 0);
     }
 });
@@ -445,60 +459,60 @@ valueStoreSuite.tests.push({
     name: "ValueStore Metrics Work After Delete", func: async (ctx: TestContext) =>
     {
         const weakPhraseValue: NameValuePair = defaultValue();
-        weakPhraseValue.valueType.value = NameValuePairType.Passphrase;
-        weakPhraseValue.value.value = "weak";
-        weakPhraseValue.name.value = "mwo;jvwgbweuighwuighweiohgegewg";
+        weakPhraseValue.y = NameValuePairType.Passphrase;
+        weakPhraseValue.v = "weak";
+        weakPhraseValue.n = "mwo;jvwgbweuighwuighweiohgegewg";
 
-        await app.currentVault.valueStore.addNameValuePair(masterKey, weakPhraseValue);
+        await userManager.defaultUser.addNameValuePair("Add Weak Phrase Value", ctx, weakPhraseValue);
 
-        let retrievedWeakPhraseValue = app.currentVault.valueStore.weakPassphraseValues.value.filter(v => v == weakPhraseValue.id.value);
+        let retrievedWeakPhraseValue = app.currentVault.valueStore.weakPassphraseValues.value.filter(v => v == weakPhraseValue.id);
         ctx.assertEquals("Weak pass phrase value exists", retrievedWeakPhraseValue.length, 1);
 
-        const reactiveWeakPhraseValue = createReactiveValue(weakPhraseValue);
-        await app.currentVault.valueStore.deleteNameValuePair(masterKey, reactiveWeakPhraseValue);
+        const reactiveWeakPhraseValue = userManager.defaultUser.getEditableNameValuePair(weakPhraseValue.id);
+        await userManager.defaultUser.deleteNameValuePair("Delete Weak Phrase Value", ctx, reactiveWeakPhraseValue.dataType);
 
-        retrievedWeakPhraseValue = app.currentVault.valueStore.weakPassphraseValues.value.filter(v => v == weakPhraseValue.id.value);
+        retrievedWeakPhraseValue = app.currentVault.valueStore.weakPassphraseValues.value.filter(v => v == weakPhraseValue.id);
         ctx.assertEquals("Weak pass phrase value doesn't exists", retrievedWeakPhraseValue.length, 0);
 
         const weakPasscodeValue: NameValuePair = defaultValue();
-        weakPasscodeValue.valueType.value = NameValuePairType.Passcode;
-        weakPasscodeValue.value.value = "weak";
-        weakPasscodeValue.name.value = "mvlkasnvkwjgighwuighwuighwlghwg";
+        weakPasscodeValue.y = NameValuePairType.Passcode;
+        weakPasscodeValue.v = "weak";
+        weakPasscodeValue.n = "mvlkasnvkwjgighwuighwuighwlghwg";
 
-        await app.currentVault.valueStore.addNameValuePair(masterKey, weakPasscodeValue);
+        await userManager.defaultUser.addNameValuePair("Add Weak Passcode Value", ctx, weakPasscodeValue);
 
-        let retrievedWeakCodeValue = app.currentVault.valueStore.weakPasscodeValues.value.filter(v => v == weakPasscodeValue.id.value);
+        let retrievedWeakCodeValue = app.currentVault.valueStore.weakPasscodeValues.value.filter(v => v == weakPasscodeValue.id);
         ctx.assertEquals("Weak pass code value exists", retrievedWeakCodeValue.length, 1);
 
         const duplicateValue: NameValuePair = defaultValue();
-        duplicateValue.value.value = "weak";
-        duplicateValue.name.value = "zbxivhsuihweighweuigwgherilgherlg";
+        duplicateValue.v = "weak";
+        duplicateValue.n = "zbxivhsuihweighweuigwgherilgherlg";
 
-        await app.currentVault.valueStore.addNameValuePair(masterKey, duplicateValue);
+        await userManager.defaultUser.addNameValuePair("Add Duplicate Value", ctx, duplicateValue);
 
-        let retrievedDuplicateValueOne = app.currentVault.valueStore.duplicateNameValuePairs.value.get(duplicateValue.id.value);
-        let retrievedDuplicateValueTwo = app.currentVault.valueStore.duplicateNameValuePairs.value.get(weakPasscodeValue.id.value);
+        let retrievedDuplicateValueOne = app.currentVault.valueStore.duplicateNameValuePairs[duplicateValue.id];
+        let retrievedDuplicateValueTwo = app.currentVault.valueStore.duplicateNameValuePairs[weakPasscodeValue.id];
 
-        ctx.assertTruthy("Duplicate value one exists", retrievedDuplicateValueOne?.value.duplicateDataTypesByID.value.has(weakPasscodeValue.id.value));
-        ctx.assertTruthy("Duplicate value two exists", retrievedDuplicateValueTwo?.value.duplicateDataTypesByID.value.has(duplicateValue.id.value));
+        ctx.assertTruthy("Duplicate value one exists", retrievedDuplicateValueOne[weakPasscodeValue.id]);
+        ctx.assertTruthy("Duplicate value two exists", retrievedDuplicateValueTwo[duplicateValue.id]);
 
-        const reactiveDuplicateValue = createReactiveValue(duplicateValue);
-        await app.currentVault.valueStore.deleteNameValuePair(masterKey, reactiveDuplicateValue);
+        const reactiveDuplicateValue = userManager.defaultUser.getEditableNameValuePair(duplicateValue.id);
+        await userManager.defaultUser.deleteNameValuePair("Delete Duplicate Value", ctx, reactiveDuplicateValue.dataType);
 
-        retrievedDuplicateValueOne = app.currentVault.valueStore.duplicateNameValuePairs.value.get(duplicateValue.id.value);
-        retrievedDuplicateValueTwo = app.currentVault.valueStore.duplicateNameValuePairs.value.get(weakPasscodeValue.id.value);
+        retrievedDuplicateValueOne = app.currentVault.valueStore.duplicateNameValuePairs[duplicateValue.id];
+        retrievedDuplicateValueTwo = app.currentVault.valueStore.duplicateNameValuePairs[weakPasscodeValue.id];
 
         // deleted so it shouldn't exist at all
         ctx.assertUndefined("Duplicate value one doesn't exists", retrievedDuplicateValueOne);
 
         // still has other duplicates so just make sure the deleted value isn't in there
         ctx.assertTruthy("Duplicate value two doesn't have previous duplicate value one",
-            !retrievedDuplicateValueTwo?.value.duplicateDataTypesByID.value.has(duplicateValue.id.value));
+            !retrievedDuplicateValueTwo[duplicateValue.id]);
 
-        const reactivepassCodeValue = createReactiveValue(weakPasscodeValue);
-        await app.currentVault.valueStore.deleteNameValuePair(masterKey, reactivepassCodeValue);
+        const reactivepassCodeValue = userManager.defaultUser.getEditableNameValuePair(weakPasscodeValue.id);
+        await userManager.defaultUser.deleteNameValuePair("Delete Weak Passcode Value", ctx, reactivepassCodeValue.dataType);
 
-        retrievedWeakCodeValue = app.currentVault.valueStore.weakPasscodeValues.value.filter(v => v == weakPasscodeValue.id.value);
+        retrievedWeakCodeValue = app.currentVault.valueStore.weakPasscodeValues.value.filter(v => v == weakPasscodeValue.id);
         ctx.assertEquals("Weak pass code value doesn't exists", retrievedWeakCodeValue.length, 0);
     }
 });
@@ -507,22 +521,22 @@ valueStoreSuite.tests.push({
     name: "ValueStore Delete CurrentAndSafe Works", func: async (ctx: TestContext) =>
     {
         const safeValue: NameValuePair = defaultValue();
-        safeValue.name.value = "hohsdl nuidlvuilvbio;beruilbelbheb";
-        safeValue.valueType.value = NameValuePairType.Passcode;
-        safeValue.value.value = "aviowanlviwah uilwngui2ht thiohblago][lpy['kymiopyhp9h";
+        safeValue.n = "hohsdl nuidlvuilvbio;beruilbelbheb";
+        safeValue.y = NameValuePairType.Passcode;
+        safeValue.v = "aviowanlviwah uilwngui2ht thiohblago][lpy['kymiopyhp9h";
 
         const unsafeValue: NameValuePair = defaultValue();
-        unsafeValue.name.value = "snvwvuibuidlhboa;nblabner";
-        safeValue.valueType.value = NameValuePairType.Passcode;
-        unsafeValue.value.value = "weak";
+        unsafeValue.n = "snvwvuibuidlhboa;nblabner";
+        unsafeValue.y = NameValuePairType.Passcode;
+        unsafeValue.v = "weak";
 
-        await app.currentVault.valueStore.addNameValuePair(masterKey, safeValue);
+        await userManager.defaultUser.addNameValuePair("Add Safe Value", ctx, safeValue);
 
-        let retrievedSafeValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.value.id.value == safeValue.id.value)[0];
+        let retrievedSafeValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.id == safeValue.id)[0];
         ctx.assertTruthy("Safe value exists", retrievedSafeValue);
 
-        const reactiveSafeValue = createReactiveValue(safeValue);
-        await app.currentVault.valueStore.deleteNameValuePair(masterKey, reactiveSafeValue);
+        const reactiveSafeValue = userManager.defaultUser.getEditableNameValuePair(safeValue.id);
+        await userManager.defaultUser.deleteNameValuePair("Delete Safe Value", ctx, reactiveSafeValue.dataType);
 
         ctx.assertEquals("Safe value correct current",
             app.currentVault.valueStore.currentAndSafeValuesCurrent[app.currentVault.valueStore.currentAndSafeValuesCurrent.length - 1],
@@ -532,13 +546,13 @@ valueStoreSuite.tests.push({
             app.currentVault.valueStore.currentAndSafeValuesSafe[app.currentVault.valueStore.currentAndSafeValuesSafe.length - 1],
             getSafeValues().length);
 
-        await app.currentVault.valueStore.addNameValuePair(masterKey, unsafeValue);
+        await userManager.defaultUser.addNameValuePair("Add Unsafe Value", ctx, unsafeValue);
 
-        let retrievedUnsafeValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.value.id.value == unsafeValue.id.value)[0];
+        let retrievedUnsafeValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.id == unsafeValue.id)[0];
         ctx.assertTruthy("Unsafe value exists", retrievedUnsafeValue);
 
-        const reactiveUnsafeValue = createReactiveValue(unsafeValue);
-        await app.currentVault.valueStore.deleteNameValuePair(masterKey, reactiveUnsafeValue);
+        const reactiveUnsafeValue = userManager.defaultUser.getEditableNameValuePair(unsafeValue.id);
+        await userManager.defaultUser.deleteNameValuePair("Delete Unsafe Value", ctx, reactiveUnsafeValue.dataType);
 
         ctx.assertEquals("Unsafe value correct current",
             app.currentVault.valueStore.currentAndSafeValuesCurrent[app.currentVault.valueStore.currentAndSafeValuesCurrent.length - 1],
@@ -554,30 +568,31 @@ valueStoreSuite.tests.push({
     name: "ValueStore Delete With Group Works", func: async (ctx: TestContext) =>
     {
         const value: NameValuePair = defaultValue();
-        value.name.value = " nvibweighweigweaioghwiugbwegihwgw";
+        value.v = "weak";
+        value.n = " nvibweighweigweaioghwiugbwegihwgw";
 
         const group: Group = defaultGroup(DataType.NameValuePairs);
-        group.name.value = "ValueStore Add With Group Works";
-        group.color.value = "#FFFFFF";
+        group.n = "ValueStore Delete With Group Works";
+        group.c = "#FFFFFF";
 
-        await app.currentVault.groupStore.addGroup(masterKey, group);
-        value.groups.value.set(group.id.value, Field.create(group.id.value));
+        await userManager.defaultUser.addGroup("Add Group", ctx, group);
 
-        await app.currentVault.valueStore.addNameValuePair(masterKey, value);
+        value.g[group.id] = true;
+        await userManager.defaultUser.addNameValuePair("Add Value", ctx, value);
 
-        let retrieveValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.value.id.value == value.id.value)[0];
-        let retrievedGroup = app.currentVault.groupStore.valuesGroups.filter(g => g.value.id.value == group.id.value)[0];
+        let retrieveValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.id == value.id)[0];
+        let retrievedGroup = app.currentVault.groupStore.valuesGroups.filter(g => g.id == group.id)[0];
 
         ctx.assertTruthy("Value exists", retrieveValue);
         ctx.assertTruthy("Group exists", retrievedGroup);
-        ctx.assertTruthy("Value has group id", retrieveValue.value.groups.value.has(retrievedGroup.value.id.value));
-        ctx.assertTruthy("Group has value id", retrievedGroup.value.values.value.has(retrieveValue.value.id.value));
+        ctx.assertTruthy("Value has group id", retrieveValue.g[retrievedGroup.id]);
+        ctx.assertTruthy("Group has value id", retrievedGroup.v[retrieveValue.id]);
 
-        const reactiveValue = createReactiveValue(value);
-        await app.currentVault.valueStore.deleteNameValuePair(masterKey, reactiveValue);
+        const reactiveValue = userManager.defaultUser.getEditableNameValuePair(value.id);
+        await userManager.defaultUser.deleteNameValuePair("Delete Value", ctx, reactiveValue.dataType);
 
-        retrievedGroup = app.currentVault.groupStore.valuesGroups.filter(g => g.value.id.value == group.id.value)[0];
-        ctx.assertTruthy("Group doesn't value id", !retrievedGroup.value.values.value.has(retrieveValue.value.id.value));
+        retrievedGroup = app.currentVault.groupStore.valuesGroups.filter(g => g.id == group.id)[0];
+        ctx.assertTruthy("Group doesn't value id", !retrievedGroup.v[retrieveValue.id]);
     }
 });
 
@@ -586,34 +601,36 @@ valueStoreSuite.tests.push({
     {
         const name = "ValueStore Delete With Filter Works";
         const value: NameValuePair = defaultValue();
-        value.name.value = name;
+        value.n = name;
+        value.v = "weak";
 
         const filter: Filter = defaultFilter(DataType.NameValuePairs);
-        filter.name.value = name;
+        filter.n = name;
 
-        filter.conditions.value.set(name, Field.create({
-            id: Field.create(name),
-            property: Field.create("name"),
-            filterType: Field.create(FilterConditionType.EqualTo),
-            value: Field.create(name)
-        }));
+        filter.c[name] = 
+        {
+            id: name,
+            p: "n",
+            t: FilterConditionType.EqualTo,
+            v: name
+        };
 
-        await app.currentVault.filterStore.addFilter(masterKey, filter);
-        await app.currentVault.valueStore.addNameValuePair(masterKey, value);
+        await userManager.defaultUser.addFilter("Add Filter", ctx, filter);
+        await userManager.defaultUser.addNameValuePair("Add Value", ctx, value);
 
-        let retrievedValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.value.id.value == value.id.value)[0];
-        let retrievedFilter = app.currentVault.filterStore.nameValuePairFilters.filter(f => f.value.id.value == filter.id.value)[0];
+        let retrievedValue = app.currentVault.valueStore.nameValuePairs.filter(v => v.id == value.id)[0];
+        let retrievedFilter = app.currentVault.filterStore.nameValuePairFilters.filter(f => f.id == filter.id)[0];
 
         ctx.assertTruthy("Value exists", retrievedValue);
         ctx.assertTruthy("Filter exists", retrievedFilter);
-        ctx.assertTruthy("Value has filter id", retrievedValue.value.filters.value.has(retrievedFilter.value.id.value));
-        ctx.assertTruthy("Filter has value id", retrievedFilter.value.values.value.has(retrievedValue.value.id.value));
+        ctx.assertTruthy("Value has filter id", retrievedValue.i[retrievedFilter.id]);
+        ctx.assertTruthy("Filter has value id", retrievedFilter.v[retrievedValue.id]);
 
-        const reactiveValue = createReactiveValue(value);
-        await app.currentVault.valueStore.deleteNameValuePair(masterKey, reactiveValue);
+        const reactiveValue = userManager.defaultUser.getEditableNameValuePair(value.id);
+        await userManager.defaultUser.deleteNameValuePair("Delete Value", ctx, reactiveValue.dataType);
 
-        retrievedFilter = app.currentVault.filterStore.nameValuePairFilters.filter(f => f.value.id.value == filter.id.value)[0];
-        ctx.assertTruthy("Filter doesn't has value", !retrievedFilter.value.values.value.has(retrievedValue.value.id.value));
+        retrievedFilter = app.currentVault.filterStore.nameValuePairFilters.filter(f => f.id == filter.id)[0];
+        ctx.assertTruthy("Filter doesn't has value", !retrievedFilter.v[retrievedValue.id]);
     }
 });
 

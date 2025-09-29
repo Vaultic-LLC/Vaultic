@@ -128,6 +128,6 @@ function initApp()
     // gives time to set breakpoints if needed
     setTimeout(() =>
     {
-        runTests(8);
+        runTests(0);
     }, 10000);
 }

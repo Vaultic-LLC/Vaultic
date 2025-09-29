@@ -88,7 +88,13 @@ export class CoreCryptUtility implements ClientCryptUtility
         const tempKeys = await coreGenerator.ECKeys();
         const sharedKey = x25519.getSharedSecret(tempKeys.private, recipientPublicKey);
 
-        const response = await this.symmetricEncrypt(this.bytesToHex(sharedKey), value);
+        const key: VaulticKey = 
+        {
+            algorithm: Algorithm.XCHACHA20_POLY1305,
+            key: this.bytesToHex(sharedKey)
+        };
+
+        const response = await this.symmetricEncrypt(JSON.stringify(key), value);
         if (!response)
         {
             return TypedMethodResponse.propagateFail(response);
@@ -100,7 +106,13 @@ export class CoreCryptUtility implements ClientCryptUtility
     public async ECDecrypt(tempPublicKey: string, usersPrivateKey: string, value: string): Promise<TypedMethodResponse<string>>
     {
         const sharedKey = x25519.getSharedSecret(usersPrivateKey, tempPublicKey);
-        return await this.symmetricDecrypt(this.bytesToHex(sharedKey), value);
+        const key: VaulticKey = 
+        {
+            algorithm: Algorithm.XCHACHA20_POLY1305,
+            key: this.bytesToHex(sharedKey)
+        };
+
+        return await this.symmetricDecrypt(JSON.stringify(key), value);
     }
 
     public async symmetricEncrypt(key: string, value: string): Promise<TypedMethodResponse<string | undefined>>

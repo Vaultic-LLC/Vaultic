@@ -365,7 +365,15 @@ importExportHelperTestSuite.tests.push({
                 }
                 else 
                 {
-                    ctx.assertEquals(`Row ${i} ${headers[j]} equals values ${headers[j]}`, rowValues[j], value[valueHeaderMapper.get(headers[j])!]);
+                    const property = valueHeaderMapper.get(headers[j])!
+                    if (property == "y" && value[property] === undefined)
+                    {
+                        // Undefined gets exported as an empty string for value types
+                        ctx.assertTruthy(`Row ${i} ${headers[j]} equals values ${headers[j]}`, rowValues[j] === "" || rowValues[j] === undefined);
+                        continue;
+                    }
+
+                    ctx.assertTruthy(`Row ${i} ${headers[j]} equals values ${headers[j]}`, rowValues[j] === value[property]);
                 }
             }
         }
