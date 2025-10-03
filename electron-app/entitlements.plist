@@ -2,9 +2,9 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
   <dict>
-    <!-- Required for Mac App Store -->
+    <!-- Disabled for non-App Store distribution -->
     <key>com.apple.security.app-sandbox</key>
-    <true/>
+    <false/>
     
     <!-- Network access -->
     <key>com.apple.security.network.client</key>
@@ -20,7 +20,7 @@
     <key>com.apple.security.print</key>
     <true/>
     
-    <!-- Required for native modules (better-sqlite3, sodium-native, sqlite3) -->
+    <!-- Required for native modules (sodium-native, sqlite3) -->
     <key>com.apple.security.cs.allow-jit</key>
     <true/>
     <key>com.apple.security.cs.allow-unsigned-executable-memory</key>

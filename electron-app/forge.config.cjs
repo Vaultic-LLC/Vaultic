@@ -17,37 +17,43 @@ module.exports = {
 				'./resources/bin/ffmpeg_intel_mac',
 				'./resources/bin/ffmpeg_mac'
 			  ],
-			  identity: 'Apple Distribution: Vaultic LLC (YU69N454M8)',
-			  platform: 'mas',
+			  identity: 'Developer ID Application: Vaultic LLC (YU69N454M8)',
+			  platform: 'darwin',
 			  type: 'distribution',
-			  provisioningProfile: 'New_Distribution_Provisioning_Profile.provisionprofile',
+			  provisioningProfile: 'Developer_ID_Application_Profile.provisionprofile',
 			  optionsForFile: (filePath) => {
 				const entitlements = filePath.includes('.app/') ? 'entitlements-child.plist' : 'entitlements.plist';
 				return {
-				  hardenedRuntime: false,
+				  hardenedRuntime: true,
 				  entitlements
 				}
 			  }
-		}
+		},
+		osxNotarize: {
+			tool: 'notarytool',
+			appleId: "tylerwanta123@gmail.com",
+			appleIdPassword: "agdu-aski-xvad-dsdl",
+			teamId: "YU69N454M8"
+		  }
 	},
 	rebuildConfig: {
-		onlyModules: ['better-sqlite3', 'sodium-native', 'sqlite3'],
+		onlyModules: ['sodium-native', 'sqlite3'],
 		force: true,
 		buildPath: './dist'
 	},
 	makers: [
-		// {
-		// 	name: '@electron-forge/maker-dmg',
-		// 	config: {
-		// 		format: 'ULFO'
-		// 	}
-		// },
 		{
-			name: '@electron-forge/maker-pkg',
-			platform: ['mas'],
+			name: '@electron-forge/maker-dmg',
 			config: {
-			  identity: '3rd Party Mac Developer Installer: Vaultic LLC (YU69N454M8)'
+				format: 'ULFO'
 			}
-		  }
+		},
+		// {
+		// 	name: '@electron-forge/maker-pkg',
+		// 	platform: ['mas'],
+		// 	config: {
+		// 	  identity: '3rd Party Mac Developer Installer: Vaultic LLC (YU69N454M8)'
+		// 	}
+		//   }
 	]
 };

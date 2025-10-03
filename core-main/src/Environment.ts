@@ -29,7 +29,7 @@ export interface InternalEnvironment
     };
     database:
     {
-        createDataSource: (isTest: boolean) => DataSource;
+        createDataSource: (isTest: boolean) => Promise<DataSource>;
         deleteDatabase: (isTest: boolean) => Promise<boolean>
     };
     getDeviceInfo: () => DeviceInfo;
@@ -72,7 +72,7 @@ class Environment
     {
         try
         {
-            this.internalDatabaseDataSouce = this.internalEnvironment.database.createDataSource(this.internalEnvironment.isTest);
+            this.internalDatabaseDataSouce = await this.internalEnvironment.database.createDataSource(this.internalEnvironment.isTest);
             await this.internalDatabaseDataSouce.initialize();
             this.internalRepositories = initRepositories();
 

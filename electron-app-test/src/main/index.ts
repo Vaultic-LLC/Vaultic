@@ -13,7 +13,7 @@ import { CryptUtility } from "./Utilities/CryptUtility";
 import { HashUtility } from "./Utilities/HashUtility";
 import generatorUtility from './Utilities/Generator';
 import { getDeviceInfo } from './Objects/DeviceInfo';
-import database, { createDataSource, deleteDatabase } from './Helpers/DatabaseHelper';
+import { createDataSource, deleteDatabase } from './Helpers/DatabaseHelper';
 import fs from "fs";
 import http2 from "http2";
 import { DataUtility } from "./Utilities/DataUtility";

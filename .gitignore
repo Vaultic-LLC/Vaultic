@@ -26,4 +26,5 @@ electron-app-test/package-lock.json
 
 New_Distribution_Provisioning_Profile.provisionprofile
 New_Development_Profile.provisionprofile
+Developer_ID_Application_Profile.provisionprofile
 make_output.txt
