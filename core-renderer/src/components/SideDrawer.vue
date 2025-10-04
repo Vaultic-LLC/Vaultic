@@ -43,7 +43,7 @@ import { ToggleRadioButtonModel, TreeNodeButton } from "../Types/Models";
 import { Dictionary } from '@vaultic/shared/Types/DataStructures';
 import { DisplayVault, IUser, VaultType } from '@vaultic/shared/Types/Entities';
 import { AppView } from '../Types/App';
-import { useConfirm } from 'primevue-vaultic/useconfirm';
+import { useConfirm } from 'primevue/useconfirm';
 
 export default defineComponent({
     name: "SideDrawer",

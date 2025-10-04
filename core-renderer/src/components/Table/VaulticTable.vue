@@ -164,9 +164,9 @@
 import { computed, ComputedRef, defineComponent, onMounted, onUnmounted, Ref, ref, useId, watch } from 'vue';
 
 import TableHeaderTab from './Header/TableHeaderTab.vue';
-import DataTable, { DataTablePageEvent } from "primevue-vaultic/datatable";
-import Column from 'primevue-vaultic/column';
-import Button from 'primevue-vaultic/button';
+import DataTable, { DataTablePageEvent } from "primevue/datatable";
+import Column from 'primevue/column';
+import Button from 'primevue/button';
 import SearchBar from './Controls/SearchBar.vue';
 
 import AtRiskIndicator from "./AtRiskIndicator.vue";
@@ -186,7 +186,7 @@ import { RGBColor } from '../../Types/Colors';
 import { hexToRgb } from '../../Helpers/ColorHelper';
 import { tween } from '../../Helpers/TweenHelper';
 import * as TWEEN from '@tweenjs/tween.js';
-import { useConfirm } from "primevue-vaultic/useconfirm";
+import { useConfirm } from "primevue/useconfirm";
 import { rowChunkAmount } from '../../Constants/Misc';
 import app from '../../Objects/Stores/AppStore';
 import tippy, { Instance, Tippy } from 'tippy.js';

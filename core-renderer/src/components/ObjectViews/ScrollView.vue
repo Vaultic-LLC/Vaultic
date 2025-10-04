@@ -11,7 +11,7 @@
 <script lang="ts">
 import { ComputedRef, computed, defineComponent } from 'vue';
 
-import ScrollPanel from 'primevue-vaultic/scrollpanel';
+import ScrollPanel from 'primevue/scrollpanel';
 
 export default defineComponent({
 	name: 'ScrollView',

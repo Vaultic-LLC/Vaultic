@@ -59,7 +59,7 @@ import Popups from './components/Popups.vue';
 import MenuWidget from "./components/Widgets/IconCards/MenuWidget.vue"
 import SideDrawer from "./components/SideDrawer.vue"
 import OrganizationDeviceTable from './components/Table/OrganizationDeviceTable.vue';
-import ConfirmDialog from "primevue-vaultic/confirmdialog";
+import ConfirmDialog from "primevue/confirmdialog";
 import AccountInfoWidget from './components/Widgets/AccountInfoWidget.vue';
 
 import { AccountSetupView } from './Types/Models';

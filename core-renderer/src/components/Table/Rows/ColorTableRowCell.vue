@@ -13,7 +13,7 @@
 <script lang="ts">
 import { computed, ComputedRef, defineComponent } from 'vue';
 
-import ColorPicker from 'primevue-vaultic/colorpicker';
+import ColorPicker from 'primevue/colorpicker';
 
 export default defineComponent({
 	name: "ColorTableRowCell",

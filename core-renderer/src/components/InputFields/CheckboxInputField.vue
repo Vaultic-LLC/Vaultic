@@ -12,7 +12,7 @@
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, ref, watch, useId } from 'vue';
 
-import Checkbox from 'primevue-vaultic/checkbox';
+import Checkbox from 'primevue/checkbox';
 
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
 import { widgetBackgroundHexString } from '../../Constants/Colors';

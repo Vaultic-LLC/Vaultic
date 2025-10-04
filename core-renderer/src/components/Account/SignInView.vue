@@ -84,7 +84,7 @@ import ButtonLink from '../InputFields/ButtonLink.vue';
 import ToolTip from "../ToolTip.vue";
 import EnterMFACodePopup from './EnterMFACodePopup.vue';
 import UserProfilePic from './UserProfilePic.vue';
-import Popover from 'primevue-vaultic/popover';
+import Popover from 'primevue/popover';
 import PopupButton from '../InputFields/PopupButton.vue';
 
 import { InputColorModel, defaultInputColorModel } from '../../Types/Models';

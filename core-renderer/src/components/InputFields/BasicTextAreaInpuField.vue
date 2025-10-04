@@ -26,9 +26,9 @@
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, useId, watch } from 'vue';
 
-import FloatLabel from "primevue-vaultic/floatlabel";
-import Textarea from 'primevue-vaultic/textarea';
-import Message from "primevue-vaultic/message";
+import FloatLabel from "primevue/floatlabel";
+import Textarea from 'primevue/textarea';
+import Message from "primevue/message";
 
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
 import { appHexColor, widgetBackgroundHexString, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';

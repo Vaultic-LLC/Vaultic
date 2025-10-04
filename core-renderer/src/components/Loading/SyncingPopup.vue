@@ -32,7 +32,7 @@
 <script lang="ts">
 import { defineComponent, onMounted, onUnmounted, Ref, ref, watch, ComputedRef, computed } from 'vue';
 
-import ProgressBar from "primevue-vaultic/progressbar";
+import ProgressBar from "primevue/progressbar";
 import IonIcon from '../Icons/IonIcon.vue';
 
 import { popups } from '../../Objects/Stores/PopupStore';

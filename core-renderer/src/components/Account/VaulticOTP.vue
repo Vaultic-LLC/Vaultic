@@ -17,8 +17,8 @@
 <script lang="ts">
 import { computed, ComputedRef, defineComponent, inject, onMounted, onUnmounted, ref, Ref } from 'vue';
 
-import InputOtp from 'primevue-vaultic/inputotp';
-import Message from 'primevue-vaultic/message';
+import InputOtp from 'primevue/inputotp';
+import Message from 'primevue/message';
 
 import { widgetBackgroundHexString } from '../../Constants/Colors';
 import app from '../../Objects/Stores/AppStore';

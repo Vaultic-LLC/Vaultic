@@ -81,9 +81,9 @@
 <script lang="ts">
 import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmounted, ref, watch, useId } from 'vue';
 
-import FloatLabel from 'primevue-vaultic/floatlabel';
-import Select from "primevue-vaultic/select";
-import Message from "primevue-vaultic/message";
+import FloatLabel from 'primevue/floatlabel';
+import Select from "primevue/select";
+import Message from "primevue/message";
 
 import { appHexColor, widgetBackgroundHexString, widgetInputLabelBackgroundHexColor } from '../../Constants/Colors';
 import { ValidationFunctionsKey } from '../../Constants/Keys';

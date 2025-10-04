@@ -31,7 +31,7 @@ import TextInputField from '../InputFields/TextInputField.vue';
 import VaulticFieldset from '../InputFields/VaulticFieldset.vue';
 import VaulticTable from '../Table/VaulticTable.vue';
 import AddButton from '../Table/Controls/AddButton.vue';
-import Popover from 'primevue-vaultic/popover';
+import Popover from 'primevue/popover';
 import ObjectSingleSelect from '../InputFields/ObjectSingleSelect.vue';
 import EnumInputField from '../InputFields/EnumInputField.vue';
 import PopupButton from '../InputFields/PopupButton.vue';

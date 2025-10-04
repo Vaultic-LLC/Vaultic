@@ -31,7 +31,7 @@ import { ComputedRef, Ref, computed, defineComponent, inject, onMounted, onUnmou
 
 import PopupButton from '../InputFields/PopupButton.vue';
 import ScrollView from './ScrollView.vue';
-import Message from 'primevue-vaultic/message';
+import Message from 'primevue/message';
 
 import app from "../../Objects/Stores/AppStore";
 import { ClosePopupFuncctionKey, DecryptFunctionsKey, RequestAuthorizationKey, ValidationFunctionsKey } from '../../Constants/Keys';

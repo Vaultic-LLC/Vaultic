@@ -10,7 +10,7 @@
 <script lang="ts">
 import { Ref, defineComponent, onMounted, onUnmounted, ref, computed, ComputedRef } from "vue";
 
-import Button from "primevue-vaultic/button";
+import Button from "primevue/button";
 
 export default defineComponent({
     name: "PopupButton",

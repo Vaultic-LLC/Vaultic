@@ -57,9 +57,9 @@ import { ComputedRef, Ref, computed, defineComponent, onMounted, onUnmounted, re
 import { defaultInputColor, defaultInputTextColor } from "../../Types/Colors"
 import { InputColorModel } from '../../Types/Models';
 
-import Editor from 'primevue-vaultic/editor';
-import Panel from 'primevue-vaultic/panel';
-import Fieldset from 'primevue-vaultic/fieldset';
+import Editor from 'primevue/editor';
+import Panel from 'primevue/panel';
+import Fieldset from 'primevue/fieldset';
 
 export default defineComponent({
     name: "TextAreaInputField",

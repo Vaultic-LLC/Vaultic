@@ -7,9 +7,9 @@ import app from './core/Objects/Stores/AppStore';
 import "@melloware/coloris/dist/coloris.css";
 import Coloris from "@melloware/coloris";
 import { setupCalendar } from 'v-calendar-tw';
-import PrimeVue from 'primevue-vaultic/config';
-import Aura from '@primevue/themes/aura';
-import ConfirmationService from 'primevue-vaultic/confirmationservice';
+import PrimeVue from 'primevue/config';
+import Aura from '@primeuix/themes/aura';
+import ConfirmationService from 'primevue/confirmationservice';
 import runTests from "../tests/tests/index"
 
 api.setAPI(window.api);
@@ -128,6 +128,6 @@ function initApp()
     // gives time to set breakpoints if needed
     setTimeout(() =>
     {
-        runTests(0);
+        //runTests(0);
     }, 10000);
 }

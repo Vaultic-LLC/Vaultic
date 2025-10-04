@@ -27,10 +27,10 @@ import { ComputedRef, Ref, computed, defineComponent, ref, useId } from 'vue';
 import { defaultInputColor, defaultInputTextColor } from "../../../Types/Colors"
 import { widgetBackgroundHexString } from '../../../Constants/Colors';
 
-import FloatLabel from "primevue-vaultic/floatlabel";
-import InputText from 'primevue-vaultic/inputtext';
-import InputIcon from 'primevue-vaultic/inputicon';
-import IconField from 'primevue-vaultic/iconfield';
+import FloatLabel from "primevue/floatlabel";
+import InputText from 'primevue/inputtext';
+import InputIcon from 'primevue/inputicon';
+import IconField from 'primevue/iconfield';
 import { ComponentSizeModel } from '../../../Types/Models';
 
 export default defineComponent({
