@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 module.exports = {
 	packagerConfig: {
 		asar: {
@@ -17,27 +19,21 @@ module.exports = {
 				'./resources/bin/ffmpeg_intel_mac',
 				'./resources/bin/ffmpeg_mac'
 			  ],
-			  identity: 'Developer ID Application: Vaultic LLC (YU69N454M8)',
-			  platform: 'darwin',
-			  type: 'distribution',
-			  provisioningProfile: 'Developer_ID_Application_Profile.provisionprofile',
-			  optionsForFile: (filePath) => {
-				const entitlements = filePath.includes('.app/') ? 'entitlements-child.plist' : 'entitlements.plist';
-				return {
-				  hardenedRuntime: true,
-				  entitlements
-				}
-			  }
+			  identity: process.env.APPLE_IDENTITY,
+			  hardenedRuntime: true,
+			  entitlements: 'entitlements.plist',
+			  'entitlements-inherit': 'entitlements-child.plist',
+			  'signature-flags': 'library'
 		},
-		osxNotarize: {
-			tool: 'notarytool',
-			appleId: "tylerwanta123@gmail.com",
-			appleIdPassword: "agdu-aski-xvad-dsdl",
-			teamId: "YU69N454M8"
-		  }
+	osxNotarize: {
+		tool: 'notarytool',
+		appleId: process.env.APPLE_ID,
+		appleIdPassword: process.env.APPLE_ID_PASSWORD,
+		teamId: process.env.APPLE_TEAM_ID
+	}
 	},
 	rebuildConfig: {
-		onlyModules: ['sodium-native', 'sqlite3'],
+		onlyModules: ['better-sqlite3', 'sodium-native', 'sqlite3'],
 		force: true,
 		buildPath: './dist'
 	},

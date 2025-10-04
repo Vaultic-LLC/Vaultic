@@ -1,8 +1,8 @@
 import { electronAPI } from "@electron-toolkit/preload";
 import fs from "fs";
 import { DataSource } from "typeorm";
+import Database from "better-sqlite3";
 import sqlite3 from 'sqlite3';
-import { Database, open } from 'sqlite';
 import { User } from "../Core/Database/Entities/User";
 import { UserVault } from "../Core/Database/Entities/UserVault";
 import { Vault } from "../Core/Database/Entities/Vault";
@@ -68,16 +68,24 @@ function databaseFilePath()
 	return "";
 }
 
-export async function createDataSource(isTest: boolean)
+export function createDataSource(isTest: boolean)
 {
 	const directory = getDirectory(isTest);
 	checkMakeDirectory(directory);
 
 	let databaseDirectory = directory + databaseFilePath();
-	database = await open(({ filename: databaseDirectory, driver: sqlite3.Database }))
+
+	if (isTest)
+	{
+		database = new Database(databaseDirectory, { verbose: console.log });
+	}
+	else
+	{
+		database = new Database(databaseDirectory);
+	}
 
 	dataSource = new DataSource({
-		type: "sqlite",
+		type: "better-sqlite3",
 		database: databaseDirectory,
 		entities: [
 			Log,
@@ -105,7 +113,7 @@ export async function deleteDatabase(isTest: boolean)
 {
 	await dataSource?.destroy();
 	dataSource = undefined;
-	await database?.close();
+	database?.close();
 
 	// give time for the database to fully close
 	await new Promise(resolve => setTimeout(resolve, 1000));
