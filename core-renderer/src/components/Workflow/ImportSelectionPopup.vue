@@ -10,10 +10,10 @@
                             class="importSelectionPopup__headerPropertyPicker">
                             <TextInputField :disabled="true" :color="color" :label="'Property'"
                                 v-model="mapper.property.displayName" :width="'8vw'" :maxWidth="'330px'"
-                                :minWidth="'100px'" :height="'4vh'" :minHeight="'35px'" />
+                                :minWidth="'150px'" :height="'4vh'" :minHeight="'35px'" />
                             <EnumInputField :label="'CSV Header'" :color="color" v-model="mapper.csvHeader"
                                 :optionsEnum="mockHeadersEnum" :width="'8vw'" :height="'4vh'" :minHeight="'35px'"
-                                :minWidth="'100px'" :maxHeight="'50px'" :fadeIn="true"
+                                :minWidth="'150px'" :maxHeight="'50px'" :fadeIn="true"
                                 :required="mapper.property.required" />
                             <TextInputField v-if="mapper.property.requiresDelimiter" :color="color"
                                 :label="'Delimiter'" v-model="mapper.property.delimiter" :width="'4vw'"
