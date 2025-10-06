@@ -41,15 +41,9 @@ module.exports = {
 		{
 			name: '@electron-forge/maker-dmg',
 			config: {
-				format: 'ULFO'
+				format: 'ULFO',
+				icon: "./resources/icon.icns",
 			}
 		},
-		// {
-		// 	name: '@electron-forge/maker-pkg',
-		// 	platform: ['mas'],
-		// 	config: {
-		// 	  identity: '3rd Party Mac Developer Installer: Vaultic LLC (YU69N454M8)'
-		// 	}
-		//   }
 	]
 };
