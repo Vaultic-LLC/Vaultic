@@ -23,8 +23,6 @@
 		"build:linux": "npm run build && electron-builder --linux --config",
 		"package": "npm run copy && electron-vite build --outDir=dist && electron-forge package",
 		"make": "npm run copy && electron-vite build --outDir=dist && electron-forge make",
-		"make:mas": "npm run copy && electron-vite build --outDir=dist && electron-forge make --platform=mas > make_output.txt",
-		"make:mac": "npm run copy && electron-vite build --outDir=dist && electron-forge make --platform=darwin  --verbose",
 		"copy-core-main-test": "node ../../copy.js src=../../core-main/src dest=./src/main/Core",
 		"copy-core-renderer-test": "node ../../copy.js src=../../core-renderer/src dest=./src/renderer/src/core",
 		"copy-test": "npm run copy-core-main-test && npm run copy-core-renderer-test",

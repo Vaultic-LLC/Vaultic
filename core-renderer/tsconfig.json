@@ -1,7 +1,6 @@
 {
     "compilerOptions": {
         "strict": true,
-        "composite": true,
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
         "strictPropertyInitialization": false,
@@ -11,6 +10,12 @@
             "es2023"
         ],
         "target": "ES2023",
-        "module": "ESNext"
-    }
+        "module": "ESNext",
+        "skipLibCheck": true,
+        "isolatedModules": true
+    },
+    "include": [
+        "src/**/*",
+        "src/**/*.vue"
+    ]
 }

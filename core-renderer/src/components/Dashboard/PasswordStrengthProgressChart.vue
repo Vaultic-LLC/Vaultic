@@ -588,7 +588,7 @@ export default defineComponent({
             reset
         }
     }
-}) as any;
+});
 </script>
 
 <style>
