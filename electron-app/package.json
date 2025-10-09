@@ -4,7 +4,11 @@
 	"description": "A Password Manager",
 	"main": "./out/main/index.js",
 	"author": "Vaultic LLC",
-	"homepage": "https://www.electronjs.org",
+	"homepage": "https://vaultic.org",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Vaultic-LLC/Vaultic"
+	},
 	"scripts": {
 		"copy-core-main": "node ../copy.js src=../core-main/src dest=./src/main/Core",
 		"copy-core-renderer": "node ../copy.js src=../core-renderer/src dest=./src/renderer/src/core",
@@ -54,7 +58,7 @@
 		"getmac": "6.6.0",
 		"jose": "5.6.3",
 		"primeicons": "7.0.0",
-		"primevue": "^4.4.0",
+		"primevue": "4.4.0",
 		"qrcode": "1.5.3",
 		"quill": "2.0.2",
 		"reflect-metadata": "0.2.2",
@@ -64,6 +68,7 @@
 		"tar-fs": "^2.1.4",
 		"tippy.js": "6.3.7",
 		"typeorm": "^0.3.21",
+		"update-electron-app": "^3.1.1",
 		"v-calendar-tw": "3.2.0",
 		"vite-plugin-babel": "^1.3.0",
 		"vue-chartjs": "5.2.0"

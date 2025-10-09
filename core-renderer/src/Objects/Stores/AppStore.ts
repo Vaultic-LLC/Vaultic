@@ -666,7 +666,13 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
             // don't bother waiting for these, just trigger them so they are there if we need them
             app.devices.getDevices();
             app.organizations.getOrganizations();
-            this.getUserInfo();
+            this.getUserInfo().then(() =>
+            {
+                if (app.canShowSubscriptionWidgets.value)
+                {
+                    app.vaultDataBreaches.getVaultDataBreaches();
+                }
+            });
         }
 
         const setMasterKeyResponse = await api.cache.setMasterKey(masterKey);

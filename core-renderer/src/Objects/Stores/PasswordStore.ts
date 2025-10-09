@@ -354,6 +354,11 @@ export class PasswordStore extends PrimaryDataTypeStore<IPasswordStoreState, Pas
             return false;
         }
 
+        if (app.isOnline && app.vaultDataBreaches.vaultBreachesByPasswordID.value.has(password.id))
+        {
+            await app.vaultDataBreaches.dismissVaultDataBreach(app.vaultDataBreaches.vaultBreachesByPasswordID.value.get(password.id)!.VaultDataBreachID);
+        }
+
         app.currentVault.passwordsByDomain = this.state.o;
         return true;
     }

@@ -275,13 +275,16 @@ export default defineComponent({
 }
 
 :deep(.textInputFieldContainer__label) {
-    font-size: var(--input-font-size);
+    font-size: var(--input-font-size) !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
 }
 
 :deep(.p-floatlabel-in:has(input:focus) label.textInputFieldContainer__label),
 :deep(.p-floatlabel-in:has(input.p-filled) label.textInputFieldContainer__label) {
     top: var(--input-label-active-top) !important;
     font-size: var(--input-label-active-font-size) !important;
+    transform: translateY(0) !important;
 }
 
 :deep(.p-floatlabel:has(.p-invalid) .textInputFieldContainer__label) {
@@ -290,6 +293,7 @@ export default defineComponent({
 
 :deep(.p-floatlabel:has(input:focus) .textInputFieldContainer__label) {
     color: v-bind(color) !important;
+    transform: translateY(0) !important;
 }
 
 :deep(.textInputFieldContainer__messageText) {

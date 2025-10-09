@@ -20,6 +20,7 @@ import { HashUtility } from "./Utilities/HashUtility";
 import { CryptUtility } from "./Utilities/CryptUtility";
 import { DataUtility } from "./Utilities/DataUtility";
 import { handleUserLogOut } from "./Core/Helpers/RepositoryHelper";
+import { updateElectronApp } from 'update-electron-app';
 
 let tray: Tray | null = null;
 let mainWindow: BrowserWindow | null = null;
@@ -30,6 +31,10 @@ if (require('electron-squirrel-startup'))
 }
 else
 {
+	updateElectronApp({
+		updateInterval: "1 hour"
+	});
+
 	function createTray()
 	{
 		const trayIconPath = join(__dirname, '../../resources/icon.png'); // required.

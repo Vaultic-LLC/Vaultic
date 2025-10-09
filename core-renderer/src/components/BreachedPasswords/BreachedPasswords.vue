@@ -120,6 +120,7 @@ export default defineComponent({
                     pulseColor: color.value,
                     onClick: function ()
                     {
+                        app.activePasswordValuesTable = DataType.Passwords;
                         app.currentVault.passwordStore.toggleAtRiskType(DataType.Passwords, AtRiskType.Breached);
                     }
                 };
@@ -182,6 +183,11 @@ export default defineComponent({
 
         function setRows()
         {
+            if (!canLoadWidget.value)
+            {
+                return;
+            }
+
             backingVaultsAndBreachCount = new Map();
             const rows: TableRowModel[] = [];           
 
@@ -232,6 +238,8 @@ export default defineComponent({
 
             app.currentVault.passwordStore.addEvent("onCheckPasswordBreach", checkPasswordForBreach);
             app.currentVault.passwordStore.addEvent("onCheckPasswordsForBreach", checkPasswordsForBreach);
+
+            setRows();
         });
 
         onUnmounted(() =>
@@ -240,7 +248,7 @@ export default defineComponent({
             app.vaultDataBreaches.removeEvent("onBreachDismissed", setRows);
 
             app.currentVault.passwordStore.removeEvent("onCheckPasswordBreach", checkPasswordForBreach);
-            app.currentVault.passwordStore.addEvent("onCheckPasswordsForBreach", checkPasswordsForBreach);
+            app.currentVault.passwordStore.removeEvent("onCheckPasswordsForBreach", checkPasswordsForBreach);
         });
 
         return {
