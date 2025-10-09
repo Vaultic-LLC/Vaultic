@@ -68,6 +68,13 @@
                             :width="'5vw'" :minWidth="'70px'" :maxWidth="'130px'" :height="'3vh'" :minHeight="'30px'"
                             :maxHeight="'45px'" :fontSize="'clamp(12px, 0.8vw, 18px)'" :fallbackClickHandler="doExportLogs"/>
                     </div>
+                    <div class="signInViewContainer__helpPopoverSectionSeperator"></div>
+                    <div class="signInViewContainer__helpPopoverSection">
+                        <div class="signInViewContainer__helpPopoverSectionTitle">Clear Local Data</div>
+                        <PopupButton :color="color" :text="'Clear'"
+                            :width="'5vw'" :minWidth="'70px'" :maxWidth="'130px'" :height="'3vh'" :minHeight="'30px'"
+                            :maxHeight="'45px'" :fontSize="'clamp(12px, 0.8vw, 18px)'" :fallbackClickHandler="doClearLocalData"/>
+                    </div>
                 </div>
             </Popover>
     </div>
@@ -358,6 +365,14 @@ export default defineComponent({
             await exportLogs(props.color);
         }
 
+        async function doClearLocalData()
+        {
+            app.popups.showLoadingIndicator(props.color, "Clearing Local Data");
+            await api.environment.recreateDatabase();
+            app.popups.hideLoadingIndicator();
+            app.popups.showToast("Clear Success", true);
+        }
+
         watch(() => props.reloadAllDataIsToggled, (newValue) => 
         {
             reloadAllData.value = newValue;
@@ -429,7 +444,8 @@ export default defineComponent({
             onHelpUnfocus,
             onHelpClick,
             openDeactivationPopup,
-            doExportLogs
+            doExportLogs,
+            doClearLocalData
         };
     }
 })
