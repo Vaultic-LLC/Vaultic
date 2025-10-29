@@ -6,7 +6,7 @@ import { ClientCryptUtility, ClientGeneratorUtility, ClientHashUtility } from "@
 import { RepositoryHelper, ServerHelper, ValidationHelper, VaulticHelper } from "@vaultic/shared/Types/Helpers";
 import { ClientEnvironment, ClientVaulticCache } from "@vaultic/shared/Types/Environment";
 import { ClientLogRepository, ClientUserRepository, ClientUserVaultRepository, ClientVaultRepository } from "@vaultic/shared/Types/Repositories";
-import { IAPI } from "@vaultic/shared/Types/API";
+import { PlatformDependentAPIResolver } from "@vaultic/shared/Types/API";
 import { Promisify } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { CondensedVaultData, UserData } from "@vaultic/shared/Types/Entities";
 import { ServerAllowSharingFrom } from "@vaultic/shared/Types/ClientServerTypes";
@@ -173,7 +173,7 @@ const logRepository: ClientLogRepository =
     log: (errorCode?: number, message?: string, callStack?: string) => ipcRenderer.invoke('logRepository:log', errorCode, message, callStack)
 }
 
-const api: IAPI =
+const api: PlatformDependentAPIResolver =
 {
     getDeviceInfo,
     environment,

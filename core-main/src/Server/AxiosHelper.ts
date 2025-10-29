@@ -1,12 +1,11 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
-import vaulticServer from './VaulticServer';
-import { environment } from '../Environment';
 import { FieldTree } from '../Types/FieldTree';
 import { DeviceInfo } from '@vaultic/shared/Types/Device';
 import { TypedMethodResponse } from '@vaultic/shared/Types/MethodResponse';
 import { BaseResponse, EncryptedResponse, InvalidSessionResponse } from '@vaultic/shared/Types/Responses';
 import { Algorithm, AsymmetricVaulticKey, MLKEM1024KeyResult, PublicPrivateKey } from '@vaultic/shared/Types/Keys';
 import errorCodes from '@vaultic/shared/Types/ErrorCodes';
+import { Environment } from '../Types/Environment';
 
 let vaulticServerPublicKey: string;
 let salt: string;
@@ -18,7 +17,7 @@ let axiosInstance: AxiosInstance;
 let responseKeys: PublicPrivateKey<string>;
 
 // can't access environment before it has been initalized
-function init()
+export function init(environment: Environment)
 {
     deviceInfo = environment.getDeviceInfo();
     responseKeys = environment.utilities.crypt.generatePublicPrivateKeys(Algorithm.ML_KEM_1024);
@@ -35,13 +34,13 @@ function init()
 
     if (environment.isTest)
     {
-        stsAxiosHelper.init('https://localhost:7088/');
-        apiAxiosHelper.init('https://localhost:7007/');
+        stsAxiosHelper.init(environment, 'https://localhost:7088/');
+        apiAxiosHelper.init(environment, 'https://localhost:7007/');
     }
     else
     {
-        stsAxiosHelper.init('https://vaultic-sts.vaulticserver.vaultic.co/');
-        apiAxiosHelper.init('https://vaultic-api.vaulticserver.vaultic.co/');
+        stsAxiosHelper.init(environment, 'https://vaultic-sts.vaulticserver.vaultic.co/');
+        apiAxiosHelper.init(environment, 'https://vaultic-api.vaulticserver.vaultic.co/');
     }
 
     axiosInstance = axios.create({
@@ -57,10 +56,11 @@ class AxiosWrapper
 {
     private url: string;
     private initalized: boolean;
+    protected environment: Environment;
 
     constructor() { }
 
-    init(url: string)
+    init(environment: Environment, url: string)
     {
         if (this.initalized)
         {
@@ -68,6 +68,7 @@ class AxiosWrapper
         }
 
         this.initalized = true;
+        this.environment = environment;
         this.url = url;
     }
 
@@ -145,7 +146,7 @@ class AxiosWrapper
         }
 
         // we failed, log it
-        await environment.repositories.logs.log(undefined, JSON.stringify({ result: returnResponse, endpoint: serverPath }), "AxiosHelper");
+        await this.environment.repositories.logs.log(undefined, JSON.stringify({ result: returnResponse, endpoint: serverPath }), "AxiosHelper");
         return returnResponse as BaseResponse;
     }
 
@@ -166,10 +167,10 @@ class AxiosWrapper
             if (e?.error instanceof Error)
             {
                 const error: Error = e?.error as Error;
-                const response = await vaulticServer.app.log(error.message, "AxiosHelper.GetRequestData");
-                if (response.Success)
+                const response = await this.environment.repositories.logs.log(undefined, error.message, "AxiosHelper.GetRequestData");
+                if (response)
                 {
-                    return [{ success: false, logID: response.logID }, { Key: '', Data: '' }]
+                    return [{ success: false }, { Key: '', Data: '' }]
                 }
             }
         }
@@ -206,7 +207,7 @@ class STSAxiosWrapper extends AxiosWrapper
         data.ResponsePublicKey = responseKeys.public;
         data.Salt = salt;
 
-        const result = await environment.utilities.crypt.asymmeticEncrypt(vaulticServerPublicKey, JSON.stringify(data));
+        const result = await this.environment.utilities.crypt.asymmeticEncrypt(vaulticServerPublicKey, JSON.stringify(data));
         if (!result.success)
         {
             return TypedMethodResponse.propagateFail(result);
@@ -235,7 +236,7 @@ class STSAxiosWrapper extends AxiosWrapper
             }
 
             const encryptedResponse: EncryptedResponse = response as EncryptedResponse;
-            const decryptedResponse = await environment.utilities.crypt.asymmetricDecrypt(responseKeys.private, encryptedResponse.Data, encryptedResponse.CipherText);
+            const decryptedResponse = await this.environment.utilities.crypt.asymmetricDecrypt(responseKeys.private, encryptedResponse.Data, encryptedResponse.CipherText);
 
             if (!decryptedResponse.success)
             {
@@ -266,7 +267,7 @@ class APIAxiosWrapper extends AxiosWrapper
 
     async endToEndEncryptPostData(fieldTree: FieldTree, data: { [key: string]: any }): Promise<TypedMethodResponse<any>>
     {
-        if (!environment.cache.exportKey)
+        if (!this.environment.cache.exportKey)
         {
             return TypedMethodResponse.fail(undefined, undefined, "No Export Key");
         }
@@ -285,7 +286,7 @@ class APIAxiosWrapper extends AxiosWrapper
                     continue;
                 }
 
-                const response = await environment.utilities.crypt.symmetricEncrypt(environment.cache.exportKey, data[fieldTree.properties[i]]);
+                const response = await this.environment.utilities.crypt.symmetricEncrypt(this.environment.cache.exportKey, data[fieldTree.properties[i]]);
                 if (!response.success)
                 {
                     return response.addToErrorMessage(`Prop: ${fieldTree.properties[i]}`);
@@ -347,7 +348,7 @@ class APIAxiosWrapper extends AxiosWrapper
 
     async decryptEndToEndData(fieldTree: FieldTree, data: { [key: string]: any }): Promise<TypedMethodResponse<any>>
     {
-        if (!environment.cache.exportKey)
+        if (!this.environment.cache.exportKey)
         {
             return TypedMethodResponse.fail(undefined, undefined, "No Export Key");
         }
@@ -368,7 +369,7 @@ class APIAxiosWrapper extends AxiosWrapper
 
                 try
                 {
-                    const response = await environment.utilities.crypt.symmetricDecrypt(environment.cache.exportKey, data[fieldTree.properties[i]]);
+                    const response = await this.environment.utilities.crypt.symmetricDecrypt(this.environment.cache.exportKey, data[fieldTree.properties[i]]);
                     if (!response.success)
                     {
                         return TypedMethodResponse.fail(undefined, undefined, `Failed to e2e decrypt: ${fieldTree.properties[i]}`);
@@ -435,7 +436,7 @@ class APIAxiosWrapper extends AxiosWrapper
 
     async post<T extends BaseResponse>(serverPath: string, data?: any): Promise<T | BaseResponse> 
     {
-        if (!environment.cache.sessionKey)
+        if (!this.environment.cache.sessionKey)
         {
             return { Success: false, InvalidSession: true } as InvalidSessionResponse;
         }
@@ -448,13 +449,13 @@ class APIAxiosWrapper extends AxiosWrapper
         // ResponsePublicKey is requried for BaseRequest to be valid on the server
         data.ResponsePublicKey = responseKeys.public;
 
-        const sessionHash = await environment.sessionHandler.getSession();
+        const sessionHash = await this.environment.sessionHandler.getSession();
         if (!sessionHash)
         {
             return TypedMethodResponse.fail(undefined, undefined, undefined, undefined, true);
         }
 
-        const requestData = await environment.utilities.crypt.symmetricEncrypt(environment.cache.sessionKey!, JSON.stringify(data));
+        const requestData = await this.environment.utilities.crypt.symmetricEncrypt(this.environment.cache.sessionKey!, JSON.stringify(data));
         if (!requestData.success)
         {
             return TypedMethodResponse.fail(undefined, undefined, requestData.errorMessage, requestData.logID);
@@ -467,7 +468,7 @@ class APIAxiosWrapper extends AxiosWrapper
         };
 
         // Use asymmetric encryption when sending to the server to hide the SessionTokenHash
-        const encryptedData = await environment.utilities.crypt.asymmeticEncrypt(vaulticServerPublicKey, JSON.stringify(formattedData));
+        const encryptedData = await this.environment.utilities.crypt.asymmeticEncrypt(vaulticServerPublicKey, JSON.stringify(formattedData));
         if (!encryptedData.success)
         {
             return TypedMethodResponse.propagateFail(encryptedData);
@@ -488,7 +489,7 @@ class APIAxiosWrapper extends AxiosWrapper
                 return TypedMethodResponse.fail(undefined, "handleResponse", "No Data");
             }
 
-            const decryptedResponse = await environment.utilities.crypt.symmetricDecrypt(environment.cache.sessionKey!, encryptedResponse.Data);
+            const decryptedResponse = await this.environment.utilities.crypt.symmetricDecrypt(this.environment.cache.sessionKey!, encryptedResponse.Data);
             if (!decryptedResponse.success)
             {
                 return TypedMethodResponse.fail(undefined, "Handle Response");
@@ -506,7 +507,6 @@ class APIAxiosWrapper extends AxiosWrapper
 
 export interface AxiosHelper
 {
-    init: () => void;
     api: APIAxiosWrapper;
     sts: STSAxiosWrapper;
 }
@@ -516,7 +516,6 @@ const stsAxiosHelper = new STSAxiosWrapper();
 
 const axiosHelper: AxiosHelper =
 {
-    init,
     api: apiAxiosHelper,
     sts: stsAxiosHelper
 };

@@ -3,7 +3,6 @@ import { Repository } from "typeorm";
 import { VaulticRepository } from "./VaulticRepository";
 import { UserVault } from "../Entities/UserVault";
 import Transaction from "../Transaction";
-import { User } from "../Entities/User";
 import { StoreState } from "../Entities/States/StoreState";
 import vaultHelper from "../../Helpers/VaultHelper";
 import { safetifyMethod } from "../../Helpers/RepositoryHelper";
@@ -13,10 +12,8 @@ import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import errorCodes from "@vaultic/shared/Types/ErrorCodes";
 import { DeepPartial, hasValue, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { IUserVaultRepository } from "../../Types/Repositories";
-import { Dictionary } from "@vaultic/shared/Types/DataStructures";
 import { ChangeTracking } from "../Entities/ChangeTracking";
 import { Algorithm, PublicKeyType } from "@vaultic/shared/Types/Keys";
-import vaulticServer from "../../Server/VaulticServer";
 import { StoreType, VaultStoreStates } from "@vaultic/shared/Types/Stores";
 import { ClientChangeTrackingType, ClientUserVaultChangeTrackings, UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { StoreRetriever } from "../../Types/Parameters";
@@ -420,7 +417,7 @@ class UserVaultRepository extends VaulticRepository<UserVault> implements IUserV
     public async setupSharedUserVaults(masterKey: string, recipientsPrivateEncryptingKey: string, senderUserIDs: number[],
         unsetupUserVaults: UnsetupSharedClientUserVault[], transaction: Transaction): Promise<void>
     {
-        const senderPublicSigningKeys = await vaulticServer.user.getPublicKeys(PublicKeyType.Signing, senderUserIDs);
+        const senderPublicSigningKeys = await environment.server.api.user.getPublicKeys(PublicKeyType.Signing, senderUserIDs);
         if (!senderPublicSigningKeys.Success)
         {
             await environment.repositories.logs.log(undefined, "Failed to get public keys");

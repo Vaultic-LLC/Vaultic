@@ -1,8 +1,8 @@
-import { IAPI } from "@vaultic/shared/Types/API"
+import { PlatformDependentAPIResolver } from "@vaultic/shared/Types/API"
 
 class API 
 {
-    private internalAPI: IAPI;
+    private internalAPI: PlatformDependentAPIResolver;
 
     get environment() { return this.internalAPI?.environment; }
     get server() { return this.internalAPI?.server; }
@@ -13,9 +13,10 @@ class API
 
     constructor()
     {
+        this.internalAPI = undefined as any as PlatformDependentAPIResolver;
     }
 
-    setAPI(api: IAPI)
+    setAPIResolver(api: PlatformDependentAPIResolver)
     {
         if (this.internalAPI != undefined)
         {

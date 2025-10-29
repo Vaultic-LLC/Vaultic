@@ -1,0 +1,58 @@
+{
+  "name": "wxt-vue-starter",
+  "description": "manifest.json description",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox",
+    "compile": "vue-tsc --noEmit",
+    "postinstall": "wxt prepare",
+    "copy": "node ../copy.js src=../core-main/src dest=./lib/main && node ../copy.js src=../core-renderer/src dest=./lib/renderer"
+  },
+  "dependencies": {
+    "@noble/curves": "^1.4.2",
+    "@noble/post-quantum": "^0.4.0",
+    "@popperjs/core": "2.11.8",
+    "@primeuix/themes": "^1.2.5",
+    "@serenity-kit/opaque": "0.9.0",
+    "@tweenjs/tween.js": "21.0.0",
+    "axios": "1.12.1",
+    "chart.js": "4.4.0",
+    "chartjs-plugin-zoom": "2.0.1",
+    "libsodium-wrappers-sumo": "^0.7.15",
+    "localforage": "^1.10.0",
+    "jose": "5.6.3",
+    "pako": "^2.1.0",
+    "primeicons": "7.0.0",
+    "primevue": "4.4.0",
+    "qrcode": "1.5.3",
+    "quill": "2.0.2",
+    "sql.js": "^1.13.0",
+    "reflect-metadata": "0.2.2",
+    "tippy.js": "6.3.7",
+    "typeorm": "0.3.27",
+    "v-calendar-tw": "3.2.0",
+    "vue": "^3.5.21",
+    "vue-chartjs": "5.2.0"
+  },
+  "devDependencies": {
+    "@types/libsodium-wrappers-sumo": "^0.7.8",
+    "@types/pako": "^2.0.4",
+    "@vaultic/shared": "../core-shared",
+    "@wxt-dev/module-vue": "^1.0.2",
+    "typescript": "^5.9.2",
+    "vue-tsc": "^3.0.6",
+    "wxt": "0.20.11"
+  },
+  "overrides": {
+    "wxt": "0.20.11",
+    "@wxt-dev/browser": "0.1.4",
+    "@wxt-dev/storage": "1.2.5"
+  }
+}
