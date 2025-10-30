@@ -23,7 +23,6 @@ async function getSession(): Promise<string>
     return currentSession;
 }
 
-console.log("initializing environment");
 environment.init({
     isTest: false,
     sessionHandler:
@@ -47,8 +46,7 @@ environment.init({
     hasConnection: () => Promise.resolve(true)
 });
 
-console.log("setting api resolver");
 const apiResolver = coreAPIResolver.toPlatformDependentAPIResolver(() => Promise.resolve({} as DeviceInfo), new CVaulticHelper(), new PromisifyGeneratorUtility());
-console.log("api resolver", apiResolver);
+
 rendererAPI.api.setAPIResolver(apiResolver);
 createApp(App).mount('#app');
