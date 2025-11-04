@@ -1,8 +1,8 @@
 {
 	"name": "Vaultic",
-	"version": "1.0.3",
+	"version": "1.0.5",
 	"description": "A Password Manager",
-	"main": "./out/main/index.js",
+	"main": "./dist/main/index.js",
 	"author": "Vaultic LLC",
 	"homepage": "https://vaultic.org",
 	"repository": {
@@ -79,6 +79,7 @@
 		"@babel/plugin-transform-object-rest-spread": "^7.25.9",
 		"@electron-forge/cli": "^7.9.0",
 		"@electron-forge/maker-dmg": "^7.9.0",
+		"@electron-forge/maker-msix": "^7.10.2",
 		"@electron-forge/maker-squirrel": "^7.9.0",
 		"@electron-toolkit/eslint-config": "1.0.1",
 		"@electron-toolkit/eslint-config-ts": "1.0.0",

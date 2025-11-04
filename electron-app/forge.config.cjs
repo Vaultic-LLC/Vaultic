@@ -7,8 +7,8 @@ module.exports = {
 			unpackDir: "native_modules"
 		},
 		appBundleId: 'com.vaultic.vaultic',
-		appVersion: '1.0.3',
-		buildVersion: '1.0.3',
+		appVersion: '1.0.5',
+		buildVersion: '1.0.5',
 		icon: './resources/icon',
 		ignore: [
 			/^\/src/,
@@ -18,19 +18,19 @@ module.exports = {
 			binaries: [
 				'./resources/bin/ffmpeg_intel_mac',
 				'./resources/bin/ffmpeg_mac'
-			  ],
-			  identity: process.env.APPLE_IDENTITY,
-			  hardenedRuntime: true,
-			  entitlements: 'entitlements.plist',
-			  'entitlements-inherit': 'entitlements-child.plist',
-			  'signature-flags': 'library'
+			],
+			identity: process.env.APPLE_IDENTITY,
+			hardenedRuntime: true,
+			entitlements: 'entitlements.plist',
+			'entitlements-inherit': 'entitlements-child.plist',
+			'signature-flags': 'library'
 		},
-	osxNotarize: {
-		tool: 'notarytool',
-		appleId: process.env.APPLE_ID,
-		appleIdPassword: process.env.APPLE_ID_PASSWORD,
-		teamId: process.env.APPLE_TEAM_ID
-	}
+		osxNotarize: {
+			tool: 'notarytool',
+			appleId: process.env.APPLE_ID,
+			appleIdPassword: process.env.APPLE_ID_PASSWORD,
+			teamId: process.env.APPLE_TEAM_ID
+		}
 	},
 	rebuildConfig: {
 		onlyModules: ['better-sqlite3', 'sodium-native', 'sqlite3'],
@@ -45,5 +45,19 @@ module.exports = {
 				icon: "./resources/icon.icns",
 			}
 		},
+		{
+			name: '@electron-forge/maker-msix',
+			config: {
+				manifestVariables: {
+					appDisplayName: 'Vaultic',
+					publisherDisplayName: 'Vaultic LLC',
+					publisher: 'CN=73FC5DA3-F3CD-411E-802D-2281556736A6',
+					packageMinOSVersion: '10.0.19041.0',
+					packageIdentity: 'VaulticLLC.Vaultic',
+				},
+				icon: "./resources/icon.ico",
+				packageAssets: "./resources/msix-assets",
+			}
+		}
 	]
 };
