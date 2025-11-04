@@ -11,7 +11,7 @@ import PrimeVue from 'primevue/config';
 import Aura from '@primeuix/themes/aura';
 import ConfirmationService from 'primevue/confirmationservice';
 
-api.setAPI(window.api);
+api.setAPIResolver(window.api);
 
 Coloris.init();
 Coloris({

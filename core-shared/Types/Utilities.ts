@@ -19,13 +19,13 @@ export interface ClientHashUtility
     hash: (algorithm: Algorithm, value: string, salt?: string) => Promise<TypedMethodResponse<string | undefined>>;
 }
 
-export interface CoreGeneratorUtility
+export interface ICoreGeneratorUtility
 {
     ECKeys: () => Promise<PublicPrivateKey<string>>;
+    generateRandomPasswordOrPassphrase: (type: RandomValueType, length: number, includeNumbers: boolean, includeSpecialCharacters: boolean, includeAbmiguousCharacters: boolean, passphraseSeperator: string) => string;
 }
 
-export interface ClientGeneratorUtility extends CoreGeneratorUtility
+export interface ClientGeneratorUtility extends ICoreGeneratorUtility
 {
     uniqueId: () => string;
-    generateRandomPasswordOrPassphrase: (type: RandomValueType, length: number, includeNumbers: boolean, includeSpecialCharacters: boolean, includeAbmiguousCharacters: boolean, passphraseSeperator: string) => string;
 }

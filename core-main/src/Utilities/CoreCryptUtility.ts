@@ -1,5 +1,4 @@
 import { x25519 } from '@noble/curves/ed25519';
-import coreGenerator from './CoreGeneratorUtility';
 import { environment } from '../Environment';
 import { ECEncryptionResult, TypedMethodResponse } from '@vaultic/shared/Types/MethodResponse';
 import { ml_kem1024 } from '@noble/post-quantum/ml-kem';
@@ -85,7 +84,7 @@ export class CoreCryptUtility implements ClientCryptUtility
 
     public async ECEncrypt(recipientPublicKey: string, value: string): Promise<TypedMethodResponse<ECEncryptionResult>>
     {
-        const tempKeys = await coreGenerator.ECKeys();
+        const tempKeys = await environment.utilities.generator.ECKeys();
         const sharedKey = x25519.getSharedSecret(tempKeys.private, recipientPublicKey);
 
         const key: VaulticKey = 

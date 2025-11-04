@@ -2,7 +2,6 @@ import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { User } from "../Database/Entities/User";
 import Transaction from "../Database/Transaction";
 import { environment } from "../Environment";
-import vaulticServer from "../Server/VaulticServer";
 import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { UnsetupSharedClientUserVault } from "@vaultic/shared/Types/Entities";
 import { Algorithm, SignedVaultKey } from "@vaultic/shared/Types/Keys";
@@ -147,7 +146,7 @@ export async function backupData(masterKey: string, dataToBackup?: UserDataPaylo
         postData.userDataPayload["vaults"] = vaultsToBackup.value.vaults;
     }
 
-    const backupResponse = await vaulticServer.user.backupData(postData);
+    const backupResponse = await environment.server.api.user.backupData(postData);
     if (!backupResponse.Success)
     {
         return await checkMergeMissingData(masterKey, "", vaultsToBackup.value?.keys, postData.userDataPayload, backupResponse.userDataPayload, undefined, dataToBackup, reloadingAllData);

@@ -2,7 +2,6 @@ import { environment } from "../../Environment";
 import { Vault } from "../Entities/Vault";
 import { Repository } from "typeorm";
 import { VaulticRepository } from "./VaulticRepository";
-import vaulticServer from "../../Server/VaulticServer";
 import { UserVault } from "../Entities/UserVault";
 import Transaction from "../Transaction";
 import { VaultPreferencesStoreState } from "../Entities/States/VaultPreferencesStoreState";
@@ -30,7 +29,6 @@ import { defaultFilterStoreState, defaultGroupStoreState, defaultPasswordStoreSt
 import { StoreStateRepository } from "./StoreState/StoreStateRepository";
 import { StoreRetriever } from "../../Types/Parameters";
 import { Algorithm, VaulticKey } from "@vaultic/shared/Types/Keys";
-import axiosHelper from "../../Server/AxiosHelper";
 import { userDataE2EEncryptedFieldTree } from "../../Types/FieldTree";
 
 class VaultRepository extends VaulticRepository<Vault> implements IVaultRepository
@@ -98,7 +96,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
             modifiedOrgMembers = await vaultAddedMembersToOrgMembers(currentUser.userID, vaultKey, addedMembers);
         }
 
-        const response = await vaulticServer.vault.create(name, shared, orgsAndUserKeys, modifiedOrgMembers);
+        const response = await environment.server.api.vault.create(name, shared, orgsAndUserKeys, modifiedOrgMembers);
         if (!response.Success)
         {
             return false;
@@ -192,7 +190,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
             if (!(await transaction.commit()))
             {
-                await vaulticServer.vault.failedToSaveVault(userVault.userOrganizationID, userVault.userVaultID);
+                await environment.server.api.vault.failedToSaveVault(userVault.userOrganizationID, userVault.userVaultID);
                 return TypedMethodResponse.transactionFail();
             }
 
@@ -320,7 +318,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
 
             if (needToUpdateSharing)
             {
-                const response = await vaulticServer.vault.updateVault(parsedUpdateVaultData.userVaultID, userVaults[0][0].userOrganizationID,
+                const response = await environment.server.api.vault.updateVault(parsedUpdateVaultData.userVaultID, userVaults[0][0].userOrganizationID,
                     parsedUpdateVaultData.shared, addedOrgInfo, removedOrgIDs, addedVaultMemberInfo, updatedModifiedOrgMembers, removedMemberIDs);
 
                 if (!response.Success)
@@ -596,7 +594,7 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                 return TypedMethodResponse.fail(undefined, undefined, "Can't delete unarchived vault");
             }
 
-            const response = await vaulticServer.vault.deleteVault(userVault.userOrganizationID, userVault.userVaultID);
+            const response = await environment.server.api.vault.deleteVault(userVault.userOrganizationID, userVault.userVaultID);
             if (!response.Success)
             {
                 return TypedMethodResponse.fail(undefined, undefined, "Failed to delete vault on server");
@@ -873,13 +871,13 @@ class VaultRepository extends VaulticRepository<Vault> implements IVaultReposito
                     }
                 }
 
-                const result = await vaulticServer.vault.syncVaults(currentSignatures.identifiers);
+                const result = await environment.server.api.vault.syncVaults(currentSignatures.identifiers);
                 if (!result.Success)
                 {
                     return TypedMethodResponse.fail(undefined, undefined, "Syncing Vaults");
                 }
 
-                const decryptedResponse = await axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, result);
+                const decryptedResponse = await environment.server.axiosHelper.api.decryptEndToEndData(userDataE2EEncryptedFieldTree, result);
                 if (!decryptedResponse.success)
                 {
                     return decryptedResponse;

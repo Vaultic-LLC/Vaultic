@@ -1,13 +1,10 @@
 import { DataSource } from "typeorm";
-import axiosHelper from "./Server/AxiosHelper";
 import { initRepositories, VaulticRepositories } from "./Database/Repositories";
 import { VaulticCache } from "./Cache";
-import { DeviceInfo } from "@vaultic/shared/Types/Device";
-import { GeneratorUtility } from "./Types/Utilities";
 import * as PolyFills from "@vaultic/shared/Types/PolyFills";
-import { CoreCryptUtility } from "./Utilities/CoreCryptUtility";
-import { CoreHashUtility } from "./Utilities/CoreHashUtility";
-import { CoreDataUtility } from "./Utilities/CoreDataUtility";
+import { InternalEnvironment } from "./Types/Environment";
+import { Server } from "./Types/Server";
+import initServer from "./Server/VaulticServer";
 PolyFills.a;
 
 export interface SessionHandler
@@ -16,31 +13,12 @@ export interface SessionHandler
     getSession: () => Promise<string>;
 }
 
-export interface InternalEnvironment
-{
-    isTest: boolean;
-    sessionHandler: SessionHandler;
-    utilities:
-    {
-        crypt: CoreCryptUtility;
-        hash: CoreHashUtility;
-        generator: GeneratorUtility;
-        data: CoreDataUtility;
-    };
-    database:
-    {
-        createDataSource: (isTest: boolean) => DataSource;
-        deleteDatabase: (isTest: boolean) => Promise<boolean>
-    };
-    getDeviceInfo: () => DeviceInfo;
-    hasConnection: () => Promise<boolean>;
-}
-
 class Environment
 {
     private internalEnvironment: InternalEnvironment;
     private internalDatabaseDataSouce: DataSource;
     private internalRepositories: VaulticRepositories;
+    private internalServer: Server;
     private internalCache: VaulticCache;
 
     private internalFailedToInitalizeDatabase: boolean;
@@ -50,6 +28,7 @@ class Environment
     get utilities() { return this.internalEnvironment.utilities; }
     get databaseDataSouce() { return this.internalDatabaseDataSouce; }
     get repositories() { return this.internalRepositories; }
+    get server() { return this.internalServer; }
     get cache() { return this.internalCache; }
 
     get failedToInitalizeDatabase() { return this.internalFailedToInitalizeDatabase; }
@@ -63,7 +42,7 @@ class Environment
     async init(environment: InternalEnvironment)
     {
         this.internalEnvironment = environment;
-        axiosHelper.init();
+        this.internalServer = initServer(this);
 
         await this.setupDatabase();
     }

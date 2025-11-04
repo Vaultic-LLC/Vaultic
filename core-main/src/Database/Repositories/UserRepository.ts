@@ -3,7 +3,6 @@ import { User } from "../Entities/User";
 import { VaulticRepository } from "./VaulticRepository";
 import { Repository } from "typeorm";
 import Transaction from "../Transaction";
-import vaulticServer from "../../Server/VaulticServer";
 import { UserVault } from "../Entities/UserVault";
 import { AppStoreState } from "../Entities/States/AppStoreState";
 import { UserPreferencesStoreState } from "../Entities/States/UserPreferencesStoreState";
@@ -213,7 +212,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
 
         async function internalCreateUser(this: UserRepository): Promise<TypedMethodResponse<string>>
         {
-            const response = await vaulticServer.user.getUserIDs();
+            const response = await environment.server.api.user.getUserIDs();
             if (!response.Success)
             {
                 return TypedMethodResponse.fail(errorCodes.FAILED_TO_GET_USER_IDS, undefined, "Get User Ids");
@@ -320,7 +319,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
             const succeeded = await transaction.commit();
             if (!succeeded)
             {
-                await vaulticServer.vault.failedToSaveVault(userVault.userOrganizationID, userVault.userVaultID);
+                await environment.server.api.vault.failedToSaveVault(userVault.userOrganizationID, userVault.userVaultID);
                 return TypedMethodResponse.transactionFail();
             }
 
@@ -983,7 +982,7 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 return TypedMethodResponse.fail(errorCodes.NO_USER);
             }
 
-            const response = await vaulticServer.user.deleteAccount();
+            const response = await environment.server.api.user.deleteAccount();
             if (!response.Success)
             {
                 return TypedMethodResponse.fail(undefined, undefined, "Failed to delete account");

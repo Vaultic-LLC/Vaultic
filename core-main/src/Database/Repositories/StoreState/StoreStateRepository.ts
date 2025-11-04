@@ -359,7 +359,6 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                             updateSeen(false);
                             break;
                         case StoreStateChangeType.Update:
-                            console.log(`Updating ${type} path: ${path} to ${pathChange[j].v} on ${JSON.stringify(obj)}`);
                             manager.set(pathChange[j].p, pathChange[j].v, obj);
                             updateSeen(true);
                             break;

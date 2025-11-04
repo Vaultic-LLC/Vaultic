@@ -1,5 +1,4 @@
 import * as opaque from "@serenity-kit/opaque";
-import vaulticServer, { stsServer } from "../Server/VaulticServer";
 import { environment } from "../Environment";
 import { safetifyMethod } from "../Helpers/RepositoryHelper";
 import { FinishRegistrationResponse, LogUserInResponse, StartRegistrationResponse } from "@vaultic/shared/Types/Responses";
@@ -12,7 +11,6 @@ import { DeepPartial, nameof } from "@vaultic/shared/Helpers/TypeScriptHelper";
 import { User } from "../Database/Entities/User";
 import { UserDataPayload } from "@vaultic/shared/Types/ClientServerTypes";
 import { IUserVault } from "@vaultic/shared/Types/Entities";
-import axiosHelper from "../Server/AxiosHelper";
 import { userDataE2EEncryptedFieldTree } from "../Types/FieldTree";
 
 async function registerUser(masterKey: string, pendingUserToken: string, firstName: string, lastName: string): Promise<StartRegistrationResponse | FinishRegistrationResponse>
@@ -28,7 +26,7 @@ async function registerUser(masterKey: string, pendingUserToken: string, firstNa
             password: passwordHash.value
         });
 
-    const startResponse = await stsServer.registration.start(registrationRequest, pendingUserToken);
+    const startResponse = await environment.server.sts.registration.start(registrationRequest, pendingUserToken);
     if (!startResponse.Success)
     {
         return startResponse;
@@ -43,7 +41,7 @@ async function registerUser(masterKey: string, pendingUserToken: string, firstNa
         }
     });
 
-    return await stsServer.registration.finish(pendingUserToken, registrationRecord, firstName, lastName);
+    return await environment.server.sts.registration.finish(pendingUserToken, registrationRecord, firstName, lastName);
 }
 
 async function logUserIn(masterKey: string, email: string,
@@ -73,7 +71,7 @@ async function logUserIn(masterKey: string, email: string,
             environment.cache.setLoginData(startLoginRequest, passwordHash.value, clientLoginState);
         }
 
-        const startResponse = await stsServer.login.start(environment.cache.startLoginRequest, email, mfaCode);
+        const startResponse = await environment.server.sts.login.start(environment.cache.startLoginRequest, email, mfaCode);
         if (!startResponse.Success)
         {
             if (startResponse.FailedMFA)
@@ -143,7 +141,7 @@ async function logUserIn(masterKey: string, email: string,
             }
         }
 
-        let finishResponse = await stsServer.login.finish(firstLogin, startResponse.PendingUserToken!, finishLoginRequest);
+        let finishResponse = await environment.server.sts.login.finish(firstLogin, startResponse.PendingUserToken!, finishLoginRequest);
         if (finishResponse.Success)
         {
             await environment.cache.setSessionInfo(sessionKey, exportKey, finishResponse.Session?.Hash!);
@@ -213,7 +211,7 @@ async function updateKSFParams(newParams: string): Promise<TypedMethodResponse<a
                 password: passwordHash.value
             });
 
-        const startResponse = await vaulticServer.user.startUpdateKSFParams(registrationRequest);
+        const startResponse = await environment.server.api.user.startUpdateKSFParams(registrationRequest);
         if (!startResponse.Success)
         {
             return TypedMethodResponse.fail(undefined, undefined, "Start Update Failed");
@@ -281,13 +279,13 @@ async function updateKSFParams(newParams: string): Promise<TypedMethodResponse<a
 
         userDataPayload["userVaults"] = userVaultsToPush;
 
-        const encryptedPayload = await axiosHelper.api.endToEndEncryptPostData(userDataE2EEncryptedFieldTree, { userDataPayload: userDataPayload });
+        const encryptedPayload = await environment.server.axiosHelper.api.endToEndEncryptPostData(userDataE2EEncryptedFieldTree, { userDataPayload: userDataPayload });
         if (!encryptedPayload.success)
         {
             return TypedMethodResponse.fail(undefined, undefined, "e2e encrypt user data");
         }
 
-        const finishResponse = await vaulticServer.user.finishUpdateKSFParams(registrationRecord, encryptedPayload.value.userDataPayload);
+        const finishResponse = await environment.server.api.user.finishUpdateKSFParams(registrationRecord, encryptedPayload.value.userDataPayload);
         if (!finishResponse.Success)
         {
             return TypedMethodResponse.fail(undefined, undefined, "Finish update params");

@@ -1,6 +1,5 @@
 import { Member, Organization } from "@vaultic/shared/Types/DataTypes";
 import { environment } from "../Environment";
-import vaulticServer from "../Server/VaulticServer";
 import { AddedOrgInfo, AddedVaultInfo, AddedVaultMembersInfo, ModifiedOrgMember, OrgAndUserKeys, UserIDAndKey } from "@vaultic/shared/Types/ClientServerTypes";
 import { PublicKeys, PublicKeyType } from "@vaultic/shared/Types/Keys";
 import vaultHelper from "./VaultHelper";
@@ -19,7 +18,7 @@ export async function vaultAddedOrgsToAddedOrgInfo(senderUserID: number, vaultKe
     let usersAndPublicKeys: { [key: number]: PublicKeys } = {};
     if (allMembers.length > 0)
     {
-        const getPublicKeyResponse = await vaulticServer.user.getPublicKeys(PublicKeyType.Encrypting, allMembers);
+        const getPublicKeyResponse = await environment.server.api.user.getPublicKeys(PublicKeyType.Encrypting, allMembers);
         if (!getPublicKeyResponse.Success)
         {
             return;
@@ -186,7 +185,7 @@ export async function organizationUpdateAddedVaultsToAddedOrgMembers(masterKey: 
         });
 
         const allMembersArray = Array.from(users);
-        const getPublicKeyResponse = await vaulticServer.user.getPublicKeys(PublicKeyType.Encrypting, allMembersArray);
+        const getPublicKeyResponse = await environment.server.api.user.getPublicKeys(PublicKeyType.Encrypting, allMembersArray);
         if (!getPublicKeyResponse.Success)
         {
             return;

@@ -1,41 +1,32 @@
-import { UserController, createUserController } from "./UserController";
+import { createUserController } from "./UserController";
 import { createAppController } from "./AppController";
-import { AppController, OrganizationController, SessionController } from "@vaultic/shared/Types/Controllers";
-import axiosHelper from "./AxiosHelper";
+import axiosHelper, { init } from "./AxiosHelper";
 import { createSessionController } from "./SessionController";
-import { LoginController, createLoginController } from "./LoginController";
-import { RegistrationController, createRegistrationController } from "./RegistrationController";
-import { createVaultController, VaultController } from "./VaultController";
+import { createLoginController } from "./LoginController";
+import { createRegistrationController } from "./RegistrationController";
+import { createVaultController } from "./VaultController";
 import { createOrganizationController } from "./OrganizationController";
+import { Environment } from "../Types/Environment";
+import { Server } from "../Types/Server";
 
-export interface VaulticServer
+export default function initServer(environment: Environment): Server
 {
-    app: AppController;
-    session: SessionController;
-    user: UserController;
-    vault: VaultController;
-    organization: OrganizationController;
+    init(environment);
+    return {
+        api: 
+        {
+            app: createAppController(axiosHelper),
+            session: createSessionController(axiosHelper),
+            user: createUserController(axiosHelper),
+            vault: createVaultController(axiosHelper),
+            organization: createOrganizationController(axiosHelper)
+        },
+        sts: 
+        {
+            login: createLoginController(axiosHelper),
+            registration: createRegistrationController(axiosHelper)
+        },
+        axiosHelper: axiosHelper
+    }
 }
-
-export interface STSServer 
-{
-    login: LoginController;
-    registration: RegistrationController;
-};
-
-const vaulticServer: VaulticServer =
-{
-    app: createAppController(axiosHelper),
-    session: createSessionController(axiosHelper),
-    user: createUserController(axiosHelper),
-    vault: createVaultController(axiosHelper),
-    organization: createOrganizationController(axiosHelper)
-}
-
-export default vaulticServer;
-export const stsServer: STSServer =
-{
-    login: createLoginController(axiosHelper),
-    registration: createRegistrationController(axiosHelper)
-};
 
