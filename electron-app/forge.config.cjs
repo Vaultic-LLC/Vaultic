@@ -7,8 +7,8 @@ module.exports = {
 			unpackDir: "native_modules"
 		},
 		appBundleId: 'com.vaultic.vaultic',
-		appVersion: '1.0.5',
-		buildVersion: '1.0.5',
+		appVersion: '1.1.0',
+		buildVersion: '1.1.0',
 		icon: './resources/icon',
 		ignore: [
 			/^\/src/,
@@ -44,6 +44,9 @@ module.exports = {
 				format: 'ULFO',
 				icon: "./resources/icon.icns",
 			}
+		},
+		{
+			name: '@electron-forge/maker-zip',
 		},
 		{
 			name: '@electron-forge/maker-msix',

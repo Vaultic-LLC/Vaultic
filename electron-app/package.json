@@ -1,6 +1,6 @@
 {
 	"name": "Vaultic",
-	"version": "1.0.5",
+	"version": "1.1.0",
 	"description": "A Password Manager",
 	"main": "./dist/main/index.js",
 	"author": "Vaultic LLC",
@@ -27,6 +27,7 @@
 		"build:linux": "npm run build && electron-builder --linux --config",
 		"package": "npm run copy && electron-vite build --outDir=dist && electron-forge package",
 		"make": "npm run copy && electron-vite build --outDir=dist && electron-forge make",
+		"make:mac-zip": "npm run copy && electron-vite build --outDir=dist && electron-forge make --targets=@electron-forge/maker-zip",
 		"copy-core-main-test": "node ../../copy.js src=../../core-main/src dest=./src/main/Core",
 		"copy-core-renderer-test": "node ../../copy.js src=../../core-renderer/src dest=./src/renderer/src/core",
 		"copy-test": "npm run copy-core-main-test && npm run copy-core-renderer-test",
@@ -81,6 +82,7 @@
 		"@electron-forge/maker-dmg": "^7.9.0",
 		"@electron-forge/maker-msix": "^7.10.2",
 		"@electron-forge/maker-squirrel": "^7.9.0",
+		"@electron-forge/maker-zip": "^7.10.2",
 		"@electron-toolkit/eslint-config": "1.0.1",
 		"@electron-toolkit/eslint-config-ts": "1.0.0",
 		"@electron-toolkit/tsconfig": "1.0.1",
