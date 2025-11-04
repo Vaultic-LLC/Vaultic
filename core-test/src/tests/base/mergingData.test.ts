@@ -8,7 +8,7 @@ import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
 let mergingDataTestSuite = createTestSuite("Merging Data", TestSuites.MergingData);
 
-// copies vaultic.db to vaultic2.db and the logs into a fresh vaultic.db
+// copies vaultic.db to vaultic2.db and then logs into a fresh vaultic.db
 async function copyDatabaseAndLogIntoOnlineMode(forTest: string, ctx: TestContext)
 {
     //@ts-ignore

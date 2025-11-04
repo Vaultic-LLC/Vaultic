@@ -348,7 +348,6 @@ export class StoreStateRepository<T extends StoreState> extends VaulticRepositor
                     {
                         // The object was delete on another device, don't include changes to it
                         delete parsedChanges[paths[i]];
-
                         continue;
                     }
 

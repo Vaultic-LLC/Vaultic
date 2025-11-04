@@ -50,5 +50,4 @@ export default async function runTests(suite: TestSuites)
     }
 
     runner.printResults();
-
 }

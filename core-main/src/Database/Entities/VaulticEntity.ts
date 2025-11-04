@@ -325,15 +325,18 @@ export class VaulticEntity implements ObjectLiteral, IVaulticEntity
         }
     }
 
-    // Attempts to verify entity and all nested entities. Will throw the TypedMethodResponse if 
-    // unsuccessfull. Any call that verifies an entity should be wrapped in safetifyMethod
-    // at the highest level to catch the thrown error
+    /**
+     * Attempts to verify entity and all nested entities. Will throw the TypedMethodResponse if 
+     * unsuccessfull. Any call that verifies an entity should be wrapped in safetifyMethod
+     * at the highest level to catch the thrown error
+     * @param key 
+     * @returns 
+     */
     async verify(key: string): Promise<boolean>
     {
         const selfVerification = await this.internalVerify(key);
         if (!selfVerification.success)
         {
-            console.log(`\n\nFailed in verify: ${JSON.stringify(this)}`);
             selfVerification.addToCallStack(`Verifying ${this.entityName()}: ${this.identifier()}`);
             throw selfVerification;
         }

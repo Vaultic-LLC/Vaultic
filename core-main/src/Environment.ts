@@ -80,7 +80,6 @@ class Environment
         }
         catch (e)
         {
-            console.log("failed to setup database", e);
             this.internalFailedToInitalizeDatabase = true;
         }
     }
