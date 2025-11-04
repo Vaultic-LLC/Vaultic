@@ -12,7 +12,7 @@ import Aura from '@primeuix/themes/aura';
 import ConfirmationService from 'primevue/confirmationservice';
 import runTests from "../tests/tests/index"
 
-api.setAPI(window.api);
+api.setAPIResolver(window.api);
 
 Coloris.init();
 Coloris({
@@ -128,6 +128,6 @@ function initApp()
     // gives time to set breakpoints if needed
     setTimeout(() =>
     {
-        //runTests(0);
+        runTests(0);
     }, 10000);
 }
