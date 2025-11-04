@@ -1,0 +1,21 @@
+{
+	"files": [],
+	"references": [
+		{
+			"path": "./tsconfig.node.json"
+		},
+		{
+			"path": "./tsconfig.web.json"
+		}
+	],
+	"compilerOptions": {
+		"composite": true,
+		"rootDirs": [
+			"src",
+			"../common"
+		],
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"strictPropertyInitialization": false
+	}
+}

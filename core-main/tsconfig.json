@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "composite": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "strictPropertyInitialization": false,
+        "lib": [
+            "dom",
+            "es2023"
+        ],
+        "target": "ES2023",
+        "module": "NodeNext"
+    }
+}

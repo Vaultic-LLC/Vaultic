@@ -1,0 +1,39 @@
+{
+	"extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
+	"include": [
+		"electron.vite.config.*",
+		"src/main/*",
+		"src/main/Objects/Files/*",
+		"src/main/Types/*",
+		"src/main/Objects/*",
+		"src/main/Helpers/*",
+		"src/main/Utilities/*",
+		"src/preload/*",
+		"src/preload/Types/*",
+		"src/main/Core/*",
+		"src/main/Core/Helpers/*",
+		"src/main/Core/Server/*",
+		"src/main/Core/Types/*",
+		"src/main/Core/Utilities/*",
+		"src/main/Core/Database/Migrations/*",
+		"src/main/Core/Database/Entities/*",
+		"src/main/Core/Database/Repositories/*",
+		"src/main/Core/Database/*"
+	],
+	"compilerOptions": {
+		"composite": true,
+		"types": [
+			"electron-vite/node"
+		],
+		"noUnusedLocals": false,
+		"noUnusedParameters": false,
+		"rootDirs": [
+			"src",
+			"../common"
+		],
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"strictPropertyInitialization": false,
+		"target": "ES2023"
+	}
+}

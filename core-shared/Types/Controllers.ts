@@ -1,0 +1,75 @@
+import { ServerAllowSharingFrom } from "./ClientServerTypes";
+import { BreachRequestVault, Member } from "./DataTypes";
+import { RequireMFAOn, RequiresMFA } from "./Device";
+import { UserVaultIDAndVaultID } from "./Entities";
+import { TypedMethodResponse } from "./MethodResponse";
+import { BaseResponse, CreateCheckoutResponse, CreateOrganizationResponse, DeactivateUserSubscriptionResponse, DeleteDeviceResponse, GetChartDataResponse, GetDevicesResponse, GetMFAKeyResponse, GetOrganizationsResponse, GetSettings, GetUserInfoResponse, GetVaultDataBreachesResponse, GetVaultMembersResponse, LogResponse, RegisterDeviceResponse, SearchForUsersResponse, UpdateSharingSettingsResponse, UseSessionLicenseAndDeviceAuthenticationResponse, ValidateEmailResponse, VerifyEmailResponse } from "./Responses";
+
+export interface AppController
+{
+    log: (exception: string, stack: string) => Promise<LogResponse>;
+}
+
+export interface SessionController
+{
+    expire: () => Promise<BaseResponse>;
+    extend: () => Promise<BaseResponse>;
+}
+
+export interface ClientUserController
+{
+    validateEmail(email: string): Promise<ValidateEmailResponse>;
+    verifyEmail: (pendingUserToken: string, emailVerificationCode: string) => Promise<VerifyEmailResponse>;
+    getDevices: () => Promise<GetDevicesResponse>;
+    registerDevice: (name: string, requiresMFA: RequiresMFA) => Promise<RegisterDeviceResponse>;
+    updateDevice: (name: string, requiresMFA: RequiresMFA, desktopDeviceID?: number, mobileDeviceID?: number) => Promise<BaseResponse>;
+    deleteDevice: (desktopDeviceID?: number, mobileDeviceID?: number) => Promise<DeleteDeviceResponse>;
+    createCheckout: () => Promise<CreateCheckoutResponse>;
+    getChartData: (data: string) => Promise<GetChartDataResponse>;
+    deactivateUserSubscription: (email: string, deactivationKey: string) => Promise<DeactivateUserSubscriptionResponse>;
+    reportBug: (description: string) => Promise<UseSessionLicenseAndDeviceAuthenticationResponse>;
+    getSettings: () => Promise<GetSettings>;
+    updateSettings: (username?: string, allowSharedVaultsFromOthers?: boolean, allowSharingFrom?: ServerAllowSharingFrom, addedAllowSharingFrom?: number[], removedAllowSharingFrom?: number[], requireMFAOn?: RequireMFAOn) => Promise<UpdateSharingSettingsResponse>;
+    searchForUsers: (username: string, excludedUserIDs: string) => Promise<SearchForUsersResponse>;
+    getMFAKey: () => Promise<GetMFAKeyResponse>;
+    getUserInfo: () => Promise<GetUserInfoResponse>;
+    startEmailVerification: (email: string) => Promise<ValidateEmailResponse>;
+    finishEmailVerification: (code: string) => Promise<VerifyEmailResponse>;
+}
+
+export interface ClientVaultController 
+{
+    getMembers: (userOrganizationID: number, vaultID: number) => Promise<GetVaultMembersResponse>;
+    getVaultDataBreaches: (getVaultDataBreachData: string) => Promise<GetVaultDataBreachesResponse>;
+    checkPasswordsForBreach: (checkPasswordForBreachData: string) => Promise<GetVaultDataBreachesResponse>;
+    dismissVaultDataBreach: (userOrganizaitonID: number, vaultID: number, vaultDataBreachID: number) => Promise<BaseResponse>;
+    clearDataBreaches: (vaults: BreachRequestVault[]) => Promise<BaseResponse>;
+}
+
+export interface CreateOrganizationData
+{
+    name: string;
+    addedVaults: UserVaultIDAndVaultID[];
+    addedMembers: Member[];
+}
+
+export interface UpdateOrganizationData
+{
+    organizationID: number;
+    name: string;
+    unchangedVaults: UserVaultIDAndVaultID[];
+    addedVaults: UserVaultIDAndVaultID[];
+    removedVaults: UserVaultIDAndVaultID[];
+    originalMembers: Member[];
+    addedMembers: Member[];
+    updatedMembers: Member[];
+    removedMembers: Member[];
+}
+
+export interface OrganizationController
+{
+    getOrganizations: () => Promise<GetOrganizationsResponse>;
+    createOrganization: (masterKey: string, createOrganizationData: string) => Promise<TypedMethodResponse<CreateOrganizationResponse | undefined>>;
+    updateOrganization: (masterKey: string, updateOrganizationData: string) => Promise<TypedMethodResponse<BaseResponse | undefined>>;
+    deleteOrganization: (organizationID: number) => Promise<BaseResponse>
+}

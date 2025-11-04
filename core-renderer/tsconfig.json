@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "strict": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "strictPropertyInitialization": false,
+        "moduleResolution": "Bundler",
+        "lib": [
+            "dom",
+            "es2023"
+        ],
+        "target": "ES2023",
+        "module": "ESNext",
+        "skipLibCheck": true,
+        "isolatedModules": true
+    },
+    "include": [
+        "src/**/*",
+        "src/**/*.vue"
+    ]
+}

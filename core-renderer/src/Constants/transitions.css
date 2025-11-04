@@ -1,0 +1,54 @@
+.lockFade-leave-active {
+    transition: opacity 1s linear;
+}
+
+.lockFade-enter-from,
+.lockFade-leave-to {
+    opacity: 0;
+    /* z-index: 100; */
+}
+
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s linear;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
+.addObjectFade-enter-active,
+.addObjectFade-leave-active {
+    transition: opacity 0.2s linear;
+}
+
+.addObjectFade-enter-from,
+.addObjectFade-leave-to {
+    opacity: 0;
+}
+
+.accountSetupFade-enter-active,
+.accountSetupFade-leave-active {
+    transition: opacity 0.5s linear;
+}
+
+.accountSetupFade-enter-from,
+.accountSetupFade-leave-to {
+    opacity: 0;
+}
+
+.listFade-enter-active,
+.listFade-leave-active,
+.listFade-move {
+    transition: all 0.5s ease;
+}
+
+.listFade-enter-from,
+.listFade-leave-to {
+    opacity: 0;
+}
+
+.listFade-leave-active {
+    position: absolute;
+}
