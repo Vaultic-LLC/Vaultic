@@ -12,7 +12,7 @@ import { computed, ComputedRef, defineComponent, Ref, ref, onMounted } from 'vue
 
 export default defineComponent({
     name: "VaulticButton",
-    props: ['color', 'minSize', 'preferredSize', 'maxSize', 'tooltipMessage'],
+    props: ['color', 'minSize', 'preferredSize', 'maxSize', 'tooltipMessage', 'fontSize'],
     setup(props)
     {
         const container: Ref<HTMLElement | null> = ref(null);
@@ -20,6 +20,7 @@ export default defineComponent({
         const computedPreferredSize: ComputedRef<string> = computed(() => props.preferredSize ?? '1.8vw');
         const computedMaxSize: ComputedRef<string> = computed(() => props.maxSize ?? '35px');
         const transition: Ref<string> = ref('0');
+        const computedFontSize: ComputedRef<string> = computed(() => props.fontSize ?? 'clamp(20px, 2vw, 35px)');
 
         onMounted(() =>
         {
@@ -42,6 +43,7 @@ export default defineComponent({
             computedMinSize,
             computedPreferredSize,
             computedMaxSize,
+            computedFontSize,
             transition
         }
     }
@@ -58,7 +60,7 @@ export default defineComponent({
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: clamp(20px, 2vw, 35px);
+    font-size: v-bind(computedFontSize);
     border-radius: 50%;
     color: white;
     transition: v-bind(transition);

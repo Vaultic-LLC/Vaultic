@@ -10,6 +10,10 @@ import EnterMFACodePopup from '@/lib/renderer/components/Account/EnterMFACodePop
 import PopupButton from '@/lib/renderer/components/InputFields/PopupButton.vue';
 import TextInputField from '@/lib/renderer/components/InputFields/TextInputField.vue';
 import EncryptedInputField from '@/lib/renderer/components/InputFields/EncryptedInputField.vue';
+import { ColorPalette } from '@vaultic/shared/Types/Color';
+import StoreUpdateTransaction from '@/lib/renderer/Objects/StoreUpdateTransaction';
+import VaulticHeader from '@/lib/Components/Header/VaulticHeader.vue';
+import VaulticContent from '@/lib/Components/VaulticContent/VaulticContent.vue';
 
 const mfaView: Ref<any> = ref();
 
@@ -34,6 +38,7 @@ async function signIn(mfaCode?: string)
 
     if (response.success)
     {
+        await setColorPalette();
         isSignedIn.value = true;
         isSigningIn.value = false;
     }
@@ -60,32 +65,47 @@ async function signIn(mfaCode?: string)
     }
 }
 
+async function setColorPalette()
+{
+    const colorPalette: ColorPalette = await browser.runtime.sendMessage({ 
+        type: RuntimeMessages.GetColorPalette, 
+    });
+
+    // This will update the color palette but not commit it since we just need it for themeing
+    await app.userPreferences.updateCurrentColorPalette(new StoreUpdateTransaction(), colorPalette);
+}
+
 onMounted(async() => 
 {
-    console.log('Checking if user is signed in');
+    document.getElementsByTagName('html')?.item(0)?.classList.add('darkMode');
     const response = await browser.runtime.sendMessage({ type: RuntimeMessages.IsSignedIn });
-    console.log(`User is signed in: ${response}`);
     isSignedIn.value = response;
+
+    if (isSignedIn.value)
+    {
+        await setColorPalette();
+    }
 });
 
 </script>
 
 <template>
-  <div class="app" :class="{ isSigningIn: isSigningIn }">
-    <img class="app__logo" :src="Logo" alt="Logo" />
-    <div v-if="!isSignedIn && !isSigningIn">
-        <PopupButton :text="'Sign In'" @onClick="isSigningIn = true" :color="primaryColor" />
+  <div class="app" :class="{ isSigningIn: isSigningIn, isSignedIn: isSignedIn }">
+    <div v-if="!isSignedIn" class="app__signInContent">
+        <img class="app__logo" :src="Logo" alt="Logo" />
+        <PopupButton v-if="!isSigningIn" class="app__doSignInButton" :text="'Sign In'" @onClick="isSigningIn = true" :color="primaryColor" :height="'30px'" :width="'70%'" />
+        <div v-if="isSigningIn" class="app__signInContainer">
+            <TextInputField :color="primaryColor" :label="'Email'" v-model="email"
+                :width="'100%'" :maxWidth="'300px'" :isEmailField="true" />
+            <EncryptedInputField :colorModel="colorModel" :label="'Master Key'"
+                v-model="masterKey" :isInitiallyEncrypted="false" :showRandom="false"
+                :showUnlock="true" :required="true" :showCopy="false" :width="'100%'" :maxWidth="'300px'" />
+            <PopupButton class="app__signInButton" :text="'Sign In'" @onClick="signIn" :color="primaryColor" :height="'30px'" :width="'70%'" />
+        </div>
     </div>
-    <div v-if="isSigningIn" class="app__signInContainer">
-        <TextInputField :color="primaryColor" :label="'Email'" v-model="email"
-            :width="'100%'" :maxWidth="'300px'" :isEmailField="true" />
-        <EncryptedInputField :colorModel="colorModel" :label="'Master Key'"
-            v-model="masterKey" :isInitiallyEncrypted="false" :showRandom="false"
-            :showUnlock="true" :required="true" :showCopy="false" :width="'100%'" :maxWidth="'300px'" />
-        <PopupButton class="app__signInButton" :text="'Sign In'" @onClick="signIn" :color="primaryColor" :height="'30px'" :width="'70%'" />
-    </div>
-    <div v-if="isSignedIn">
-        Signed In
+    <div v-if="isSignedIn" class="app__content">
+        <VaulticHeader />
+        <VaulticContent />
     </div>
     <Teleport to="body">
         <Transition name="fade">
@@ -98,7 +118,7 @@ onMounted(async() =>
 <style scoped>
 .app {
     width: 150px;
-    height: 150px;
+    height: 120px;
     background-color: #0f111d;
     align-items: center;
     display: flex;
@@ -107,15 +127,30 @@ onMounted(async() =>
     transition: 0.3s;
 }
 
+.app__signInContent {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+}
+
 .app.isSigningIn {
     width: 250px;
-    height: 300px;
+    height: 250px;
+}
+
+.app.isSignedIn {
+    width: 500px;
+    height: 400px;
 }
 
 .app__logo {
     width: 75%;
     object-fit: contain;
     margin-top: 10px;
+    max-height: 40px;
 }
 
 .app__signInContainer {
@@ -128,8 +163,17 @@ onMounted(async() =>
     margin-top: 20px;
 }
 
+.app__doSignInButton {
+    margin-bottom: 10px;
+}
+
 .app__signInButton {
-    margin-top: 60px;
+    margin-top: 40px;
+}
+
+.app__content {
+    width: 100%;
+    height: 100%;
 }
 
 </style>

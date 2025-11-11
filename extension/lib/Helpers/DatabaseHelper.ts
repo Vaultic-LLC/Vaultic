@@ -12,7 +12,7 @@ import { VaultStoreState } from "../Main/Database/Entities/States/VaultStoreStat
 import { User } from "../Main/Database/Entities/User";
 import { UserVault } from "../Main/Database/Entities/UserVault";
 import { Vault } from "../Main/Database/Entities/Vault";
-import { CreateSchema1722604318830 } from "../Main/Database/Migrations/1722604318830-CreateSchema";
+import { CreateSchema1722604318830 } from "../main/Database/Migrations/1722604318830-CreateSchema";
 import localForage from "localforage";
 
 let dataSource: DataSource | undefined;

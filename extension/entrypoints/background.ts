@@ -1,5 +1,11 @@
-import { createDataSource, deleteDatabase } from "@/lib/Helpers/DatabaseHelper";
+// Import localforage and sql.js and expose them globally for TypeORM sql.js driver
+import localforage from 'localforage';
+import initSqlJs from 'sql.js';
+
+(globalThis as any).localforage = localforage;
+
 import { coreAPIResolver } from "@/lib/main/CoreAPIResolver";
+import { createDataSource, deleteDatabase } from "@/lib/Helpers/DatabaseHelper";
 import * as rendererAPI from '@/lib/renderer/API';
 import { environment } from "@/lib/Main/Environment";
 import { RuntimeMessages } from "@/lib/Types/RuntimeMessages";
@@ -16,6 +22,18 @@ import { LogUserInResponse } from "@vaultic/shared/Types/Responses";
 
 export default defineBackground(() => 
 {
+    // Initialize sql.js and expose it globally for TypeORM
+    const initializeSqlJs = async () => {
+        if (!(globalThis as any).initSqlJs) {
+            const SQL = await initSqlJs({
+                // Use the CDN version for the wasm file
+                locateFile: (file: string) => `https://sql.js.org/dist/${file}`
+            });
+            (globalThis as any).SQL = SQL;
+            (globalThis as any).initSqlJs = () => Promise.resolve(SQL);
+        }
+    };
+    
     const apiResolver = coreAPIResolver.toPlatformDependentAPIResolver(() => Promise.resolve({} as DeviceInfo), new CVaulticHelper(), new PromisifyGeneratorUtility());
     rendererAPI.api.setAPIResolver(apiResolver);
 
@@ -30,64 +48,94 @@ export default defineBackground(() =>
         return currentSession;
     }
 
-    environment.init({
-        isTest: false,
-        sessionHandler:
-        {
-            setSession,
-            getSession
-        },
-        utilities:
-        {
-            crypt: new CryptUtility(),
-            hash: new HashUtility(),
-            generator: generatorUtility,
-            data: new DataUtility()
-        },
-        database:
-        {
-            createDataSource,
-            deleteDatabase
-        },
-        getDeviceInfo: () => ({} as DeviceInfo),
-        hasConnection: () => Promise.resolve(true)
+    let isInitialized = false;
+    const initPromise = initializeSqlJs().then(() => {
+        environment.init({
+            isTest: false,
+            sessionHandler:
+            {
+                setSession,
+                getSession
+            },
+            utilities:
+            {
+                crypt: new CryptUtility(),
+                hash: new HashUtility(),
+                generator: generatorUtility,
+                data: new DataUtility()
+            },
+            database:
+            {
+                createDataSource,
+                deleteDatabase
+            },
+            getDeviceInfo: () => ({
+                deviceName: "Vaultic",
+                model: "Vaultic",
+                version: "1.0.0",
+                platform: "extension",
+                mac: "00:00:00:00:00:00"
+            } as DeviceInfo),
+            hasConnection: () => Promise.resolve(true)
+        });
+        isInitialized = true;
     });
 
-    // In Manifest V3, return a Promise instead of using sendResponse
-    browser.runtime.onMessage.addListener((message, sender) => 
+    browser.runtime.onMessage.addListener((message, sender, sendResponse) => 
     {
-        console.log(`Message received: ${message.type}`);
+        // TOOD: verify sender is from the extension
+        console.log(`Message received: ${message.type}, from: ${JSON.stringify(sender)}`);
         
-        switch (message.type) 
-        {
-            case RuntimeMessages.IsSignedIn:
-                console.log(`Responding with loadedUser: ${app.loadedUser.value}`);
-                // Return the value directly (or wrapped in Promise.resolve)
-                return Promise.resolve(app.loadedUser.value);
+        // Handle async processing
+        (async () => {
+            try {
+                // Ensure initialization is complete before handling messages
+                await initPromise;
+                console.log('Initialization complete, processing message');
                 
-            case RuntimeMessages.SignIn:
-                console.log('Handling SignIn request');
-                // Return the Promise directly
-                return signUserIn(message.email, message.masterKey, message.mfaCode)
-                    .then(response => {
+                let response;
+                switch (message.type) 
+                {
+                    case RuntimeMessages.IsSignedIn:
+                        console.log(`Responding with loadedUser: ${app.loadedUser.value}`);
+                        response = app.loadedUser.value;
+                        break;
+                        
+                    case RuntimeMessages.SignIn:
+                        console.log('Handling SignIn request');
+                        response = await signUserIn(message.email, message.masterKey, message.mfaCode);
                         console.log('SignIn response:', response);
-                        return response;
-                    })
-                    .catch(error => {
-                        console.error('SignIn error:', error);
-                        return { success: false, error: error.message };
-                    });
+                        break;
+
+                    case RuntimeMessages.GetColorPalette:
+                        response = app.userPreferences.currentColorPalette;
+                        break;
+
+                    case RuntimeMessages.GetColorPalette:
+                        response = app.userVaults.value;
+                        break;
+                        
+                    default:
+                        console.warn(`Unknown message type: ${message.type}`);
+                        response = { success: false, error: 'Unknown message type' };
+                        break;
+                }
                 
-            default:
-                console.warn(`Unknown message type: ${message.type}`);
-                return Promise.resolve({ success: false, error: 'Unknown message type' });
-        }
+                console.log('Sending response:', response);
+                sendResponse(response);
+            } catch (error: any) {
+                console.error('Error handling message:', error);
+                sendResponse({ success: false, error: error.message });
+            }
+        })();
+        
+        // Return true to indicate we will send a response asynchronously
+        return true;
     });
 });
 
 async function signUserIn(email: string, masterKey: string, mfaCode?: string): Promise<TypedMethodResponse<LogUserInResponse | undefined>>
 {
-    console.log(`Signing user in with email: ${email}, masterKey: ${masterKey}, mfaCode: ${mfaCode}`);
     const response = await api.helpers.server.logUserIn(masterKey, email, false, false, mfaCode);
     if (response.success && response.value!.Success)
     {
@@ -103,12 +151,16 @@ async function signUserIn(email: string, masterKey: string, mfaCode?: string): P
                 app.popups.hideLoadingIndicator();
                 app.syncVaults(response.value?.masterKey!, email, true, false);
             }
+            else 
+            {
+                return TypedMethodResponse.failWithValue({ Success: false, message: "Failed to load user data" });
+            }
         }
         else
         {
             if (!(await app.syncAndLoadUserData(masterKey, email, false)))
             {
-                return TypedMethodResponse.failWithValue(response.value);
+                return TypedMethodResponse.failWithValue({ Success: false, message: "Failed to sync and load user data" });
             }   
         } 
         
