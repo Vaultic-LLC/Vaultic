@@ -97,7 +97,7 @@ export class BaseVaultStore<V extends PasswordStore,
         this.internalPermissions.value = data.permissions;
         this.internalShared = data.shared;
         this.internalIsArchived.value = data.isArchived;
-        this.internalPasswordsByDomain = (JSON.parse(data.passwordStoreState) as IPasswordStoreState).passwordsByDomain ?? new Map();
+        this.internalPasswordsByDomain = (JSON.parse(data.passwordStoreState) as IPasswordStoreState).o ?? new Map();
 
         await this.initalizeNewStateFromJSON(data.vaultStoreState);
         await this.internalVaultPreferencesStore.initalizeNewStateFromJSON(data.vaultPreferencesStoreState);
@@ -106,6 +106,28 @@ export class BaseVaultStore<V extends PasswordStore,
     protected defaultState(): VaultStoreState 
     {
         return defaultVaultStoreState();
+    }
+
+    public toCondensedVaultData(): CondensedVaultData
+    {
+        return {
+            userOrganizationID: this.internalUserOrganizationID,
+            userVaultID: this.internalUserVaultID,
+            vaultID: this.internalVaultID,
+            vaultPreferencesStoreState: JSON.stringify(this.internalVaultPreferencesStore.getState()),
+            name: this.internalName,
+            shared: this.internalShared,
+            isArchived: this.internalIsArchived.value,
+            isOwner: this.internalIsOwner.value,
+            isReadOnly: this.internalReadOnlyComputed.value,
+            lastUsed: true,
+            permissions: this.internalPermissions.value,
+            vaultStoreState: JSON.stringify(this.getState()),
+            passwordStoreState: JSON.stringify(this.internalPasswordStore.getState()),
+            valueStoreState: JSON.stringify(this.internalValueStore.getState()),
+            filterStoreState: JSON.stringify(this.internalFilterStore.getState()),
+            groupStoreState: JSON.stringify(this.internalGroupStore.getState()),
+        };
     }
 }
 
@@ -160,6 +182,20 @@ export class ReactiveVaultStore extends BaseVaultStore<ReactivePasswordStore,
         this.internalValueStore = new ReactiveValueStore(this);
         this.internalFilterStore = new ReactiveFilterStore(this);
         this.internalGroupStore = new ReactiveGroupStore(this);
+    }
+
+    public resetToDefault()
+    {
+        super.resetToDefault();
+        this.internalName = "";
+        this.internalShared = false;
+        this.internalUserOrganizationID = 0;
+        this.internalUserVaultID = 0;
+        this.internalVaultID = 0;    
+        this.internalIsOwner.value = false;
+        this.internalPermissions.value = ServerPermissions.View;
+        this.internalIsArchived.value = false;
+        this.internalPasswordsByDomain = undefined;
     }
 
     public async setReactiveVaultStoreData(masterKey: string, data: CondensedVaultData, secondLoad: boolean)

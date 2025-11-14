@@ -3,18 +3,16 @@ class SyncManager
     private afterSyncCallbacks: (() => void)[] = [];
     constructor() {}
 
-    addAfterSyncCallback(callback: () => Promise<void>)
+    addAfterSyncCallback(position: number,callback: () => Promise<void>)
     {
-        this.afterSyncCallbacks.push(callback);
+        this.afterSyncCallbacks[position] = callback;
     }
 
     syncData()
     {
-        // TODO: sync data
-
         for (const callback of this.afterSyncCallbacks)
         {
-            callback();
+            callback?.();
         }
     }
 }

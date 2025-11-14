@@ -175,6 +175,12 @@ export default defineConfig({
     host_permissions: [
       'https://*.vaulticserver.vaultic.co/*',
       'https://vaultic-sts.vaulticserver.vaultic.co/*'
+    ],
+    web_accessible_resources: [
+      {
+        resources: ['icon/icon.png'],
+        matches: ['<all_urls>']
+      }
     ]
   },
   vite: () => ({

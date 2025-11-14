@@ -5,17 +5,24 @@ import app from '@/lib/renderer/Objects/Stores/AppStore';
 import VaultDropDown from './VaultDropDown.vue';
 import VaulticButton from '@/lib/renderer/components/InputFields/VaulticButton.vue';
 import IonIcon from '@/lib/renderer/components/Icons/IonIcon.vue';
+import { RuntimeMessages } from '@/lib/Types/RuntimeMessages';
+import syncManager from '@/lib/Utilities/SyncManager';
 
 const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
 function lock()
 {
-
+    app.lock(false, false, false);
+    browser.runtime.sendMessage({ type: RuntimeMessages.Lock });
 }
 
-function sync()
+async function sync()
 {
-
+    const success = await browser.runtime.sendMessage({ type: RuntimeMessages.Sync });
+    if (success)
+    {
+        syncManager.syncData();
+    }
 }
 
 function openSettings()

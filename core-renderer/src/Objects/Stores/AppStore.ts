@@ -125,6 +125,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
 
     private internalIsSyncing: Ref<boolean>;
     private internalForceReadOnly: Ref<boolean>;
+    private internalIsBrowserExtension: Ref<boolean>;
 
     private internalProcessIsRunning: boolean;
 
@@ -163,6 +164,8 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
     set isSyncingVal(val: boolean) { this.internalIsSyncing.value = val; }
     get forceReadOnly() { return this.internalForceReadOnly; }
     set forceReadOnlyVal(val: boolean) { this.internalForceReadOnly.value = val; }
+    get isBrowserExtension() { return this.internalIsBrowserExtension.value; }
+    set isBrowserExtension(val: boolean) { this.internalIsBrowserExtension.value = val; }
 
     constructor()
     {
@@ -221,6 +224,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
 
         this.internalIsSyncing = ref(false);
         this.internalForceReadOnly = ref(false);
+        this.internalIsBrowserExtension = ref(false);
 
         this.internalProcessIsRunning = false;
     }
@@ -278,7 +282,8 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
         }
         else
         {
-            await api.cache.clear();
+            // need ? for extension since api is undefined
+            await api?.cache?.clear();
         }
 
         if (expireSession && this.isOnline === true)

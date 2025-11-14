@@ -1,12 +1,12 @@
 <template>
     <div class="passwordValueTableContainer">
-        <VaulticTable ref="tableRef" id="passwordValueTable" :color="color" :columns="tableColumns" 
-            :headerTabs="headerTabs" :emptyMessage="emptyTableMessage" :dataSources="tableDataSources"
-            :searchBarSizeModel="searchBarSizeModel" :allowPinning="!readOnly" :onPin="onPin" :onEdit="onEdit" 
-            :onDelete="onDelete" :maxCellWidth="'10vw'">
+        <VaulticTable ref="tableRef" id="passwordValueTable" :class="{ 'isBrowserExtension': isBrowserExtension }" :color="color" 
+            :columns="tableColumns" :headerTabs="headerTabs" :emptyMessage="emptyTableMessage" :dataSources="tableDataSources"
+            :searchBarSizeModel="searchBarSizeModel" :allowPinning="!readOnly && !isBrowserExtension" :onPin="!isBrowserExtension ? onPin : undefined" 
+            :onEdit="!isBrowserExtension ? onEdit : undefined" :onDelete="!isBrowserExtension ? onDelete : undefined" :maxCellWidth="isBrowserExtension ? 'unset' : '10vw'">
             <template #tableControls>
                 <Transition name="fade" mode="out-in">
-                    <AddDataTableItemButton v-if="!readOnly" :color="color" :initalActiveContentOnClick="activeTable" />
+                    <AddDataTableItemButton v-if="!readOnly && !isBrowserExtension" :color="color" :initalActiveContentOnClick="activeTable" />
                 </Transition>
             </template>
         </VaulticTable>
@@ -38,7 +38,7 @@ import EditPasswordPopup from '../ObjectPopups/EditPopups/EditPasswordPopup.vue'
 import EditValuePopup from '../ObjectPopups/EditPopups/EditValuePopup.vue';
 import VaulticTable from './VaulticTable.vue';
 
-import { HeaderTabModel, TableDataSources, TableColumnModel, TableRowModel, ComponentSizeModel } from '../../Types/Models';
+import { HeaderTabModel, TableDataSources, TableColumnModel, ComponentSizeModel } from '../../Types/Models';
 import { IGroupableSortedCollection } from "../../Objects/DataStructures/SortedCollections"
 import { getEmptyTableMessage, getNoValuesApplyToFilterMessage, getPasswordValueTableRowModels } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
@@ -63,6 +63,7 @@ export default defineComponent({
     setup()
     {
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
+        const isBrowserExtension: ComputedRef<boolean> = computed(() => app.isBrowserExtension);
         const activeTable: Ref<number> = ref(app.activePasswordValuesTable);
         const readOnly: ComputedRef<boolean> = computed(() => app.currentVault.isReadOnly.value);
         const color: ComputedRef<string> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
@@ -587,6 +588,7 @@ export default defineComponent({
         })
 
         return {
+            isBrowserExtension,
             tableColumns,
             readOnly,
             tableRef,
@@ -616,6 +618,14 @@ export default defineComponent({
     width: 43%;
     left: 38%;
     top: max(252px, 42%);
+}
+
+#passwordValueTable.isBrowserExtension {
+    position: relative;
+    height: 90%;
+    width: 100%;
+    left: unset;
+    top: unset;
 }
 
 @media (max-width: 1300px) {

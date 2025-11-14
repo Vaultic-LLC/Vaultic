@@ -1,3 +1,6 @@
+@import '@/lib/renderer/Constants/variables.css';
+@import '@/lib/renderer/Constants/animations.css';
+@import '@/lib/renderer/Constants/transitions.css';
 @import 'primeicons/primeicons.css';
 
 body {

@@ -21,6 +21,8 @@ async function setVaults(): Promise<void>
         label: v.name,
         backingObject: v
     })) ?? [];
+
+    selectedVault.value = vaults.value.find(v => v.backingObject?.vaultID == app.currentVault.vaultID) ?? null;
 }
 
 function onVaultSelected(model: ObjectSelectOptionModel)
@@ -30,7 +32,8 @@ function onVaultSelected(model: ObjectSelectOptionModel)
 
 onMounted(async() => 
 {
-    syncManager.addAfterSyncCallback(setVaults);
+    setVaults();
+    syncManager.addAfterSyncCallback(1, setVaults);
 });
 
 </script>
@@ -44,7 +47,7 @@ onMounted(async() =>
 
 <style scoped>
 .vaultDropDownContainer {
-    width: 100px;
+    width: 150px;
     height: 30px
 }
 

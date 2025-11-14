@@ -7,7 +7,7 @@ import initSqlJs from 'sql.js';
 import { coreAPIResolver } from "@/lib/main/CoreAPIResolver";
 import { createDataSource, deleteDatabase } from "@/lib/Helpers/DatabaseHelper";
 import * as rendererAPI from '@/lib/renderer/API';
-import { environment } from "@/lib/Main/Environment";
+import { environment } from "@/lib/main/Environment";
 import { RuntimeMessages } from "@/lib/Types/RuntimeMessages";
 import { CryptUtility } from "@/lib/Utilities/CryptUtility";
 import { DataUtility } from "@/lib/Utilities/DataUtility";
@@ -19,6 +19,7 @@ import app from "@/lib/renderer/Objects/Stores/AppStore";
 import { api } from "@/lib/renderer/API";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { LogUserInResponse } from "@vaultic/shared/Types/Responses";
+import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
 
 export default defineBackground(() => 
 {
@@ -96,6 +97,15 @@ export default defineBackground(() =>
                 let response;
                 switch (message.type) 
                 {
+                    case RuntimeMessages.Lock:
+                        app.lock();
+                        break;
+                    
+                    case RuntimeMessages.Sync:
+                        const masterKey = await api.repositories.users.getValidMasterKey();
+                        response = await app.syncVaults(masterKey!, app.userInfo!.email!);
+                        break;
+                        
                     case RuntimeMessages.IsSignedIn:
                         console.log(`Responding with loadedUser: ${app.loadedUser.value}`);
                         response = app.loadedUser.value;
@@ -107,14 +117,49 @@ export default defineBackground(() =>
                         console.log('SignIn response:', response);
                         break;
 
-                    case RuntimeMessages.GetColorPalette:
-                        response = app.userPreferences.currentColorPalette;
+                    case RuntimeMessages.GetVaultData:
+                        response = 
+                        {
+                            colorPalette: app.userPreferences.currentColorPalette,
+                            vaultData: app.currentVault.toCondensedVaultData()
+                        };
                         break;
 
-                    case RuntimeMessages.GetColorPalette:
+                    case RuntimeMessages.GetVaults:
                         response = app.userVaults.value;
                         break;
-                        
+                    
+                    case RuntimeMessages.GetPasswordsByDomain:
+                        response = [];
+                        console.log(`Getting passwords by domain: ${message.domain}, Passwords By Domain: ${JSON.stringify(app.currentVault?.passwordsByDomain)}`);
+                        if (app.currentVault?.passwordsByDomain !== undefined)
+                        {
+                            OH.forEachKey(app.currentVault.passwordsByDomain, (domain: string) => 
+                            {
+                                console.log(`Domain: ${domain}, Message Domain: ${message.domain}`);
+                                if (domain.includes(message.domain) || message.domain.includes(domain))
+                                {
+                                    OH.forEachKey(app.currentVault.passwordsByDomain![domain], (password: string) => 
+                                    {
+                                        console.log(`Password: ${password}, Passwords By ID: ${JSON.stringify(app.currentVault.passwordStore.passwordsByID)}`);
+                                        const tempPassword: { email?: string, id?: string } = { email: undefined, id: undefined};
+
+                                        tempPassword.id = password;
+                                        tempPassword.email = app.currentVault.passwordStore.passwordsByID[password].e;
+
+                                        response.push(tempPassword);
+                                    });
+                                }
+                            });
+                        }
+                        break;
+                    
+                    case RuntimeMessages.GetPasswordData:
+                        const key = await api.repositories.users.getValidMasterKey();
+                        const decryptedPassword = await environment.utilities.crypt.symmetricDecrypt(key!, app.currentVault.passwordStore.passwordsByID[message.id].p);
+                        response = decryptedPassword;
+                        break;
+
                     default:
                         console.warn(`Unknown message type: ${message.type}`);
                         response = { success: false, error: 'Unknown message type' };

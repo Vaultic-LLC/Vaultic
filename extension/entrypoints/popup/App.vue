@@ -14,6 +14,8 @@ import { ColorPalette } from '@vaultic/shared/Types/Color';
 import StoreUpdateTransaction from '@/lib/renderer/Objects/StoreUpdateTransaction';
 import VaulticHeader from '@/lib/Components/Header/VaulticHeader.vue';
 import VaulticContent from '@/lib/Components/VaulticContent/VaulticContent.vue';
+import { CondensedVaultData } from '@vaultic/shared/Types/Entities';
+import syncManager from '@/lib/Utilities/SyncManager';
 
 const mfaView: Ref<any> = ref();
 
@@ -21,7 +23,6 @@ const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.cur
 const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(primaryColor.value));
 
 const isSignedIn: Ref<boolean> = ref(false);
-const isSigningIn: Ref<boolean> = ref(false);
 const mfaIsShowing: Ref<boolean> = ref(false);
 
 const email = ref('');
@@ -38,9 +39,11 @@ async function signIn(mfaCode?: string)
 
     if (response.success)
     {
-        await setColorPalette();
+        await setData();
         isSignedIn.value = true;
-        isSigningIn.value = false;
+
+        email.value = '';
+        masterKey.value = '';
     }
     else 
     {
@@ -65,36 +68,54 @@ async function signIn(mfaCode?: string)
     }
 }
 
-async function setColorPalette()
+async function setData()
 {
-    const colorPalette: ColorPalette = await browser.runtime.sendMessage({ 
-        type: RuntimeMessages.GetColorPalette, 
+    const data: { colorPalette: ColorPalette, vaultData: CondensedVaultData } = await browser.runtime.sendMessage({ 
+        type: RuntimeMessages.GetVaultData, 
     });
 
+    app.isOnline = true;
+
     // This will update the color palette but not commit it since we just need it for themeing
-    await app.userPreferences.updateCurrentColorPalette(new StoreUpdateTransaction(), colorPalette);
+    await app.userPreferences.updateCurrentColorPalette(new StoreUpdateTransaction(), data.colorPalette);
+    await app.currentVault.setReactiveVaultStoreData(masterKey.value, data.vaultData, true);
 }
+
+watch(() => app.isOnline, () =>
+{
+    if (!app.isOnline)
+    {
+        isSignedIn.value = false;
+    }
+});
 
 onMounted(async() => 
 {
+    app.isBrowserExtension = true;
     document.getElementsByTagName('html')?.item(0)?.classList.add('darkMode');
-    const response = await browser.runtime.sendMessage({ type: RuntimeMessages.IsSignedIn });
-    isSignedIn.value = response;
-
-    if (isSignedIn.value)
+    const body = document.getElementsByTagName('body').item(0);
+    if (body)
     {
-        await setColorPalette();
+        body.id = 'body';
+    }
+
+    syncManager.addAfterSyncCallback(0, async() => setData());
+    const response = await browser.runtime.sendMessage({ type: RuntimeMessages.IsSignedIn });
+
+    if (response)
+    {
+        await setData();
+        isSignedIn.value = true;
     }
 });
 
 </script>
 
 <template>
-  <div class="app" :class="{ isSigningIn: isSigningIn, isSignedIn: isSignedIn }">
+  <div class="app" :class="{ isSignedIn: isSignedIn }">
     <div v-if="!isSignedIn" class="app__signInContent">
         <img class="app__logo" :src="Logo" alt="Logo" />
-        <PopupButton v-if="!isSigningIn" class="app__doSignInButton" :text="'Sign In'" @onClick="isSigningIn = true" :color="primaryColor" :height="'30px'" :width="'70%'" />
-        <div v-if="isSigningIn" class="app__signInContainer">
+        <div class="app__signInContainer">
             <TextInputField :color="primaryColor" :label="'Email'" v-model="email"
                 :width="'100%'" :maxWidth="'300px'" :isEmailField="true" />
             <EncryptedInputField :colorModel="colorModel" :label="'Master Key'"
@@ -117,8 +138,8 @@ onMounted(async() =>
 
 <style scoped>
 .app {
-    width: 150px;
-    height: 120px;
+    width: 250px;
+    height: 250px;
     background-color: #0f111d;
     align-items: center;
     display: flex;
@@ -134,11 +155,6 @@ onMounted(async() =>
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
-}
-
-.app.isSigningIn {
-    width: 250px;
-    height: 250px;
 }
 
 .app.isSignedIn {
@@ -176,4 +192,16 @@ onMounted(async() =>
     height: 100%;
 }
 
+.tippy-box[data-theme~='material'] {
+    text-align: center;
+}
+
+.tippy-box[data-theme~='material'][data-placement^='bottom-start']>.tippy-arrow {
+    left: 10px !important;
+    transform: translate(0, 0) !important;
+}
+
+ion-icon {
+    visibility: unset !important;
+}
 </style>
