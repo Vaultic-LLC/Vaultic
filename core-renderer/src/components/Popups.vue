@@ -64,8 +64,9 @@
         </Teleport>
         <Teleport to="#body">
 			<Transition name="fade">
-				<ObjectPopup v-if="popupStore.addDataTypePopupIsShowing" :minWidth="'800px'" :minHeight="'480px'"
-					:closePopup="popupStore.hideAddDataTypePopup">
+				<ObjectPopup v-if="popupStore.addDataTypePopupIsShowing" :width="isBrowserExtension ? '85%' : undefined" 
+                    :height="isBrowserExtension ? '480px' : ''" :minWidth="''" :minHeight="''" 
+                    :closePopup="popupStore.hideAddDataTypePopup">
 					<AddObjectPopup :initalActiveContent="popupStore.initialAddDataTypePopupContent" />
 				</ObjectPopup>
 			</Transition>
@@ -127,7 +128,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { computed, ComputedRef, defineComponent } from 'vue';
 
 import LoadingPopup from './Loading/LoadingPopup.vue';
 import AlertPopup from './AlertPopup.vue';
@@ -177,8 +178,11 @@ export default defineComponent({
     },
     setup()
     {
+        const isBrowserExtension: ComputedRef<boolean> = computed(() => app.isBrowserExtension);
+
         return {
             popupStore: app.popups,
+            isBrowserExtension,
             PopupNames,
             DataType,
         }

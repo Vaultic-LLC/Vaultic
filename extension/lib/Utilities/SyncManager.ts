@@ -1,6 +1,6 @@
 class SyncManager
 {
-    private afterSyncCallbacks: (() => void)[] = [];
+    private afterSyncCallbacks: (() => Promise<void>)[] = [];
     constructor() {}
 
     addAfterSyncCallback(position: number,callback: () => Promise<void>)
@@ -8,11 +8,11 @@ class SyncManager
         this.afterSyncCallbacks[position] = callback;
     }
 
-    syncData()
+    async syncData()
     {
         for (const callback of this.afterSyncCallbacks)
         {
-            callback?.();
+            await callback?.();
         }
     }
 }

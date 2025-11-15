@@ -7,7 +7,7 @@ import { AtRiskType, DataType, Filter, Group, IPrimaryDataObject, ISecondaryData
 import { SecretProperty, SecretPropertyType } from "../../Types/Fields";
 import { IIdentifiable, PrimaryDataObjectCollection, SecondaryDataObjectCollection } from "@vaultic/shared/Types/Fields";
 import { Algorithm } from "@vaultic/shared/Types/Keys";
-import { CurrentAndSafeStructure, DictionaryAsList, DoubleKeyedObject, PendingStoreState, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import { CurrentAndSafeStructure, DictionaryAsList, DoubleKeyedObject, ModifyBridge, PendingStoreState, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 
@@ -177,12 +177,21 @@ export class VaultContrainedStore<T extends StoreState, K extends StateKeys, U e
     }
 }
 
-export class DataTypeStore<T extends StoreState, K extends StateKeys, U extends string = StoreEvents>
+export class DataTypeStore<T extends StoreState, K extends StateKeys, U extends string = StoreEvents, V extends ModifyBridge<Function, Function, Function> | undefined = undefined>
     extends VaultContrainedStore<T, K, U>
 {
+    // This is just for the browser extension since there are multiple versions of the stores active at once (background and main). Main is what the user
+    // is acting against, but background is the one we want to actually make the updates in. This just allows us to pawn the updates off to background.
+    protected modifyBridge: V;
+    
     constructor(vault: VaultStoreParameter, storeType: StoreType, retriever: StorePathRetriever<K>)
     {
         super(vault, storeType, retriever);
+    }
+
+    public setModifyBridge(bridge: V)
+    {
+        this.modifyBridge = bridge;
     }
 
     public resetToDefault()
@@ -274,8 +283,8 @@ export interface PrimarydataTypeStoreStateKeys extends StateKeys
     'currentAndSafeDataTypes.safe': '';
 };
 
-export class PrimaryDataTypeStore<T extends StoreState, K extends PrimarydataTypeStoreStateKeys, U extends string = StoreEvents>
-    extends DataTypeStore<T, K, U>
+export class PrimaryDataTypeStore<T extends StoreState, K extends PrimarydataTypeStoreStateKeys, U extends string = StoreEvents, V extends ModifyBridge<Function, Function, Function> | undefined = undefined>
+    extends DataTypeStore<T, K, U, V>
 {
     public removeSecondaryObjectFromValues(
         secondaryObjectID: string,
@@ -669,8 +678,8 @@ export interface SecondarydataTypeStoreStateKeys extends StateKeys
     'duplicateValueDataTypes.dataTypes': '';
 };
 
-export class SecondaryDataTypeStore<T extends StoreState, K extends SecondarydataTypeStoreStateKeys, U extends string = StoreEvents>
-    extends DataTypeStore<T, K, U>
+export class SecondaryDataTypeStore<T extends StoreState, K extends SecondarydataTypeStoreStateKeys, U extends string = StoreEvents, V extends ModifyBridge<Function, Function, Function> | undefined = undefined>
+    extends DataTypeStore<T, K, U, V>
 {
     private getSecondaryDataObjectDuplicates<T extends ISecondaryDataObject>(
         currentSecondaryDataObjectID: string,

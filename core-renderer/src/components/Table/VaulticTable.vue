@@ -806,12 +806,15 @@ export default defineComponent({
     /* transform: translateY(-100%); */
     background: transparent;
     border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
     width: calc(100% - clamp(7px, 0.7vw, 10px));
     height: clamp(40px, 5vh, 60px);
 }
 
 :deep(.vaulticTableContainer__paginator) {
+    border-radius: 0px;
     border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
     background: #181822 !important;
     height: 100%;
     padding: clamp(4px, 0.4vw, 8px) clamp(8px, 0.8vw, 16px) !important;

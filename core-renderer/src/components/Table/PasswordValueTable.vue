@@ -3,25 +3,23 @@
         <VaulticTable ref="tableRef" id="passwordValueTable" :class="{ 'isBrowserExtension': isBrowserExtension }" :color="color" 
             :columns="tableColumns" :headerTabs="headerTabs" :emptyMessage="emptyTableMessage" :dataSources="tableDataSources"
             :searchBarSizeModel="searchBarSizeModel" :allowPinning="!readOnly && !isBrowserExtension" :onPin="!isBrowserExtension ? onPin : undefined" 
-            :onEdit="!isBrowserExtension ? onEdit : undefined" :onDelete="!isBrowserExtension ? onDelete : undefined" :maxCellWidth="isBrowserExtension ? 'unset' : '10vw'">
+            :onEdit="onEdit" :onDelete="onDelete" :maxCellWidth="isBrowserExtension ? '23vw' : '10vw'">
             <template #tableControls>
                 <Transition name="fade" mode="out-in">
-                    <AddDataTableItemButton v-if="!readOnly && !isBrowserExtension" :color="color" :initalActiveContentOnClick="activeTable" />
+                    <AddDataTableItemButton v-if="!readOnly" :color="color" :initalActiveContentOnClick="activeTable" />
                 </Transition>
             </template>
         </VaulticTable>
         <Teleport to="#body">
             <Transition name="fade">
-                <ObjectPopup v-if="showEditPasswordPopup" :closePopup="onEditPasswordPopupClose" :minWidth="'800px'"
-                    :minHeight="'480px'">
+                <ObjectPopup v-if="showEditPasswordPopup" :closePopup="onEditPasswordPopupClose">
                     <EditPasswordPopup :model="currentEditingPasswordModel" />
                 </ObjectPopup>
             </Transition>
         </Teleport>
         <Teleport to="#body">
             <Transition name="fade">
-                <ObjectPopup v-if="showEditValuePopup" :closePopup="onEditValuePopupClose" :minWidth="'800px'"
-                    :minHeight="'480px'">
+                <ObjectPopup v-if="showEditValuePopup" :closePopup="onEditValuePopupClose">
                     <EditValuePopup :model="currentEditingValueModel" />
                 </ObjectPopup>
             </Transition>
@@ -197,7 +195,7 @@ export default defineComponent({
             else if (newValue.length > oldValue.length)
             {
                 // @ts-ignore
-                let temp: T[] = Array.from(localVariable.values.map(v => localVariable.backingValues().get(v.id)));
+                let temp: T[] = Array.from(localVariable.values.map(v => localVariable.backingValues()[v.id]));
                 if (app.settings.f == FilterStatus.Or)
                 {
                     const filtersActivated: Filter[] = newValue.filter(f => !oldValue.includes(f));
@@ -219,7 +217,7 @@ export default defineComponent({
             else if (newValue.length < oldValue.length)
             {
                 // @ts-ignore
-                let temp: T[] = Array.from(localVariable.values.map(v => localVariable.backingValues().get(v.id)));
+                let temp: T[] = Array.from(localVariable.values.map(v => localVariable.backingValues()[v.id]));
                 if (app.settings.f == FilterStatus.Or)
                 {
                     const filtersRemoved: Filter[] = oldValue.filter(f => !newValue.includes(f));

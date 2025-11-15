@@ -1,8 +1,32 @@
+<template>
+    <div class="vaulticHeader">
+      <img class="vaulticHeader__logo" :src="Logo" alt="Logo" />
+      <div class="vaulticHeader__content">
+          <div class="vaulticHeader__dropdowns">
+              <VaultDropDown />
+              <FilterDropDown />
+          </div>
+          <div class="vaulticHeader__actions">
+              <VaulticButton @click="lock" :color="primaryColor" :preferredSize="'20px'" :fontSize="'15px'" :tooltipMessage="'Lock'">
+                  <IonIcon :name="'lock-closed-outline'"/>
+              </VaulticButton>
+              <VaulticButton @click="sync" :color="primaryColor" :preferredSize="'20px'" :fontSize="'15px'" :tooltipMessage="'Sync'">
+                  <IonIcon :name="'sync-outline'" />
+              </VaulticButton>
+              <!-- <VaulticButton @click="openSettings" :color="primaryColor" :preferredSize="'20px'" :fontSize="'15px'" :tooltipMessage="'Settings'">
+                  <IonIcon :name="'settings-outline'" />
+              </VaulticButton> -->
+          </div>
+      </div>
+    </div>
+</template>
+
 <script lang="ts" setup>
 import Logo from '@/src/Vaultic_Primary_Color.png';
 import app from '@/lib/renderer/Objects/Stores/AppStore';
 
 import VaultDropDown from './VaultDropDown.vue';
+import FilterDropDown from './FilterDropDown.vue';
 import VaulticButton from '@/lib/renderer/components/InputFields/VaulticButton.vue';
 import IonIcon from '@/lib/renderer/components/Icons/IonIcon.vue';
 import { RuntimeMessages } from '@/lib/Types/RuntimeMessages';
@@ -30,41 +54,35 @@ function openSettings()
 
 }
 </script>
-
-<template>
-  <div class="vaulticHeader">
-    <VaultDropDown />
-    <img class="vaulticHeader__logo" :src="Logo" alt="Logo" />
-    <div class="vaulticHeader__actions">
-        <VaulticButton @click="lock" :color="primaryColor" :preferredSize="'20px'" :fontSize="'15px'" :tooltipMessage="'Lock'">
-            <IonIcon :name="'lock-closed-outline'"/>
-        </VaulticButton>
-        <VaulticButton @click="sync" :color="primaryColor" :preferredSize="'20px'" :fontSize="'15px'" :tooltipMessage="'Sync'">
-            <IonIcon :name="'sync-outline'" />
-        </VaulticButton>
-        <VaulticButton @click="openSettings" :color="primaryColor" :preferredSize="'20px'" :fontSize="'15px'" :tooltipMessage="'Settings'">
-            <IonIcon :name="'settings-outline'" />
-        </VaulticButton>
-    </div>
-  </div>
-</template>
-
 <style scoped>
 .vaulticHeader {
     width: 100%;
-    height: 10%;
+    padding: 10px;
+    position: relative;
+}
+
+.vaulticHeader__dropdowns {
     display: flex;
-    justify-content: space-between;
-    padding: 10px
 }
 
 .vaulticHeader__logo {
+    position: absolute;
+    top: 5px;
+    left: 50%;
+    transform: translateX(-50%);
     object-fit: contain;
+    height: 50%;
+}
+
+.vaulticHeader__content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: space-between;
 }
 
 .vaulticHeader__actions {
     display: flex;
     gap: 10px;
 }
-
 </style>

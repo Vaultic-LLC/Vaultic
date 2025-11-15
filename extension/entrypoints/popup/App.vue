@@ -1,3 +1,30 @@
+<template>
+    <Popups />
+    <ConfirmDialog></ConfirmDialog>
+  <div class="app" :class="{ isSignedIn: isSignedIn }">
+    <div v-if="!isSignedIn" class="app__signInContent">
+        <img class="app__logo" :src="Logo" alt="Logo" />
+        <div class="app__signInContainer">
+            <TextInputField :color="primaryColor" :label="'Email'" v-model="email"
+                :width="'100%'" :maxWidth="'300px'" :isEmailField="true" />
+            <EncryptedInputField :colorModel="colorModel" :label="'Master Key'"
+                v-model="masterKey" :isInitiallyEncrypted="false" :showRandom="false"
+                :showUnlock="true" :required="true" :showCopy="false" :width="'100%'" :maxWidth="'300px'" />
+            <PopupButton class="app__signInButton" :text="'Sign In'" @onClick="signIn" :color="primaryColor" :height="'30px'" :width="'70%'" />
+        </div>
+    </div>
+    <div v-if="isSignedIn" class="app__content">
+        <VaulticHeader />
+        <VaulticContent />
+    </div>
+    <Teleport to="body">
+        <Transition name="fade">
+            <EnterMFACodePopup ref="mfaView" v-if="mfaIsShowing" @onConfirm="signIn" @onClose="mfaIsShowing = false" />
+        </Transition>
+    </Teleport>
+  </div>
+</template>
+
 <script lang="ts" setup>
 import app from '@/lib/renderer/Objects/Stores/AppStore';
 import { defaultInputColorModel, InputColorModel } from '@/lib/renderer/Types/Models';
@@ -5,6 +32,8 @@ import Logo from '@/src/Vaultic_Primary_Color.png';
 import { RuntimeMessages } from '@/lib/Types/RuntimeMessages';
 import { TypedMethodResponse } from '@vaultic/shared/Types/MethodResponse';
 import { LogUserInResponse } from '@vaultic/shared/Types/Responses';
+import Popups from '@/lib/renderer/components/Popups.vue';
+import ConfirmDialog from "primevue/confirmdialog";
 
 import EnterMFACodePopup from '@/lib/renderer/components/Account/EnterMFACodePopup.vue';
 import PopupButton from '@/lib/renderer/components/InputFields/PopupButton.vue';
@@ -93,11 +122,6 @@ onMounted(async() =>
 {
     app.isBrowserExtension = true;
     document.getElementsByTagName('html')?.item(0)?.classList.add('darkMode');
-    const body = document.getElementsByTagName('body').item(0);
-    if (body)
-    {
-        body.id = 'body';
-    }
 
     syncManager.addAfterSyncCallback(0, async() => setData());
     const response = await browser.runtime.sendMessage({ type: RuntimeMessages.IsSignedIn });
@@ -110,31 +134,6 @@ onMounted(async() =>
 });
 
 </script>
-
-<template>
-  <div class="app" :class="{ isSignedIn: isSignedIn }">
-    <div v-if="!isSignedIn" class="app__signInContent">
-        <img class="app__logo" :src="Logo" alt="Logo" />
-        <div class="app__signInContainer">
-            <TextInputField :color="primaryColor" :label="'Email'" v-model="email"
-                :width="'100%'" :maxWidth="'300px'" :isEmailField="true" />
-            <EncryptedInputField :colorModel="colorModel" :label="'Master Key'"
-                v-model="masterKey" :isInitiallyEncrypted="false" :showRandom="false"
-                :showUnlock="true" :required="true" :showCopy="false" :width="'100%'" :maxWidth="'300px'" />
-            <PopupButton class="app__signInButton" :text="'Sign In'" @onClick="signIn" :color="primaryColor" :height="'30px'" :width="'70%'" />
-        </div>
-    </div>
-    <div v-if="isSignedIn" class="app__content">
-        <VaulticHeader />
-        <VaulticContent />
-    </div>
-    <Teleport to="body">
-        <Transition name="fade">
-            <EnterMFACodePopup ref="mfaView" v-if="mfaIsShowing" @onConfirm="signIn" @onClose="mfaIsShowing = false" />
-        </Transition>
-    </Teleport>
-  </div>
-</template>
 
 <style scoped>
 .app {
@@ -158,8 +157,8 @@ onMounted(async() =>
 }
 
 .app.isSignedIn {
-    width: 500px;
-    height: 400px;
+    width: 700px;
+    height: 600px;
 }
 
 .app__logo {

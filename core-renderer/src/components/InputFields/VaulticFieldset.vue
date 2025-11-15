@@ -42,4 +42,12 @@ export default defineComponent({
 .vaulticFieldsetContainer--end {
     align-items: end;
 }
+
+@media (max-width: 850px) {
+    .vaulticFieldsetContainer {
+        flex-wrap: wrap;
+        row-gap: clamp(15px, 1vw, 20px);
+        justify-content: center;
+    }
+}
 </style>

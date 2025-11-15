@@ -1,3 +1,10 @@
+<template>
+    <div class="vaultDropDownContainer">
+      <ObjectSingleSelect :label="'Vault'" :color="color" v-model="selectedVault"
+          :options="vaults" :width="'100%'" :minWidth="''" :maxWidth="''" :height="'100%'" :minHeight="''" :maxHeight="''" @update:model-value="onVaultSelected" />
+    </div>
+  </template>
+
 <script lang="ts" setup>
 import { RuntimeMessages } from '../../Types/RuntimeMessages';
 import syncManager from '../../Utilities/SyncManager';
@@ -10,7 +17,7 @@ import app from '../../renderer/Objects/Stores/AppStore';
 const selectedVault: Ref<ObjectSelectOptionModel | null> = ref(null);
 const vaults: Ref<ObjectSelectOptionModel[]> = ref([]);
 
-const groupColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.g);
+const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
 async function setVaults(): Promise<void>
 {
@@ -27,7 +34,8 @@ async function setVaults(): Promise<void>
 
 function onVaultSelected(model: ObjectSelectOptionModel)
 {
-    
+    selectedVault.value = model;
+    syncManager.syncData();
 }
 
 onMounted(async() => 
@@ -37,13 +45,6 @@ onMounted(async() =>
 });
 
 </script>
-
-<template>
-  <div class="vaultDropDownContainer">
-    <ObjectSingleSelect :label="'Vault'" :color="groupColor" v-model="selectedVault"
-        :options="vaults" :width="'100%'" :minWidth="''" :maxWidth="''" :height="'100%'" :minHeight="''" :maxHeight="''" @update:model-value="onVaultSelected" />
-  </div>
-</template>
 
 <style scoped>
 .vaultDropDownContainer {

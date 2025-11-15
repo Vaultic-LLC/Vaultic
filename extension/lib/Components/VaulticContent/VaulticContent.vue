@@ -5,8 +5,9 @@
 </template>
 
 <script lang="ts" setup>
-import PasswordValueTable from '@/lib/renderer/components/Table/PasswordValueTable.vue';
 import syncManager from '@/lib/Utilities/SyncManager';
+
+import PasswordValueTable from '@/lib/renderer/components/Table/PasswordValueTable.vue';
 
 const key = ref('');
 
@@ -22,11 +23,13 @@ onMounted(async() =>
 .vaulticContent {
     width: 100%;
     height: 90%;
-    padding: 20px 10px 10px 10px;
+    padding: 50px 10px 10px 10px;
+    overflow: hidden;
 }
 
 .passwordValueTable {
     height: 100%;
+    margin-top: 28px
 }
 
 </style>

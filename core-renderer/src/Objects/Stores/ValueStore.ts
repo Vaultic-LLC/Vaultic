@@ -1,6 +1,6 @@
 import { ComputedRef, Ref, computed, ref } from "vue";
 import createReactiveValue, { ReactiveValue } from "./ReactiveValue";
-import { PrimaryDataTypeStore, PrimarydataTypeStoreStateKeys, SecondarydataTypeStoreStateKeys } from "./Base";
+import { PrimaryDataTypeStore, PrimarydataTypeStoreStateKeys, SecondarydataTypeStoreStateKeys, StoreEvents } from "./Base";
 import cryptHelper from "../../Helpers/cryptHelper";
 import { api } from "../../API"
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
@@ -9,7 +9,7 @@ import { NameValuePair, NameValuePairType, AtRiskType, RelatedDataTypeChanges, I
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 import { IFilterStoreState, FilterStoreStateKeys } from "./FilterStore";
 import { GroupStoreState } from "./GroupStore";
-import { CurrentAndSafeStructure, defaultValueStoreState, DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import { CurrentAndSafeStructure, defaultValueStoreState, DictionaryAsList, DoubleKeyedObject, ModifyBridge, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 import { isOld } from "../../Helpers/DataTypeHelper";
 
@@ -40,7 +40,30 @@ const ValueStorePathRetriever: StorePathRetriever<PrimarydataTypeStoreStateKeys>
     'dataTypesByHash.dataTypes': (...ids: string[]) => `h.${ids[0]}`
 };
 
-export class ValueStore extends PrimaryDataTypeStore<IValueStoreState, PrimarydataTypeStoreStateKeys>
+export type AddValueFunc = (
+    masterKey: string,
+    value: NameValuePair,
+    pendingValueStoreState: PendingStoreState<IValueStoreState, PrimarydataTypeStoreStateKeys>) => Promise<boolean>
+
+export type UpdateValueFunc = (
+    masterKey: string,
+    updatedValue: NameValuePair,
+    valueWasUpdated: boolean,
+    groups: DictionaryAsList,
+    pendingValueStoreState: PendingStoreState<IValueStoreState, PrimarydataTypeStoreStateKeys>) => Promise<boolean>
+
+export type DeleteValueFunc = (
+    masterKey: string,
+    value: ReactiveValue) => Promise<boolean>;
+
+export interface ValueStoreModifyBridge extends ModifyBridge<Function, Function, Function>
+{
+    add: AddValueFunc;
+    update: UpdateValueFunc;
+    delete: DeleteValueFunc;
+}
+
+export class ValueStore extends PrimaryDataTypeStore<IValueStoreState, PrimarydataTypeStoreStateKeys, StoreEvents, ValueStoreModifyBridge>
 {
     constructor(vault: VaultStoreParameter)
     {
@@ -62,6 +85,10 @@ export class ValueStore extends PrimaryDataTypeStore<IValueStoreState, Primaryda
         value: NameValuePair,
         pendingValueStoreState: PendingStoreState<IValueStoreState, PrimarydataTypeStoreStateKeys>): Promise<boolean>
     {
+        if (this.modifyBridge)
+        {
+            return await this.modifyBridge.add(masterKey, value, pendingValueStoreState);
+        }
 
         const pendingFilterStoreState = this.vault.filterStore.getPendingState()!;
         const pendingGroupStoreState = this.vault.groupStore.getPendingState()!;
@@ -118,6 +145,11 @@ export class ValueStore extends PrimaryDataTypeStore<IValueStoreState, Primaryda
         groups: DictionaryAsList,
         pendingValueStoreState: PendingStoreState<IValueStoreState, PrimarydataTypeStoreStateKeys>): Promise<boolean>
     {
+        if (this.modifyBridge)
+        {
+            return await this.modifyBridge.update(masterKey, updatedValue, valueWasUpdated, groups, pendingValueStoreState);
+        }
+
         let currentValue: ReactiveValue | undefined = pendingValueStoreState.getObject('dataTypesByID.dataType', updatedValue.id);
         if (!currentValue)
         {
@@ -174,6 +206,11 @@ export class ValueStore extends PrimaryDataTypeStore<IValueStoreState, Primaryda
 
     async deleteNameValuePair(masterKey: string, value: ReactiveValue): Promise<boolean>
     {
+        if (this.modifyBridge)
+        {
+            return await this.modifyBridge.delete(masterKey, value);
+        }
+
         const pendingState = this.getPendingState()!;
 
         const currentValue: ReactiveValue | undefined = pendingState?.getObject('dataTypesByID.dataType', value.id);
