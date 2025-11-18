@@ -1,6 +1,6 @@
 import { PendingStoreState } from "@vaultic/shared/Types/Stores";
 import { AddPasswordFunc, PasswordStoreStateKeys, IPasswordStoreState, UpdatePasswordFunc, DeletePasswordFunc, UpdatePasswordResponse } from "../renderer/Objects/Stores/PasswordStore";
-import { Password, SecurityQuestion, NameValuePair, Filter, FilterCondition, Group } from "../renderer/Types/DataTypes";
+import { Password, SecurityQuestion, NameValuePair, Filter, FilterCondition, Group, DataType, AtRiskType } from "../renderer/Types/DataTypes";
 import { RuntimeMessages } from "../Types/RuntimeMessages";
 import { FilterStoreStateKeys, IFilterStoreState } from "../renderer/Objects/Stores/FilterStore";
 import { GroupStoreState } from "../renderer/Objects/Stores/GroupStore";
@@ -18,6 +18,8 @@ export default function setupStoreModifyBridges()
     setupValueStoreModifyBridge();
     setupFilterStoreModifyBridge();
     setupGroupStoreModifyBridge();
+    setupUserPreferencesStoreModifyBridge();
+    setupVaultDataBreachStoreModifyBridge();
 }
 
 function setupPasswordStoreModifyBridge()
@@ -233,5 +235,50 @@ function setupGroupStoreModifyBridge()
         add: addGroupFunc, 
         update: updateGroupFunc, 
         delete: deleteGroupFunc 
+    });
+}
+
+function setupUserPreferencesStoreModifyBridge()
+{
+    const toggleFilterFunc = async (id: string) => 
+    {
+        const result = await browser.runtime.sendMessage({ type: RuntimeMessages.ToggleFilter, id });
+        if (result)
+        {
+            await syncManager.syncData();
+        }
+
+        return result;
+    }
+
+    app.userPreferences.setModifyBridge(
+    {
+        toggleFilter: toggleFilterFunc,
+    });
+}
+
+function setupVaultDataBreachStoreModifyBridge()
+{
+    const dismissVaultDataBreachFunc = async (vaultDataBreachID: number) => 
+    {
+        const result = await browser.runtime.sendMessage({ type: RuntimeMessages.DismissVaultDataBreach, vaultDataBreachID });
+        if (result)
+        {
+            await syncManager.syncData();
+            app.vaultDataBreaches.emit('onBreachDismissed');
+
+            const currentVaultBreaches = app.vaultDataBreaches.vaultDataBreachCountByVaultID[app.currentVault.vaultID];
+            if (!currentVaultBreaches)
+            {
+                app.currentVault.passwordStore.toggleAtRiskType(DataType.Passwords, AtRiskType.None);
+            }
+        }
+
+        return result;
+    }
+
+    app.vaultDataBreaches.setModifyBridge(
+    {
+        dismissVaultDataBreach: dismissVaultDataBreachFunc,
     });
 }

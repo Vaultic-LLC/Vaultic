@@ -4,7 +4,8 @@ export enum RuntimeMessages
     Sync = "SYNC",
     IsSignedIn = "IS_SIGNED_IN",
     SignIn = "SIGN_IN",
-    GetVaultData = "GET_VAULT_DATA",
+    GetVaultAndUserData = "GET_VAULT_AND_USER_DATA",
+    GetDataBreaches = "GET_DATA_BREACHES",
     GetVaults = "GET_VAULTS",
     GetPasswordsByDomain = "GET_PASSWORDS_BY_DOMAIN",
     GetPasswordData = "GET_PASSWORD_DATA",
@@ -24,6 +25,10 @@ export enum RuntimeMessages
     AddGroup = "ADD_GROUP",
     UpdateGroup = "UPDATE_GROUP",
     DeleteGroup = "DELETE_GROUP",
+
+    ToggleFilter = "TOGGLE_FILTER",
+
+    DismissVaultDataBreach = "DISMISS_VAULT_DATA_BREACH",
 };
 
 export type PasswordByDomainResponse = { email?: string, id?: string }[];

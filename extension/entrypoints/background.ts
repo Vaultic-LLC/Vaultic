@@ -117,12 +117,21 @@ export default defineBackground(() =>
                         console.log('SignIn response:', response);
                         break;
 
-                    case RuntimeMessages.GetVaultData:
+                    case RuntimeMessages.GetVaultAndUserData:
                         response = 
                         {
-                            colorPalette: app.userPreferences.currentColorPalette,
-                            vaultData: app.currentVault.toCondensedVaultData()
+                            vaultData: app.currentVault.toCondensedVaultData(),
+                            userPreferences: JSON.stringify(app.userPreferences.getState()),
                         };
+                        break;
+
+                    case RuntimeMessages.GetDataBreaches:
+                        response = 
+                        {
+                            failedToLoadDataBreaches: app.vaultDataBreaches.failedToLoadDataBreaches,
+                            loadedDataBreaches: app.vaultDataBreaches.loadedDataBreaches,
+                            state: JSON.stringify(app.vaultDataBreaches.getState())
+                        }
                         break;
 
                     case RuntimeMessages.GetVaults:
@@ -158,6 +167,63 @@ export default defineBackground(() =>
                         const key = await api.repositories.users.getValidMasterKey();
                         const decryptedPassword = await environment.utilities.crypt.symmetricDecrypt(key!, app.currentVault.passwordStore.passwordsByID[message.id].p);
                         response = decryptedPassword;
+                        break;
+
+                    case RuntimeMessages.AddPassword:
+                        response = await app.currentVault.passwordStore.addPassword(message.masterKey, message.password, message.addedSecurityQuestions, message.pendingPasswordStoreState);
+                        break;
+                    
+                    case RuntimeMessages.UpdatePassword:
+                        response = await app.currentVault.passwordStore.updatePassword(message.masterKey, message.updatingPassword, message.passwordWasUpdated, message.addedSecurityQuestions, message.updatedSecurityQuestionQuestions, message.updatedSecurityQuestionAnswers, message.deletedSecurityQuestions, message.addingGroups, message.pendingPasswordState);
+                        break;
+                    
+                    case RuntimeMessages.DeletePassword:
+                        response = await app.currentVault.passwordStore.deletePassword(message.masterKey, message.password);
+                        break;
+
+                    case RuntimeMessages.AddValue:
+                        response = await app.currentVault.valueStore.addNameValuePair(message.masterKey, message.value, message.pendingValueStoreState);
+                        break;
+                    
+                    case RuntimeMessages.UpdateValue:
+                        response = await app.currentVault.valueStore.updateNameValuePair(message.masterKey, message.updatedValue, message.valueWasUpdated, message.groups, message.pendingValueStoreState);
+                        break;
+
+                    case RuntimeMessages.DeleteValue:
+                        response = await app.currentVault.valueStore.deleteNameValuePair(message.masterKey, message.value);
+                        break;
+                    
+                    case RuntimeMessages.AddFilter:
+                        response = await app.currentVault.filterStore.addFilter(message.masterKey, message.filter, message.pendingFilterState);
+                        break;
+
+                    case RuntimeMessages.UpdateFilter:
+                        response = await app.currentVault.filterStore.updateFilter(message.masterKey, message.updatedFilter, message.addedConditions, message.removedConditions, message.pendingFilterState);
+                        break;
+                    
+                    case RuntimeMessages.DeleteFilter:
+                        response = await app.currentVault.filterStore.deleteFilter(message.masterKey, message.filter);
+                        break;
+
+                    case RuntimeMessages.AddGroup:
+                        response = await app.currentVault.groupStore.addGroup(message.masterKey, message.group, message.pendingStoreState);
+                        break;
+                    
+                    case RuntimeMessages.UpdateGroup:
+                        response = await app.currentVault.groupStore.updateGroup(message.masterKey, message.updatedGroup, message.updatePrimaryObjects, message.pendingGroupStoreState);
+                        break;
+
+                    case RuntimeMessages.DeleteGroup:
+                        response = await app.currentVault.groupStore.deleteGroup(message.masterKey, message.group);
+                        break;
+                    
+                    case RuntimeMessages.ToggleFilter:
+                        await app.userPreferences.toggleFilter(message.id);
+                        response = true;
+                        break;
+
+                    case RuntimeMessages.DismissVaultDataBreach:
+                        response = await app.vaultDataBreaches.dismissVaultDataBreach(message.vaultDataBreachID);
                         break;
 
                     default:

@@ -13,13 +13,17 @@ import StoreUpdateTransaction from "../StoreUpdateTransaction";
 
 export type StoreEvents = "onChanged";
 
-export class Store<T extends StoreState, K extends StateKeys, U extends string = StoreEvents>
+export class Store<T extends StoreState, K extends StateKeys, U extends string = StoreEvents, V extends ModifyBridge | undefined = undefined>
 {
     events: Dictionary<{ (...params: any[]): void }[]>;
 
     protected state: Reactive<T>;
     protected retriever: StorePathRetriever<K> | undefined;
     private internalStoreType: StoreType;
+
+    // This is just for the browser extension since there are multiple versions of the stores active at once (background and main). Main is what the user
+    // is acting against, but background is the one we want to actually make the updates in. This just allows us to pawn the updates off to background.
+    protected modifyBridge: V;
 
     get type() { return this.internalStoreType; }
 
@@ -115,6 +119,11 @@ export class Store<T extends StoreState, K extends StateKeys, U extends string =
         Object.assign(this.state, this.defaultState());
     }
 
+    public setModifyBridge(bridge: V)
+    {
+        this.modifyBridge = bridge;
+    }
+
     public addEvent(event: U, callback: (...params: any[]) => void)
     {
         if (this.events[event])
@@ -136,7 +145,7 @@ export class Store<T extends StoreState, K extends StateKeys, U extends string =
         this.events[event] = this.events[event].filter(c => c != callback);
     }
 
-    protected emit(event: U, ...params: any[])
+    public emit(event: U, ...params: any[])
     {
         this.events[event]?.forEach(f => f(...params));
     }
@@ -165,8 +174,8 @@ export class Store<T extends StoreState, K extends StateKeys, U extends string =
     }
 }
 
-export class VaultContrainedStore<T extends StoreState, K extends StateKeys, U extends string = StoreEvents>
-    extends Store<T, K, U>
+export class VaultContrainedStore<T extends StoreState, K extends StateKeys, U extends string = StoreEvents, V extends ModifyBridge | undefined = undefined>
+    extends Store<T, K, U, V>
 {
     protected vault: VaultStoreParameter;
 
@@ -177,21 +186,12 @@ export class VaultContrainedStore<T extends StoreState, K extends StateKeys, U e
     }
 }
 
-export class DataTypeStore<T extends StoreState, K extends StateKeys, U extends string = StoreEvents, V extends ModifyBridge<Function, Function, Function> | undefined = undefined>
-    extends VaultContrainedStore<T, K, U>
+export class DataTypeStore<T extends StoreState, K extends StateKeys, U extends string = StoreEvents, V extends ModifyBridge | undefined = undefined>
+    extends VaultContrainedStore<T, K, U, V>
 {
-    // This is just for the browser extension since there are multiple versions of the stores active at once (background and main). Main is what the user
-    // is acting against, but background is the one we want to actually make the updates in. This just allows us to pawn the updates off to background.
-    protected modifyBridge: V;
-    
     constructor(vault: VaultStoreParameter, storeType: StoreType, retriever: StorePathRetriever<K>)
     {
         super(vault, storeType, retriever);
-    }
-
-    public setModifyBridge(bridge: V)
-    {
-        this.modifyBridge = bridge;
     }
 
     public resetToDefault()
@@ -283,7 +283,7 @@ export interface PrimarydataTypeStoreStateKeys extends StateKeys
     'currentAndSafeDataTypes.safe': '';
 };
 
-export class PrimaryDataTypeStore<T extends StoreState, K extends PrimarydataTypeStoreStateKeys, U extends string = StoreEvents, V extends ModifyBridge<Function, Function, Function> | undefined = undefined>
+export class PrimaryDataTypeStore<T extends StoreState, K extends PrimarydataTypeStoreStateKeys, U extends string = StoreEvents, V extends ModifyBridge | undefined = undefined>
     extends DataTypeStore<T, K, U, V>
 {
     public removeSecondaryObjectFromValues(
@@ -678,7 +678,7 @@ export interface SecondarydataTypeStoreStateKeys extends StateKeys
     'duplicateValueDataTypes.dataTypes': '';
 };
 
-export class SecondaryDataTypeStore<T extends StoreState, K extends SecondarydataTypeStoreStateKeys, U extends string = StoreEvents, V extends ModifyBridge<Function, Function, Function> | undefined = undefined>
+export class SecondaryDataTypeStore<T extends StoreState, K extends SecondarydataTypeStoreStateKeys, U extends string = StoreEvents, V extends ModifyBridge | undefined = undefined>
     extends DataTypeStore<T, K, U, V>
 {
     private getSecondaryDataObjectDuplicates<T extends ISecondaryDataObject>(

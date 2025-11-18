@@ -7,15 +7,35 @@
               <FilterDropDown />
           </div>
           <div class="vaulticHeader__actions">
-              <VaulticButton @click="lock" :color="primaryColor" :preferredSize="'20px'" :fontSize="'15px'" :tooltipMessage="'Lock'">
+              <VaulticButton @click="lock" :color="primaryColor" :preferredSize="'25px'" :fontSize="'15px'" :tooltipMessage="'Lock'">
                   <IonIcon :name="'lock-closed-outline'"/>
               </VaulticButton>
-              <VaulticButton @click="sync" :color="primaryColor" :preferredSize="'20px'" :fontSize="'15px'" :tooltipMessage="'Sync'">
+              <VaulticButton @click="sync" :color="primaryColor" :preferredSize="'25px'" :fontSize="'15px'" :tooltipMessage="'Sync'">
                   <IonIcon :name="'sync-outline'" />
               </VaulticButton>
-              <!-- <VaulticButton @click="openSettings" :color="primaryColor" :preferredSize="'20px'" :fontSize="'15px'" :tooltipMessage="'Settings'">
-                  <IonIcon :name="'settings-outline'" />
-              </VaulticButton> -->
+              <OverlayBadge v-if="vaultsWithOtherBreaches > 0" :value="vaultsWithOtherBreaches" :severity="'danger'" :size="'small'" 
+                :pt="{
+                    pcBadge: {
+                        root: 'vaulticHeader__notificationsBadge'
+                    }
+                }">
+                <VaulticButton @click="showNotifications" :color="primaryColor" :preferredSize="'25px'" :fontSize="'15px'" :tooltipMessage="'Notifications'">
+                    <IonIcon :name="'notifications-outline'" />
+                </VaulticButton>
+              </OverlayBadge>
+              <VaulticButton v-else @click="showNotifications" :color="primaryColor" :preferredSize="'25px'" :fontSize="'15px'" :tooltipMessage="'Notifications'">
+                    <IonIcon :name="'notifications-outline'" />
+              </VaulticButton>
+              <OverlayBadge v-if="app.activePasswordValuesTable == DataType.Passwords && thisVaultBreaches > 0" :value="thisVaultBreaches" :severity="'danger'" :size="'small'" 
+                :pt="{
+                    pcBadge: {
+                        root: 'vaulticHeader__notificationsBadge'
+                    }
+                }">
+                <VaulticButton :active="isBreachedPasswordsActive" @click="toggleBreachedPasswords" :color="primaryColor" :preferredSize="'25px'" :fontSize="'15px'" :tooltipMessage="'Breached Passwords'">
+                    <IonIcon :name="'alert-outline'" />
+                </VaulticButton>
+              </OverlayBadge>
           </div>
       </div>
     </div>
@@ -31,8 +51,13 @@ import VaulticButton from '@/lib/renderer/components/InputFields/VaulticButton.v
 import IonIcon from '@/lib/renderer/components/Icons/IonIcon.vue';
 import { RuntimeMessages } from '@/lib/Types/RuntimeMessages';
 import syncManager from '@/lib/Utilities/SyncManager';
+import OverlayBadge from 'primevue/overlaybadge';
+import { AtRiskType, DataType } from '@/lib/renderer/Types/DataTypes';
 
 const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
+const thisVaultBreaches: Ref<number> = ref(app.vaultDataBreaches.vaultDataBreachCountByVaultID[app.currentVault.vaultID] ?? 0);
+const vaultsWithOtherBreaches: Ref<number> = ref(Object.keys(app.vaultDataBreaches.vaultDataBreachCountByVaultID).filter(v => v != app.currentVault.vaultID.toString()).length);
+const isBreachedPasswordsActive: ComputedRef<boolean> = computed(() => app.currentVault.passwordStore.activeAtRiskPasswordType == AtRiskType.Breached);
 
 function lock()
 {
@@ -47,12 +72,28 @@ async function sync()
     {
         syncManager.syncData();
     }
+    else
+    {
+        app.popups.showAlert("Unable to Sync", "An unknown error occurred. Please try again.", true);
+    }
 }
 
-function openSettings()
+function showNotifications()
 {
 
 }
+
+function toggleBreachedPasswords()
+{
+    app.currentVault.passwordStore.toggleAtRiskType(DataType.Passwords, AtRiskType.Breached);
+}
+
+watch(() => app.vaultDataBreaches.vaultDataBreaches.length, () =>
+{
+    thisVaultBreaches.value = app.vaultDataBreaches.vaultDataBreachCountByVaultID[app.currentVault.vaultID] ?? 0;
+    vaultsWithOtherBreaches.value = Object.keys(app.vaultDataBreaches.vaultDataBreachCountByVaultID).filter(v => v != app.currentVault.vaultID.toString()).length;
+});
+
 </script>
 <style scoped>
 .vaulticHeader {
@@ -63,6 +104,8 @@ function openSettings()
 
 .vaulticHeader__dropdowns {
     display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .vaulticHeader__logo {
@@ -84,5 +127,11 @@ function openSettings()
 .vaulticHeader__actions {
     display: flex;
     gap: 10px;
+    height: 20px;
+}
+
+:deep(.vaulticHeader__notificationsBadge) {
+    background: red !important;
+    color: white !important;
 }
 </style>

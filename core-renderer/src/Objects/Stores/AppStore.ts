@@ -259,6 +259,11 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
     {
         hideAll();
 
+        // All of these should always be false for the browser extension
+        redirect = redirect && !this.isBrowserExtension;
+        expireSession = expireSession && !this.isBrowserExtension;
+        syncData = syncData && !this.isBrowserExtension;
+
         if (redirect)
         {
             this.internalPopupStore.showAccountSetup(AccountSetupView.SignIn, undefined, undefined, false);
@@ -304,6 +309,11 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
         clearTimeout(this.autoLockTimeoutID);
         this.autoLockTimeoutID = setTimeout(() =>
         {
+            if (this.isBrowserExtension)
+            {
+                return;
+            }
+
             if (this.internalProcessIsRunning)
             {
                 this.autoLockTimeoutID = undefined;
@@ -609,6 +619,12 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
         const loadResult = await this.internalLoadUserData(masterKey, secondLoad);
         this.popups.finishSyncingPopup();
         this.internalIsSyncing.value = false;
+
+        if (loadResult && app.canShowSubscriptionWidgets.value)
+        {
+            // TODO: test to make sure this isn't causing any slowness with syncing
+            await app.vaultDataBreaches.getVaultDataBreaches();
+        }
 
         return loadResult;
     }

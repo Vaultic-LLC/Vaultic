@@ -1,5 +1,5 @@
 import { deflate, inflate } from "pako";
-import { CoreDataUtility } from "../Main/Utilities/CoreDataUtility";
+import { CoreDataUtility } from "../main/Utilities/CoreDataUtility";
 
 export class DataUtility extends CoreDataUtility
 {

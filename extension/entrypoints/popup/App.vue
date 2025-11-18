@@ -39,8 +39,6 @@ import EnterMFACodePopup from '@/lib/renderer/components/Account/EnterMFACodePop
 import PopupButton from '@/lib/renderer/components/InputFields/PopupButton.vue';
 import TextInputField from '@/lib/renderer/components/InputFields/TextInputField.vue';
 import EncryptedInputField from '@/lib/renderer/components/InputFields/EncryptedInputField.vue';
-import { ColorPalette } from '@vaultic/shared/Types/Color';
-import StoreUpdateTransaction from '@/lib/renderer/Objects/StoreUpdateTransaction';
 import VaulticHeader from '@/lib/Components/Header/VaulticHeader.vue';
 import VaulticContent from '@/lib/Components/VaulticContent/VaulticContent.vue';
 import { CondensedVaultData } from '@vaultic/shared/Types/Entities';
@@ -59,6 +57,7 @@ const masterKey = ref('');
 
 async function signIn(mfaCode?: string)
 {
+    app.popups.showLoadingIndicator(primaryColor.value, "Signing In");
     const response: TypedMethodResponse<LogUserInResponse | undefined> = await browser.runtime.sendMessage({ 
         type: RuntimeMessages.SignIn, 
         email: email.value, 
@@ -95,19 +94,62 @@ async function signIn(mfaCode?: string)
             app.popups.showAlert("Unable to Login", "An unknown error occurred. Please try again.", true);
         }
     }
+
+    app.popups.hideLoadingIndicator();
 }
 
 async function setData()
 {
-    const data: { colorPalette: ColorPalette, vaultData: CondensedVaultData } = await browser.runtime.sendMessage({ 
-        type: RuntimeMessages.GetVaultData, 
+    const data: { userPreferences: string, vaultData: CondensedVaultData } = await browser.runtime.sendMessage({ 
+        type: RuntimeMessages.GetVaultAndUserData, 
     });
 
     app.isOnline = true;
 
-    // This will update the color palette but not commit it since we just need it for themeing
-    await app.userPreferences.updateCurrentColorPalette(new StoreUpdateTransaction(), data.colorPalette);
+    await app.userPreferences.initalizeNewStateFromJSON(data.userPreferences);
     await app.currentVault.setReactiveVaultStoreData(masterKey.value, data.vaultData, true);
+
+    app.resetSessionTime();
+    await loadDataBreaches();
+}
+
+async function loadDataBreaches()
+{
+    return new Promise((resolve) =>
+    {
+        const interval = setInterval(async() =>
+        {
+            const data: { failedToLoadDataBreaches: boolean, loadedDataBreaches: boolean, state: string } = await browser.runtime.sendMessage({ 
+                type: RuntimeMessages.GetDataBreaches, 
+            });
+
+            if (data.failedToLoadDataBreaches)
+            {
+                clearInterval(interval);
+                resolve(true);
+            }
+
+            if (data.loadedDataBreaches)
+            {
+                clearInterval(interval);
+                await app.vaultDataBreaches.initalizeNewStateFromJSON(data.state);
+                console.log(`Data Breaches: ${JSON.stringify(app.vaultDataBreaches.vaultDataBreaches)}`);
+                if (app.vaultDataBreaches.vaultDataBreaches.length > 0)
+                {
+                    browser.action.setBadgeBackgroundColor({ color: 'red' });
+                    browser.action.setBadgeTextColor({ color: 'white' });
+                    browser.action.setBadgeText({ text: app.vaultDataBreaches.vaultDataBreaches.length.toString() });
+                }
+                else
+                {
+                    browser.action.setBadgeText({ text: "" });
+                }
+
+                resolve(true);
+            }
+
+        }, 50);
+    });
 }
 
 watch(() => app.isOnline, () =>
@@ -115,6 +157,7 @@ watch(() => app.isOnline, () =>
     if (!app.isOnline)
     {
         isSignedIn.value = false;
+        browser.action.setBadgeText({ text: "" });
     }
 });
 
@@ -123,7 +166,7 @@ onMounted(async() =>
     app.isBrowserExtension = true;
     document.getElementsByTagName('html')?.item(0)?.classList.add('darkMode');
 
-    syncManager.addAfterSyncCallback(0, async() => setData());
+    syncManager.addAfterSyncCallback(0, async() => await setData());
     const response = await browser.runtime.sendMessage({ type: RuntimeMessages.IsSignedIn });
 
     if (response)
@@ -145,6 +188,7 @@ onMounted(async() =>
     flex-direction: column;
     gap: 10px;
     transition: 0.3s;
+    overflow: hidden;
 }
 
 .app__signInContent {

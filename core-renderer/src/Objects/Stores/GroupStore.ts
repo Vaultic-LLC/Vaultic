@@ -61,7 +61,7 @@ export type DeleteGroupFunc = (
     masterKey: string,
     group: Group) => Promise<boolean>;
 
-export interface GroupStoreModifyBridge extends ModifyBridge<Function, Function, Function>
+export interface GroupStoreModifyBridge extends ModifyBridge
 {
     add: AddGroupFunc;
     update: UpdateGroupFunc;

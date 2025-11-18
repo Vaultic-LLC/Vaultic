@@ -85,7 +85,7 @@ export type DeletePasswordFunc = (
     masterKey: string,
     password: ReactivePassword) => Promise<boolean>;
 
-export interface PasswordStoreModifyBridge extends ModifyBridge<Function, Function, Function>
+export interface PasswordStoreModifyBridge extends ModifyBridge
 {
     add: AddPasswordFunc;
     update: UpdatePasswordFunc;
@@ -397,9 +397,9 @@ export class PasswordStore extends PrimaryDataTypeStore<IPasswordStoreState, Pas
             return false;
         }
 
-        if (app.isOnline && app.vaultDataBreaches.vaultBreachesByPasswordID.value.has(password.id))
+        if (app.isOnline && app.vaultDataBreaches.vaultBreachesByPasswordID.value[password.id])
         {
-            await app.vaultDataBreaches.dismissVaultDataBreach(app.vaultDataBreaches.vaultBreachesByPasswordID.value.get(password.id)!.VaultDataBreachID);
+            await app.vaultDataBreaches.dismissVaultDataBreach(app.vaultDataBreaches.vaultBreachesByPasswordID.value[password.id]!.VaultDataBreachID);
         }
 
         app.currentVault.passwordsByDomain = this.state.o;

@@ -8,6 +8,7 @@ import { Algorithm } from "@vaultic/shared/Types/Keys";
 import vaulticHelper from "./Helpers/VaulticHelper";
 import generatorUtility from "./Utilities/Generator";
 import { coreAPIResolver } from "./Core/CoreAPIResolver";
+import { BreachRequestVault } from "@vaultic/shared/Types/DataTypes";
 
 export default function setupIPC()
 {
@@ -40,6 +41,7 @@ export default function setupIPC()
 	ipcMain.handle('vaultController:getVaultDataBreaches', (e, getVaultDataBreachesData: string) => validateSender(e, () => coreAPIResolver.server.vault.getVaultDataBreaches(getVaultDataBreachesData)));
 	ipcMain.handle('vaultController:checkPasswordsForBreach', (e, checkPasswordForBreachData: string) => validateSender(e, () => coreAPIResolver.server.vault.checkPasswordsForBreach(checkPasswordForBreachData)));
 	ipcMain.handle('vaultController:dismissVaultDataBreach', (e, userOrganizaitonID: number, vaultID: number, vaultDataBreachID: number) => validateSender(e, () => coreAPIResolver.server.vault.dismissVaultDataBreach(userOrganizaitonID, vaultID, vaultDataBreachID)));
+	ipcMain.handle('vaultController:clearDataBreaches', (e, vaults: BreachRequestVault[]) => validateSender(e, () => coreAPIResolver.server.vault.clearDataBreaches(vaults)));
 
 	ipcMain.handle('organizationController:getOrganizations', (e) => validateSender(e, () => coreAPIResolver.server.organization.getOrganizations()));
 	ipcMain.handle('organizationController:createOrganization', (e, masterKey: string, createOrganizationData: string) => validateSender(e, () => coreAPIResolver.server.organization.createOrganization(masterKey, createOrganizationData)));

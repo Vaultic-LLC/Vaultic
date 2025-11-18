@@ -23,13 +23,12 @@ onMounted(async() =>
 .vaulticContent {
     width: 100%;
     height: 90%;
-    padding: 50px 10px 10px 10px;
+    padding: 0px 10px 10px 10px;
     overflow: hidden;
 }
 
 .passwordValueTable {
-    height: 100%;
-    margin-top: 28px
+    height: 94%;
+    margin-top: 10px;
 }
-
 </style>

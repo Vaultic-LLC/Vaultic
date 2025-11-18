@@ -76,7 +76,7 @@ export type DeleteFilterFunc = (
     masterKey: string,
     filter: Filter) => Promise<boolean>;
 
-export interface FilterStoreModifyBridge extends ModifyBridge<Function, Function, Function>
+export interface FilterStoreModifyBridge extends ModifyBridge
 {
     add: AddFilterFunc;
     update: UpdateFilterFunc;

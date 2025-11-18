@@ -1,6 +1,6 @@
 <template>
     <div class="filterDropDownContainer">
-      <ObjectMultiSelect :label="'Filters'" :color="color" v-model="selectedFilters" 
+      <ObjectMultiSelect :label="'Filters'" :width="'100%'" :height="'100%'" :minHeight="''" :color="color" v-model="selectedFilters" 
           :options="allFilters" @onOptionSelect="onFilterSelected" />
     </div>
   </template>
@@ -14,13 +14,26 @@ import { DataType } from '@/lib/renderer/Types/DataTypes';
 import ObjectMultiSelect from '../../renderer/components/InputFields/ObjectMultiSelect.vue';
 
 const selectedFilters: Ref<ObjectSelectOptionModel[]> = ref(getSelectedFilters());
+let previousSelectedFilters: ObjectSelectOptionModel[] = selectedFilters.value;
 const allFilters: Ref<ObjectSelectOptionModel[]> = ref([]);
 
 const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
 
-function onFilterSelected(filter: any)
+function onFilterSelected(filters: ObjectSelectOptionModel[])
 {
-    // TODO:
+    const addedFilters = filters.filter(f => !previousSelectedFilters.some(pf => pf.id == f.id));
+    addedFilters.forEach(async f => 
+    {
+        await app.userPreferences.toggleFilter(f.id);
+    });
+
+    const removedFilters = previousSelectedFilters.filter(pf => !filters.some(f => pf.id == f.id));
+    removedFilters.forEach(async f => 
+    {
+        await app.userPreferences.toggleFilter(f.id);
+    });
+
+    previousSelectedFilters = filters;
 }
 
 function getSelectedFilters()
@@ -92,5 +105,8 @@ onMounted(async() =>
 </script>
 
 <style scoped>
-
+.filterDropDownContainer {
+    width: 175px;
+    height: 35px
+}
 </style>

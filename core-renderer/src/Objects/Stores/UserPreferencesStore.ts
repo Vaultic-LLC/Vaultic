@@ -1,5 +1,5 @@
 import { emptyColorPalette } from "../../Types/Colors";
-import { Store } from "./Base";
+import { Store, StoreEvents } from "./Base";
 import { Ref, ref, watch } from "vue";
 import StoreUpdateTransaction from "../StoreUpdateTransaction";
 import { api } from "../../API";
@@ -7,7 +7,7 @@ import app, { AppStore } from "./AppStore";
 import { validateObject } from "../../Helpers/TypeScriptHelper";
 import { isHexString } from "../../Helpers/ColorHelper";
 import { DataType } from "../../Types/DataTypes";
-import { defaultUserPreferencesStoreState, DictionaryAsList, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import { defaultUserPreferencesStoreState, DictionaryAsList, ModifyBridge, StateKeys, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { ColorPalette } from "@vaultic/shared/Types/Color";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
@@ -72,9 +72,16 @@ const UserPreferencesPathRetriever: StorePathRetriever<UserPreferencesStateKeys>
     'activeFiltersForUserVault': (...ids: string[]) => `a.${ids[0]}`
 };
 
+export type UserPreferencesToggleFilter = (id: string) => Promise<void>;
+
+export interface UserPreferencesModifyBridge extends ModifyBridge
+{
+    toggleFilter: UserPreferencesToggleFilter;
+}
+
 export type UserPreferencesStoreState = IUserPreferencesStoreState;
 
-export class UserPreferencesStore extends Store<UserPreferencesStoreState, UserPreferencesStateKeys>
+export class UserPreferencesStore extends Store<UserPreferencesStoreState, UserPreferencesStateKeys, StoreEvents, UserPreferencesModifyBridge>
 {
     private internalCurrentPrimaryColor: Ref<string>;
     private initalized: Ref<boolean>;
@@ -407,6 +414,11 @@ export class UserPreferencesStore extends Store<UserPreferencesStoreState, UserP
 
     public async toggleFilter(id: string)
     {
+        if (this.modifyBridge)
+        {
+            return await this.modifyBridge.toggleFilter(id);
+        }
+
         const pendingState = this.getPendingState()!;
         const userVaultIDAsString = app.currentVault.userVaultID.toString();
 

@@ -32,6 +32,7 @@ export class DataUtility extends CoreDataUtility
 					return;
 				}
 
+				console.log(`Value: ${value}, Result: ${result}`);
 				resolve(result.toString('utf-8'));
 			});
 		});

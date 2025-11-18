@@ -1,6 +1,6 @@
 <template>
     <div ref="container" class="vaulticButtonContainer">
-        <div class="vaulticButtonContainer__button">
+        <div class="vaulticButtonContainer__button" :class="{ 'vaulticButtonContainer__button--active': isActive }">
             <slot></slot>
         </div>
     </div>
@@ -12,7 +12,7 @@ import { computed, ComputedRef, defineComponent, Ref, ref, onMounted } from 'vue
 
 export default defineComponent({
     name: "VaulticButton",
-    props: ['color', 'minSize', 'preferredSize', 'maxSize', 'tooltipMessage', 'fontSize'],
+    props: ['color', 'minSize', 'preferredSize', 'maxSize', 'tooltipMessage', 'fontSize', 'active'],
     setup(props)
     {
         const container: Ref<HTMLElement | null> = ref(null);
@@ -21,6 +21,7 @@ export default defineComponent({
         const computedMaxSize: ComputedRef<string> = computed(() => props.maxSize ?? '35px');
         const transition: Ref<string> = ref('0');
         const computedFontSize: ComputedRef<string> = computed(() => props.fontSize ?? 'clamp(20px, 2vw, 35px)');
+        const isActive: ComputedRef<boolean> = computed(() => props.active ?? false);
 
         onMounted(() =>
         {
@@ -44,7 +45,8 @@ export default defineComponent({
             computedPreferredSize,
             computedMaxSize,
             computedFontSize,
-            transition
+            transition,
+            isActive
         }
     }
 })
@@ -67,7 +69,8 @@ export default defineComponent({
     border: 1.5px solid v-bind(color);
 }
 
-.vaulticButtonContainer__button:hover {
+.vaulticButtonContainer__button:hover,
+.vaulticButtonContainer__button--active {
     box-shadow: 0 0 25px v-bind(color);
 }
 </style>

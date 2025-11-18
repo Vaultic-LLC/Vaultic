@@ -98,12 +98,7 @@ export interface PathChange
     p: string;
 }
 
-export interface ModifyBridge<T extends Function, U extends Function, V extends Function>
-{
-    add: T;
-    update: U;
-    delete: V;
-}
+export type ModifyBridge = { [key: string]: Function };
 
 export class PendingStoreState<T extends StoreState, U extends StateKeys>
 {

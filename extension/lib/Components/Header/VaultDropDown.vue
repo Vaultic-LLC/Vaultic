@@ -48,8 +48,8 @@ onMounted(async() =>
 
 <style scoped>
 .vaultDropDownContainer {
-    width: 150px;
-    height: 30px
+    width: 175px;
+    height: 35px
 }
 
 </style>

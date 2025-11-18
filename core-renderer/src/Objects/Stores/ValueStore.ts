@@ -56,7 +56,7 @@ export type DeleteValueFunc = (
     masterKey: string,
     value: ReactiveValue) => Promise<boolean>;
 
-export interface ValueStoreModifyBridge extends ModifyBridge<Function, Function, Function>
+export interface ValueStoreModifyBridge extends ModifyBridge
 {
     add: AddValueFunc;
     update: UpdateValueFunc;
