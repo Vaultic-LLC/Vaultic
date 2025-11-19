@@ -13,6 +13,7 @@ import ObjectSingleSelect from '../../renderer/components/InputFields/ObjectSing
 import { ObjectSelectOptionModel } from '../../renderer/Types/Models';
 import { DisplayVault } from '@vaultic/shared/Types/Entities';
 import app from '../../renderer/Objects/Stores/AppStore';
+import vaultManager from '@/lib/Utilities/VaultManager';
 
 const selectedVault: Ref<ObjectSelectOptionModel | null> = ref(null);
 const vaults: Ref<ObjectSelectOptionModel[]> = ref([]);
@@ -29,13 +30,13 @@ async function setVaults(): Promise<void>
         backingObject: v
     })) ?? [];
 
-    selectedVault.value = vaults.value.find(v => v.backingObject?.vaultID == app.currentVault.vaultID) ?? null;
+    selectedVault.value = vaults.value.find(v => v.backingObject?.vaultID == vaultManager.currentVault!.vaultID) ?? null;
 }
 
-function onVaultSelected(model: ObjectSelectOptionModel)
+async function onVaultSelected(model: ObjectSelectOptionModel)
 {
+    await vaultManager.loadVault(model.backingObject?.userVaultID ?? 0);
     selectedVault.value = model;
-    syncManager.syncData();
 }
 
 onMounted(async() => 

@@ -43,6 +43,7 @@ import VaulticHeader from '@/lib/Components/Header/VaulticHeader.vue';
 import VaulticContent from '@/lib/Components/VaulticContent/VaulticContent.vue';
 import { CondensedVaultData } from '@vaultic/shared/Types/Entities';
 import syncManager from '@/lib/Utilities/SyncManager';
+import vaultManager from '@/lib/Utilities/VaultManager';
 
 const mfaView: Ref<any> = ref();
 
@@ -68,6 +69,8 @@ async function signIn(mfaCode?: string)
     if (response.success)
     {
         await setData();
+        await vaultManager.init();
+
         isSignedIn.value = true;
 
         email.value = '';
@@ -126,6 +129,7 @@ async function loadDataBreaches()
             if (data.failedToLoadDataBreaches)
             {
                 clearInterval(interval);
+                app.vaultDataBreaches.emit("onBreachesUpdated");
                 resolve(true);
             }
 
@@ -145,6 +149,7 @@ async function loadDataBreaches()
                     browser.action.setBadgeText({ text: "" });
                 }
 
+                app.vaultDataBreaches.emit("onBreachesUpdated");
                 resolve(true);
             }
 
@@ -172,6 +177,8 @@ onMounted(async() =>
     if (response)
     {
         await setData();
+        await vaultManager.init();
+
         isSignedIn.value = true;
     }
 });

@@ -13,7 +13,7 @@
               <VaulticButton @click="sync" :color="primaryColor" :preferredSize="'25px'" :fontSize="'15px'" :tooltipMessage="'Sync'">
                   <IonIcon :name="'sync-outline'" />
               </VaulticButton>
-              <OverlayBadge v-if="vaultsWithOtherBreaches > 0" :value="vaultsWithOtherBreaches" :severity="'danger'" :size="'small'" 
+              <OverlayBadge v-if="vaultsWithOtherBreaches.length > 0" :value="vaultsWithOtherBreaches.length" :severity="'danger'" :size="'small'" 
                 :pt="{
                     pcBadge: {
                         root: 'vaulticHeader__notificationsBadge'
@@ -53,10 +53,13 @@ import { RuntimeMessages } from '@/lib/Types/RuntimeMessages';
 import syncManager from '@/lib/Utilities/SyncManager';
 import OverlayBadge from 'primevue/overlaybadge';
 import { AtRiskType, DataType } from '@/lib/renderer/Types/DataTypes';
+import { VaulticNotification } from '@vaultic/shared/Types/Props';
+import { DisplayVault } from '@vaultic/shared/Types/Entities';
+import vaultManager from '@/lib/Utilities/VaultManager';
 
 const primaryColor: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
-const thisVaultBreaches: Ref<number> = ref(app.vaultDataBreaches.vaultDataBreachCountByVaultID[app.currentVault.vaultID] ?? 0);
-const vaultsWithOtherBreaches: Ref<number> = ref(Object.keys(app.vaultDataBreaches.vaultDataBreachCountByVaultID).filter(v => v != app.currentVault.vaultID.toString()).length);
+const thisVaultBreaches: Ref<number> = ref(app.vaultDataBreaches.vaultDataBreachCountByVaultID[vaultManager.currentVault!.vaultID] ?? 0);
+const vaultsWithOtherBreaches: Ref<VaulticNotification[]> = ref([]);
 const isBreachedPasswordsActive: ComputedRef<boolean> = computed(() => app.currentVault.passwordStore.activeAtRiskPasswordType == AtRiskType.Breached);
 
 function lock()
@@ -80,7 +83,7 @@ async function sync()
 
 function showNotifications()
 {
-
+    app.popups.showNotificationPopup(vaultsWithOtherBreaches.value);
 }
 
 function toggleBreachedPasswords()
@@ -88,10 +91,61 @@ function toggleBreachedPasswords()
     app.currentVault.passwordStore.toggleAtRiskType(DataType.Passwords, AtRiskType.Breached);
 }
 
-watch(() => app.vaultDataBreaches.vaultDataBreaches.length, () =>
+async function getNotifications(): Promise<VaulticNotification[]>
+{
+    const notifs: VaulticNotification[] = [];
+    const vaultIDs = Object.keys(app.vaultDataBreaches.vaultDataBreachCountByVaultID).filter(v => v != vaultManager.currentVault!.vaultID.toString());
+
+    for (const vaultID of vaultIDs)
+    {
+        const tempVault: DisplayVault = await browser.runtime.sendMessage({ type: RuntimeMessages.GetVaultByVaultID, vaultID: Number(vaultID) });
+        if (!tempVault)
+        {
+            continue;
+        }
+
+        notifs.push({
+                text: `'${tempVault.name}' has breached passwords`,
+                description: `We have found ${app.vaultDataBreaches.vaultDataBreachCountByVaultID[tempVault.vaultID]} passwords for companies that have had recent data breaches in the vault '${tempVault.name}'. Please load the vault to view and address them.`,
+                button: {
+                    text: 'Load Vault',
+                    onClick: async () => 
+                    {
+                        app.popups.showLoadingIndicator(primaryColor.value, "Loading Vault");
+                        const success: boolean = await vaultManager.loadVault(tempVault.userVaultID);
+                        if (success)
+                        {
+                            app.popups.hideNotificationPopup();
+                        }
+                        else
+                        {
+                            app.popups.showToast("Failed to load vault", false);
+                        }
+
+                        app.popups.hideLoadingIndicator();
+                    }
+                }
+            });
+    }
+
+    return notifs;
+}
+
+async function setBreaches()
 {
     thisVaultBreaches.value = app.vaultDataBreaches.vaultDataBreachCountByVaultID[app.currentVault.vaultID] ?? 0;
-    vaultsWithOtherBreaches.value = Object.keys(app.vaultDataBreaches.vaultDataBreachCountByVaultID).filter(v => v != app.currentVault.vaultID.toString()).length;
+    vaultsWithOtherBreaches.value = await getNotifications(); 
+}
+
+onMounted(async () =>
+{
+    vaultsWithOtherBreaches.value = await getNotifications();
+    app.vaultDataBreaches.addEvent("onBreachesUpdated", setBreaches);
+});
+
+onUnmounted(() =>
+{
+    app.vaultDataBreaches.removeEvent("onBreachesUpdated", setBreaches);
 });
 
 </script>

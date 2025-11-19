@@ -137,7 +137,24 @@ export default defineBackground(() =>
                     case RuntimeMessages.GetVaults:
                         response = app.userVaults.value;
                         break;
+
+                    case RuntimeMessages.GetCurrentVault:
+                        response = app.userVaultsByVaultID.get(app.currentVault.vaultID);
+                        break;
+
+                    case RuntimeMessages.GetVaultByVaultID:
+                        response = app.userVaultsByVaultID.get(message.vaultID);
+                        break;
+
+                    case RuntimeMessages.GetVaultByUserVaultID:
+                        response = app.userVaults.value.find(v => v.userVaultID === message.userVaultID);
+                        break;
                     
+                    case RuntimeMessages.LoadVault:
+                        const loadVaultKey = await api.repositories.users.getValidMasterKey();
+                        response = await app.setActiveVault(loadVaultKey!, message.userVaultID);
+                        break;
+
                     case RuntimeMessages.GetPasswordsByDomain:
                         response = [];
                         console.log(`Getting passwords by domain: ${message.domain}, Passwords By Domain: ${JSON.stringify(app.currentVault?.passwordsByDomain)}`);

@@ -124,6 +124,14 @@
                 </ObjectPopup>
 			</Transition>
 		</Teleport>
+        <Teleport to="#body">
+			<Transition name="fade">
+                <ObjectPopup v-if="popupStore.notificationPopupIsShowing" :width="isBrowserExtension ? '85%' : undefined" 
+                    :height="isBrowserExtension ? '480px' : ''" :minWidth="''" :minHeight="''" :closePopup="popupStore.hideNotificationPopup">
+                    <NotificationView :notifications="popupStore.notifications" />
+                </ObjectPopup>
+			</Transition>
+		</Teleport>
     </div>
 </template>
 
@@ -148,6 +156,7 @@ import DeviceView from './ObjectViews/DeviceView.vue';
 import SyncingPopup from './Loading/SyncingPopup.vue';
 import VerifyEmailView from './Account/VerifyEmailView.vue';
 import DeleteAccountView from './Account/DeleteAccountView.vue';
+import NotificationView from './ObjectViews/NotificationView.vue';
 
 import app from "../Objects/Stores/AppStore";
 import { DataType } from '../Types/DataTypes';
@@ -175,6 +184,7 @@ export default defineComponent({
         SyncingPopup,
         VerifyEmailView,
         DeleteAccountView,
+        NotificationView,
     },
     setup()
     {

@@ -7,6 +7,10 @@ export enum RuntimeMessages
     GetVaultAndUserData = "GET_VAULT_AND_USER_DATA",
     GetDataBreaches = "GET_DATA_BREACHES",
     GetVaults = "GET_VAULTS",
+    GetCurrentVault = "GET_CURRENT_VAULT",
+    GetVaultByVaultID = "GET_VAULT_BY_VAULT_ID",
+    GetVaultByUserVaultID = "GET_VAULT_BY_USER_VAULT_ID",
+    LoadVault = "LOAD_VAULT",
     GetPasswordsByDomain = "GET_PASSWORDS_BY_DOMAIN",
     GetPasswordData = "GET_PASSWORD_DATA",
 
