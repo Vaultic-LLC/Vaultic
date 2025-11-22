@@ -20,8 +20,6 @@ function getDomain()
   
 async function handlePageChange() 
 {
-    console.log('Page changed! New content loaded.');
-
     const response = await browser.runtime.sendMessage({ type: RuntimeMessages.IsSignedIn });
     if (!response)
     {
@@ -676,16 +674,36 @@ function showSaveTemporaryPasswordDialog(temporaryPassword: { domain: string, pa
     yesButton.addEventListener('click', async (e) => {
         e.preventDefault();
         e.stopPropagation();
+
+        yesButton.disabled = true;
+        noButton.disabled = true;
         
         // Call saveTemporaryPassword
-        await browser.runtime.sendMessage({
+        const success = await browser.runtime.sendMessage({
             type: RuntimeMessages.SaveTemporaryPassword,
             domain: temporaryPassword.domain,
             password: temporaryPassword.password
         });
-        
-        // Remove dialog
-        dialog.remove();
+
+        if (success)
+        {
+            yesButton.remove();
+            noButton.remove();
+            message.textContent = "Save successfully!";
+            setTimeout(() => 
+            {
+                dialog.remove();
+            }, 3000);
+        }
+        else
+        {
+            yesButton.disabled = false;
+            noButton.disabled = false;
+            
+            message.textContent = "Save failed!";
+            yesButton.textContent = "Retry";
+            noButton.textContent = "Close";
+        }
     });
 
     // Create "No" button

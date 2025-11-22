@@ -234,7 +234,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
         return defaultAppStoreState();
     }
 
-    private calcAutolockTime(time: AutoLockTime): number
+    public calcAutolockTime(time: AutoLockTime): number
     {
         switch (time)
         {

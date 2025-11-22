@@ -21,6 +21,7 @@ import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { LogUserInResponse } from "@vaultic/shared/Types/Responses";
 import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
 import { RandomValueType } from "@vaultic/shared/Types/Fields";
+import { defaultPassword, Password } from '@/lib/renderer/Types/DataTypes';
 
 export default defineBackground(() => 
 {
@@ -84,6 +85,7 @@ export default defineBackground(() =>
     });
 
     let temporaryPassword: { domain: string, password: string } | undefined = undefined;
+    let sessionInterval: NodeJS.Timeout | undefined = undefined;
 
     browser.runtime.onMessage.addListener((message, sender, sendResponse) => 
     {
@@ -105,19 +107,15 @@ export default defineBackground(() =>
                         break;
                     
                     case RuntimeMessages.Sync:
-                        const masterKey = await api.repositories.users.getValidMasterKey();
-                        response = await app.syncVaults(masterKey!, app.userInfo!.email!);
+                        response = await app.syncVaults(await getMasterKey(), app.userInfo!.email!);
                         break;
                         
                     case RuntimeMessages.IsSignedIn:
-                        console.log(`Responding with loadedUser: ${app.loadedUser.value}`);
                         response = app.loadedUser.value;
                         break;
                         
                     case RuntimeMessages.SignIn:
-                        console.log('Handling SignIn request');
                         response = await signUserIn(message.email, message.masterKey, message.mfaCode);
-                        console.log('SignIn response:', response);
                         break;
 
                     case RuntimeMessages.GetVaultAndUserData:
@@ -126,6 +124,22 @@ export default defineBackground(() =>
                             vaultData: app.currentVault.toCondensedVaultData(),
                             userPreferences: JSON.stringify(app.userPreferences.getState()),
                         };
+
+                        if (sessionInterval)
+                        {
+                            clearInterval(sessionInterval);
+                        }
+
+                        const autolockTime = app.calcAutolockTime(app.getState().s.a);
+                        const sessionIntervalTime = Math.min(1000 * 60 * 10, autolockTime - (1000 * 30));
+
+                        sessionInterval = setInterval(() =>
+                        {
+                            if (app.loadedUser.value)
+                            {
+                                app.resetSessionTime();
+                            }
+                        }, sessionIntervalTime);
                         break;
 
                     case RuntimeMessages.GetDataBreaches:
@@ -154,28 +168,30 @@ export default defineBackground(() =>
                         break;
                     
                     case RuntimeMessages.LoadVault:
-                        const loadVaultKey = await api.repositories.users.getValidMasterKey();
-                        response = await app.setActiveVault(loadVaultKey!, message.userVaultID);
+                        response = await app.setActiveVault(await getMasterKey(), message.userVaultID);
                         break;
 
                     case RuntimeMessages.GetPasswordsByDomain:
                         response = [];
-                        console.log(`Getting passwords by domain: ${message.domain}, Passwords By Domain: ${JSON.stringify(app.currentVault?.passwordsByDomain)}`);
                         if (app.currentVault?.passwordsByDomain !== undefined)
                         {
                             OH.forEachKey(app.currentVault.passwordsByDomain, (domain: string) => 
                             {
-                                console.log(`Domain: ${domain}, Message Domain: ${message.domain}`);
                                 if (domain.includes(message.domain) || message.domain.includes(domain))
                                 {
                                     OH.forEachKey(app.currentVault.passwordsByDomain![domain], (password: string) => 
-                                    {
-                                        console.log(`Password: ${password}, Passwords By ID: ${JSON.stringify(app.currentVault.passwordStore.passwordsByID)}`);
-                                        const tempPassword: { username?: string, id?: string, passwordFor?: string } = { username: undefined, id: undefined, passwordFor: undefined};
-
-                                        tempPassword.id = password;
-                                        tempPassword.username = app.currentVault.passwordStore.passwordsByID[password].l;
-                                        tempPassword.passwordFor = app.currentVault.passwordStore.passwordsByID[password].f;
+                                    {                     
+                                        if (!app.currentVault.passwordStore.passwordsByID[password].l)
+                                        {
+                                            return;
+                                        }
+                                        
+                                        const tempPassword: { username?: string, id?: string, passwordFor?: string } = 
+                                        {
+                                            id: password,
+                                            username: app.currentVault.passwordStore.passwordsByID[password].l,
+                                            passwordFor: app.currentVault.passwordStore.passwordsByID[password].f || domain
+                                        };
 
                                         response.push(tempPassword);
                                     });
@@ -191,51 +207,51 @@ export default defineBackground(() =>
                         break;
 
                     case RuntimeMessages.AddPassword:
-                        response = await app.currentVault.passwordStore.addPassword(message.masterKey, message.password, message.addedSecurityQuestions, message.pendingPasswordStoreState);
+                        response = await app.currentVault.passwordStore.addPassword(await getMasterKey(), message.password, message.addedSecurityQuestions, message.pendingPasswordStoreState);
                         break;
                     
                     case RuntimeMessages.UpdatePassword:
-                        response = await app.currentVault.passwordStore.updatePassword(message.masterKey, message.updatingPassword, message.passwordWasUpdated, message.addedSecurityQuestions, message.updatedSecurityQuestionQuestions, message.updatedSecurityQuestionAnswers, message.deletedSecurityQuestions, message.addingGroups, message.pendingPasswordState);
+                        response = await app.currentVault.passwordStore.updatePassword(await getMasterKey(), message.updatingPassword, message.passwordWasUpdated, message.addedSecurityQuestions, message.updatedSecurityQuestionQuestions, message.updatedSecurityQuestionAnswers, message.deletedSecurityQuestions, message.addingGroups, message.pendingPasswordState);
                         break;
                     
                     case RuntimeMessages.DeletePassword:
-                        response = await app.currentVault.passwordStore.deletePassword(message.masterKey, message.password);
+                        response = await app.currentVault.passwordStore.deletePassword(await getMasterKey(), message.password);
                         break;
 
                     case RuntimeMessages.AddValue:
-                        response = await app.currentVault.valueStore.addNameValuePair(message.masterKey, message.value, message.pendingValueStoreState);
+                        response = await app.currentVault.valueStore.addNameValuePair(await getMasterKey(), message.value, message.pendingValueStoreState);
                         break;
                     
                     case RuntimeMessages.UpdateValue:
-                        response = await app.currentVault.valueStore.updateNameValuePair(message.masterKey, message.updatedValue, message.valueWasUpdated, message.groups, message.pendingValueStoreState);
+                        response = await app.currentVault.valueStore.updateNameValuePair(await getMasterKey(), message.updatedValue, message.valueWasUpdated, message.groups, message.pendingValueStoreState);
                         break;
 
                     case RuntimeMessages.DeleteValue:
-                        response = await app.currentVault.valueStore.deleteNameValuePair(message.masterKey, message.value);
+                        response = await app.currentVault.valueStore.deleteNameValuePair(await getMasterKey(), message.value);
                         break;
                     
                     case RuntimeMessages.AddFilter:
-                        response = await app.currentVault.filterStore.addFilter(message.masterKey, message.filter, message.pendingFilterState);
+                        response = await app.currentVault.filterStore.addFilter(await getMasterKey(), message.filter, message.pendingFilterState);
                         break;
 
                     case RuntimeMessages.UpdateFilter:
-                        response = await app.currentVault.filterStore.updateFilter(message.masterKey, message.updatedFilter, message.addedConditions, message.removedConditions, message.pendingFilterState);
+                        response = await app.currentVault.filterStore.updateFilter(await getMasterKey(), message.updatedFilter, message.addedConditions, message.removedConditions, message.pendingFilterState);
                         break;
                     
                     case RuntimeMessages.DeleteFilter:
-                        response = await app.currentVault.filterStore.deleteFilter(message.masterKey, message.filter);
+                        response = await app.currentVault.filterStore.deleteFilter(await getMasterKey(), message.filter);
                         break;
 
                     case RuntimeMessages.AddGroup:
-                        response = await app.currentVault.groupStore.addGroup(message.masterKey, message.group, message.pendingStoreState);
+                        response = await app.currentVault.groupStore.addGroup(await getMasterKey(), message.group, message.pendingStoreState);
                         break;
                     
                     case RuntimeMessages.UpdateGroup:
-                        response = await app.currentVault.groupStore.updateGroup(message.masterKey, message.updatedGroup, message.updatePrimaryObjects, message.pendingGroupStoreState);
+                        response = await app.currentVault.groupStore.updateGroup(await getMasterKey(), message.updatedGroup, message.updatePrimaryObjects, message.pendingGroupStoreState);
                         break;
 
                     case RuntimeMessages.DeleteGroup:
-                        response = await app.currentVault.groupStore.deleteGroup(message.masterKey, message.group);
+                        response = await app.currentVault.groupStore.deleteGroup(await getMasterKey(), message.group);
                         break;
                     
                     case RuntimeMessages.ToggleFilter:
@@ -273,9 +289,20 @@ export default defineBackground(() =>
                         break;
 
                     case RuntimeMessages.SaveTemporaryPassword:
-                        if (temporaryPassword)
+                        if (temporaryPassword && temporaryPassword.password)
                         {
-                            //response = await app.currentVault.passwordStore.addPassword(message.masterKey, temporaryPassword.password, [], []);
+                            const password: Password = defaultPassword();
+                            password.p = temporaryPassword.password;
+                            password.f = temporaryPassword.domain;
+                            password.d = temporaryPassword.domain;
+
+                            const pendingPasswordStoreState = app.currentVault.passwordStore.getPendingState()!;
+                            response = await app.currentVault.passwordStore.addPassword(await getMasterKey(), password, [], pendingPasswordStoreState);
+
+                            if (response)
+                            {
+                                temporaryPassword = undefined;
+                            }
                         }
                         break;
                     default:
@@ -296,6 +323,11 @@ export default defineBackground(() =>
         return true;
     });
 });
+
+async function getMasterKey(): Promise<string>
+{
+    return (await api.repositories.users.getValidMasterKey())!;
+}
 
 async function signUserIn(email: string, masterKey: string, mfaCode?: string): Promise<TypedMethodResponse<LogUserInResponse | undefined>>
 {

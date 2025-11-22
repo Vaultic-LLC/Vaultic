@@ -92,8 +92,6 @@ export default defineComponent({
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.p.p);
         const colorModel: ComputedRef<InputColorModel> = computed(() => defaultInputColorModel(color.value));
 
-        const inputWidth: Ref<string> = ref('50%');
-
         const isInitiallyEncrypted: Ref<boolean> = ref(!props.creating);
                 
         const passwordIsDirty: Ref<boolean> = ref(false);
