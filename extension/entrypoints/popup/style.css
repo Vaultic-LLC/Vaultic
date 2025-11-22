@@ -8,6 +8,25 @@ body {
     margin: 0 !important;
 }
 
+body {
+    font-family: Avenir, Helvetica, Arial, sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #0f111d;
+    overflow: hidden;
+    text-align: center;
+}
+
+h2,
+div {
+    user-select: none;
+}
+
+h2 {
+    margin-top: min(5px, 10%);
+    margin-bottom: min(5px, 10%);
+}
+
 /** Ion-Icon Styles */
 :host {
     display: inline-block;

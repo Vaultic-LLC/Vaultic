@@ -1,7 +1,7 @@
 <template>
     <Popups />
     <ConfirmDialog></ConfirmDialog>
-  <div class="app" :class="{ isSignedIn: isSignedIn }">
+  <div class="app" :class="{ isSignedIn: isSignedIn, mfaIsShowing: mfaIsShowing }">
     <div v-if="!isSignedIn" class="app__signInContent">
         <img class="app__logo" :src="Logo" alt="Logo" />
         <div class="app__signInContainer">
@@ -68,13 +68,27 @@ async function signIn(mfaCode?: string)
 
     if (response.success)
     {
-        await setData();
-        await vaultManager.init();
+        if (response.value?.FailedMFA)
+        {
+            if (mfaIsShowing.value)
+            {
+                mfaView.value.invalidate('Incorrect code, please try again');
+                return;
+            }
 
-        isSignedIn.value = true;
-
-        email.value = '';
-        masterKey.value = '';
+            mfaIsShowing.value = true;
+        }
+        else
+        {
+            await setData();
+            await vaultManager.init();
+    
+            mfaIsShowing.value = false;
+            isSignedIn.value = true;
+    
+            email.value = '';
+            masterKey.value = '';
+        }
     }
     else 
     {
@@ -91,6 +105,16 @@ async function signIn(mfaCode?: string)
             }
 
             mfaIsShowing.value = true;
+        }
+        else if (response.value?.UnknownEmail)
+        {
+            mfaIsShowing.value = false;
+            app.popups.showAlert("Unable to sign in", "The Email you entered is not correct. Please try again", false);
+        }
+        else if (response.value?.RestartOpaqueProtocol)
+        {
+            mfaIsShowing.value = false;
+            app.popups.showAlert("Unable to sign in", "Please check your Email and Master Key, and try again", false);
         }
         else
         {
@@ -196,6 +220,9 @@ onMounted(async() =>
     gap: 10px;
     transition: 0.3s;
     overflow: hidden;
+    font-family: Avenir, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .app__signInContent {
@@ -205,6 +232,11 @@ onMounted(async() =>
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
+}
+
+.app.mfaIsShowing {
+    width: 600px;
+    height: 400px;
 }
 
 .app.isSignedIn {

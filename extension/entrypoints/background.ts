@@ -20,6 +20,7 @@ import { api } from "@/lib/renderer/API";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { LogUserInResponse } from "@vaultic/shared/Types/Responses";
 import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
+import { RandomValueType } from "@vaultic/shared/Types/Fields";
 
 export default defineBackground(() => 
 {
@@ -81,6 +82,8 @@ export default defineBackground(() =>
         });
         isInitialized = true;
     });
+
+    let temporaryPassword: { domain: string, password: string } | undefined = undefined;
 
     browser.runtime.onMessage.addListener((message, sender, sendResponse) => 
     {
@@ -168,10 +171,11 @@ export default defineBackground(() =>
                                     OH.forEachKey(app.currentVault.passwordsByDomain![domain], (password: string) => 
                                     {
                                         console.log(`Password: ${password}, Passwords By ID: ${JSON.stringify(app.currentVault.passwordStore.passwordsByID)}`);
-                                        const tempPassword: { email?: string, id?: string } = { email: undefined, id: undefined};
+                                        const tempPassword: { username?: string, id?: string, passwordFor?: string } = { username: undefined, id: undefined, passwordFor: undefined};
 
                                         tempPassword.id = password;
-                                        tempPassword.email = app.currentVault.passwordStore.passwordsByID[password].e;
+                                        tempPassword.username = app.currentVault.passwordStore.passwordsByID[password].l;
+                                        tempPassword.passwordFor = app.currentVault.passwordStore.passwordsByID[password].f;
 
                                         response.push(tempPassword);
                                     });
@@ -243,6 +247,37 @@ export default defineBackground(() =>
                         response = await app.vaultDataBreaches.dismissVaultDataBreach(message.vaultDataBreachID);
                         break;
 
+                    case RuntimeMessages.GeneratePassword:
+                        // Generate a random password with default parameters
+                        // RandomValueType.Password, length 16, include numbers, include special chars, exclude ambiguous chars
+                        response = generatorUtility.generateRandomPasswordOrPassphrase(
+                            RandomValueType.Password,
+                            message.length || 16,
+                            message.includeNumbers !== undefined ? message.includeNumbers : true,
+                            message.includeSpecialCharacters !== undefined ? message.includeSpecialCharacters : true,
+                            message.includeAmbiguousCharacters !== undefined ? message.includeAmbiguousCharacters : false,
+                            ''
+                        );
+                        break;
+
+                    case RuntimeMessages.SetTemporaryPassword:
+                        temporaryPassword = { domain: message.domain, password: message.password };
+                        break;
+                    
+                    case RuntimeMessages.GetTemporaryPassword:
+                        response = temporaryPassword;
+                        break;
+
+                    case RuntimeMessages.ClearTemporaryPassword:
+                        temporaryPassword = undefined;
+                        break;
+
+                    case RuntimeMessages.SaveTemporaryPassword:
+                        if (temporaryPassword)
+                        {
+                            //response = await app.currentVault.passwordStore.addPassword(message.masterKey, temporaryPassword.password, [], []);
+                        }
+                        break;
                     default:
                         console.warn(`Unknown message type: ${message.type}`);
                         response = { success: false, error: 'Unknown message type' };

@@ -33,6 +33,12 @@ export enum RuntimeMessages
     ToggleFilter = "TOGGLE_FILTER",
 
     DismissVaultDataBreach = "DISMISS_VAULT_DATA_BREACH",
+    
+    GeneratePassword = "GENERATE_PASSWORD",
+    SetTemporaryPassword = "SET_TEMPORARY_PASSWORD",
+    GetTemporaryPassword = "GET_TEMPORARY_PASSWORD",
+    SaveTemporaryPassword = "SAVE_TEMPORARY_PASSWORD",
+    ClearTemporaryPassword = "CLEAR_TEMPORARY_PASSWORD",
 };
 
-export type PasswordByDomainResponse = { email?: string, id?: string }[];
+export type PasswordByDomainResponse = { username?: string, passwordFor?: string, id?: string }[];

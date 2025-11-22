@@ -70,6 +70,7 @@ function lock()
 
 async function sync()
 {
+    app.popups.showLoadingIndicator(primaryColor.value, "Syncing");
     const success = await browser.runtime.sendMessage({ type: RuntimeMessages.Sync });
     if (success)
     {
@@ -79,6 +80,8 @@ async function sync()
     {
         app.popups.showAlert("Unable to Sync", "An unknown error occurred. Please try again.", true);
     }
+
+    app.popups.hideLoadingIndicator();
 }
 
 function showNotifications()
