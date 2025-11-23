@@ -39,6 +39,9 @@ export enum RuntimeMessages
     GetTemporaryPassword = "GET_TEMPORARY_PASSWORD",
     SaveTemporaryPassword = "SAVE_TEMPORARY_PASSWORD",
     ClearTemporaryPassword = "CLEAR_TEMPORARY_PASSWORD",
+
+    GetValidMasterKey = "GET_VALID_MASTER_KEY",
+    SymmetricDecrypt = "SYMMETRIC_DECRYPT",
 };
 
 export type PasswordByDomainResponse = { username?: string, passwordFor?: string, id?: string }[];

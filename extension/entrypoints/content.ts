@@ -80,8 +80,6 @@ async function handlePageChange()
     {
         addAutofillIcon(usernameField, passwordField, passwords);
     }
-    // TODO: if there is just a single username field then that's all we need to autofill right now until the user goes to the
-    // next page but we need to save which username was used in the background.ts so that we can then autofill that one on the next page
     else if (usernameField)
     {
         addAutofillIcon(usernameField, null, passwords);
@@ -699,7 +697,7 @@ function showSaveTemporaryPasswordDialog(temporaryPassword: { domain: string, pa
         {
             yesButton.disabled = false;
             noButton.disabled = false;
-            
+
             message.textContent = "Save failed!";
             yesButton.textContent = "Retry";
             noButton.textContent = "Close";

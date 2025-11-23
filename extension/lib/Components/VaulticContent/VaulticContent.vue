@@ -24,7 +24,6 @@ onMounted(async() =>
     width: 100%;
     height: 90%;
     padding: 0px 10px 10px 10px;
-    overflow: hidden;
 }
 
 .passwordValueTable {

@@ -54,7 +54,7 @@ export default defineBackground(() =>
     let isInitialized = false;
     const initPromise = initializeSqlJs().then(() => {
         environment.init({
-            isTest: false,
+            isTest: true,
             sessionHandler:
             {
                 setSession,
@@ -89,8 +89,11 @@ export default defineBackground(() =>
 
     browser.runtime.onMessage.addListener((message, sender, sendResponse) => 
     {
-        // TOOD: verify sender is from the extension
-        console.log(`Message received: ${message.type}, from: ${JSON.stringify(sender)}`);
+        if (sender.id !== browser.runtime.id) 
+        {
+            console.log(`Ids do not match. Sender ID: ${sender.id}, Browser ID: ${browser.runtime.id}`);
+            return;
+        }
         
         // Handle async processing
         (async () => {
@@ -146,7 +149,7 @@ export default defineBackground(() =>
                         response = 
                         {
                             failedToLoadDataBreaches: app.vaultDataBreaches.failedToLoadDataBreaches,
-                            loadedDataBreaches: app.vaultDataBreaches.loadedDataBreaches,
+                            loadedDataBreaches: app.vaultDataBreaches.loadedDataBreaches || !app.canShowSubscriptionWidgets.value,
                             state: JSON.stringify(app.vaultDataBreaches.getState())
                         }
                         break;
@@ -305,6 +308,15 @@ export default defineBackground(() =>
                             }
                         }
                         break;
+                    
+                    case RuntimeMessages.GetValidMasterKey:
+                        response = await getMasterKey();
+                        break;
+
+                    case RuntimeMessages.SymmetricDecrypt:
+                        response = await environment.utilities.crypt.symmetricDecrypt(message.masterKey, message.encryptedValue);
+                        break;
+
                     default:
                         console.warn(`Unknown message type: ${message.type}`);
                         response = { success: false, error: 'Unknown message type' };
