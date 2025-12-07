@@ -32,7 +32,7 @@
         </VaulticFieldset>
         <VaulticFieldset :centered="true" :fillSpace="true" :static="true">
             <TextAreaInputField class="valueView__additionalInfo valueView__inputField" :colorModel="colorModel" :label="'Additional Information'"
-                v-model="valuesState.additionalInformation" :width="'50%'" :height="''" :maxHeight="''"
+                v-model="valuesState.a" :width="'50%'" :height="''" :maxHeight="''"
                 :minWidth="'216px'" :minHeight="''" :maxWidth="''" />
         </VaulticFieldset>
     </ObjectView>

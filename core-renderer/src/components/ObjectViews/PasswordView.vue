@@ -25,7 +25,7 @@
         </VaulticFieldset>
         <VaulticFieldset :fillSpace="true" :static="true">
             <TextAreaInputField class="passwordView__additionalInformation passwordView__inputField" :colorModel="colorModel"
-                :label="'Additional Information'" v-model="passwordState.additionalInformation" :width="'50%'"
+                :label="'Additional Information'" v-model="passwordState.a" :width="'50%'"
                 :height="''" :minWidth="'216px'" :minHeight="''" :maxHeight="''" :maxWidth="''" />
             <VaulticTable ref="tableRef" id="passwordView__table" :color="color" :columns="tableColumns" 
                 :headerTabs="headerTabs" :dataSources="tableDataSources" :emptyMessage="emptyMessage" :allowPinning="false" :allowSearching="false"
