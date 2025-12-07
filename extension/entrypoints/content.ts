@@ -1,6 +1,37 @@
 import { PasswordByDomainResponse, RuntimeMessages } from "@/lib/Types/RuntimeMessages";
 import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 
+type BrowserWindow = Window & typeof globalThis;
+
+function isIframeWindow(targetWindow: BrowserWindow | null | undefined = window): boolean
+{
+    if (!targetWindow)
+    {
+        return false;
+    }
+
+    try
+    {
+        return targetWindow.self !== targetWindow.top;
+    }
+    catch
+    {
+        // Accessing window.top on cross-origin frames can throw.
+        return true;
+    }
+}
+
+function isElementInsideIframe(element: Element | null): boolean
+{
+    if (!element)
+    {
+        return false;
+    }
+
+    const elementWindow = element.ownerDocument?.defaultView as BrowserWindow | null;
+    return isIframeWindow(elementWindow ?? undefined);
+}
+
 export default defineContentScript({
     matches: [
       '*://*/*',
@@ -20,6 +51,12 @@ function getDomain()
   
 async function handlePageChange() 
 {
+    if (isIframeWindow())
+    {
+        console.log('Vaultic: ignoring iframe context for autofill');
+        return;
+    }
+
     const response = await browser.runtime.sendMessage({ type: RuntimeMessages.IsSignedIn });
     if (!response)
     {
@@ -44,6 +81,12 @@ async function handlePageChange()
         form.querySelector('form input[type="text"], form input[autocomplete*="username" i]');
 
     let passwordField = document.querySelector('form input[type="password"], form input[autocomplete*="current-password" i]');
+
+    if (isElementInsideIframe(usernameField) || isElementInsideIframe(passwordField))
+    {
+        console.log('Vaultic: skipping fields located inside iframe');
+        return;
+    }
 
     if (!usernameField || !passwordField)
     {

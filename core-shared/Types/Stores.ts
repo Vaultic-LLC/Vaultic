@@ -105,14 +105,14 @@ export class PendingStoreState<T extends StoreState, U extends StateKeys>
     state: T;
     retriever: StorePathRetriever<U>;
     changes: { [key: string]: PathChange[] };
-    objProxyChanges: Map<string, string[]>;
+    objProxyChanges: { [key:string]: string[] };
 
     constructor(state: T, pathRetriever: StorePathRetriever<U>)
     {
         this.state = state;
         this.retriever = pathRetriever;
         this.changes = {};
-        this.objProxyChanges = new Map();
+        this.objProxyChanges = {};
     }
 
     getObject(identifier: keyof U, ...ids: string[])
@@ -167,7 +167,7 @@ export class PendingStoreState<T extends StoreState, U extends StateKeys>
     commitProxyObject(identifier: keyof U, updatedObj: any, ...ids: string[])
     {
         const path = this.retriever[identifier](...ids);
-        const proxyChanges = this.objProxyChanges.get(path);
+        const proxyChanges = this.objProxyChanges[path];
 
         if (!proxyChanges || proxyChanges.length == 0)
         {
@@ -282,15 +282,15 @@ export class PendingStoreState<T extends StoreState, U extends StateKeys>
 
     private onObjPropertySet(path: string, prop: string)
     {
-        if (!this.objProxyChanges.has(path))
+        if (!this.objProxyChanges[path])
         {
-            this.objProxyChanges.set(path, []);
+            this.objProxyChanges[path] = [];
         }
 
-        const changes = this.objProxyChanges.get(path);
+        const changes = this.objProxyChanges[path];
         if (changes?.indexOf(prop) == -1)
         {
-            this.objProxyChanges.get(path)?.push(prop);
+            this.objProxyChanges[path]?.push(prop);
         }
 
         return true;

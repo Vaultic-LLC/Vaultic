@@ -67,6 +67,26 @@ export class Store<T extends StoreState, K extends StateKeys, U extends string =
         return new PendingStoreState(state, this.retriever);
     }
 
+    /**
+     * Passing a pending store state through the browser message does a json stringify / parse which breaks since 
+     * functions can't be serialized. This will reconstruct the pending store state with all the same values
+     * @param pendingStoreState 
+     * @returns 
+     */
+    public reconstructPendingStoreState(pendingStoreState: PendingStoreState<T, K>): PendingStoreState<T, K> | undefined
+    {
+        if (!this.retriever)
+        {
+            return;
+        }
+
+        const newState = new PendingStoreState(pendingStoreState.state, this.retriever);
+        newState.changes = pendingStoreState.changes;
+        newState.objProxyChanges = pendingStoreState.objProxyChanges;
+
+        return newState;
+    }
+
     protected defaultState(): T
     {
         return {} as T;

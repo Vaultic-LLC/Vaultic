@@ -22,6 +22,8 @@ import { LogUserInResponse } from "@vaultic/shared/Types/Responses";
 import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
 import { RandomValueType } from "@vaultic/shared/Types/Fields";
 import { defaultPassword, Password } from '@/lib/renderer/Types/DataTypes';
+import { PendingStoreState } from '@vaultic/shared/Types/Stores';
+import { IPasswordStoreState, PasswordStoreStateKeys } from '@/lib/renderer/Objects/Stores/PasswordStore';
 
 export default defineBackground(() => 
 {
@@ -91,7 +93,7 @@ export default defineBackground(() =>
     {
         if (sender.id !== browser.runtime.id) 
         {
-            console.log(`Ids do not match. Sender ID: ${sender.id}, Browser ID: ${browser.runtime.id}`);
+            console.log(`Ids do not match.`);
             return;
         }
         
@@ -210,11 +212,13 @@ export default defineBackground(() =>
                         break;
 
                     case RuntimeMessages.AddPassword:
-                        response = await app.currentVault.passwordStore.addPassword(await getMasterKey(), message.password, message.addedSecurityQuestions, message.pendingPasswordStoreState);
+                        const addPasswordPendingStoreState = app.currentVault.passwordStore.reconstructPendingStoreState(message.pendingPasswordStoreState)!;
+                        response = await app.currentVault.passwordStore.addPassword(await getMasterKey(), message.password, message.addedSecurityQuestions, addPasswordPendingStoreState);
                         break;
                     
                     case RuntimeMessages.UpdatePassword:
-                        response = await app.currentVault.passwordStore.updatePassword(await getMasterKey(), message.updatingPassword, message.passwordWasUpdated, message.addedSecurityQuestions, message.updatedSecurityQuestionQuestions, message.updatedSecurityQuestionAnswers, message.deletedSecurityQuestions, message.addingGroups, message.pendingPasswordState);
+                        const updatePasswordPendingStoreState = app.currentVault.passwordStore.reconstructPendingStoreState(message.pendingPasswordState)!;
+                        response = await app.currentVault.passwordStore.updatePassword(await getMasterKey(), message.updatingPassword, message.passwordWasUpdated, message.addedSecurityQuestions, message.updatedSecurityQuestionQuestions, message.updatedSecurityQuestionAnswers, message.deletedSecurityQuestions, message.addingGroups, updatePasswordPendingStoreState);
                         break;
                     
                     case RuntimeMessages.DeletePassword:
@@ -222,11 +226,13 @@ export default defineBackground(() =>
                         break;
 
                     case RuntimeMessages.AddValue:
-                        response = await app.currentVault.valueStore.addNameValuePair(await getMasterKey(), message.value, message.pendingValueStoreState);
+                        const addValuePendingStoreState = app.currentVault.valueStore.reconstructPendingStoreState(message.pendingValueStoreState)!;
+                        response = await app.currentVault.valueStore.addNameValuePair(await getMasterKey(), message.value, addValuePendingStoreState);
                         break;
                     
                     case RuntimeMessages.UpdateValue:
-                        response = await app.currentVault.valueStore.updateNameValuePair(await getMasterKey(), message.updatedValue, message.valueWasUpdated, message.groups, message.pendingValueStoreState);
+                        const updateValuePendingStoreState = app.currentVault.valueStore.reconstructPendingStoreState(message.pendingValueStoreState)!;
+                        response = await app.currentVault.valueStore.updateNameValuePair(await getMasterKey(), message.updatedValue, message.valueWasUpdated, message.groups, updateValuePendingStoreState);
                         break;
 
                     case RuntimeMessages.DeleteValue:
@@ -234,11 +240,13 @@ export default defineBackground(() =>
                         break;
                     
                     case RuntimeMessages.AddFilter:
-                        response = await app.currentVault.filterStore.addFilter(await getMasterKey(), message.filter, message.pendingFilterState);
+                        const addFilterPendingStoreState = app.currentVault.filterStore.reconstructPendingStoreState(message.pendingFilterState)!;
+                        response = await app.currentVault.filterStore.addFilter(await getMasterKey(), message.filter, addFilterPendingStoreState);
                         break;
 
                     case RuntimeMessages.UpdateFilter:
-                        response = await app.currentVault.filterStore.updateFilter(await getMasterKey(), message.updatedFilter, message.addedConditions, message.removedConditions, message.pendingFilterState);
+                        const updateFilterPendingStoreState = app.currentVault.filterStore.reconstructPendingStoreState(message.pendingFilterState)!;
+                        response = await app.currentVault.filterStore.updateFilter(await getMasterKey(), message.updatedFilter, message.addedConditions, message.removedConditions, updateFilterPendingStoreState);
                         break;
                     
                     case RuntimeMessages.DeleteFilter:
@@ -246,11 +254,13 @@ export default defineBackground(() =>
                         break;
 
                     case RuntimeMessages.AddGroup:
-                        response = await app.currentVault.groupStore.addGroup(await getMasterKey(), message.group, message.pendingStoreState);
+                        const addGroupPendingStoreState = app.currentVault.groupStore.reconstructPendingStoreState(message.pendingStoreState)!;
+                        response = await app.currentVault.groupStore.addGroup(await getMasterKey(), message.group, addGroupPendingStoreState);
                         break;
                     
                     case RuntimeMessages.UpdateGroup:
-                        response = await app.currentVault.groupStore.updateGroup(await getMasterKey(), message.updatedGroup, message.updatePrimaryObjects, message.pendingGroupStoreState);
+                        const updateGroupPendingStoreState = app.currentVault.groupStore.reconstructPendingStoreState(message.pendingGroupStoreState)!;
+                        response = await app.currentVault.groupStore.updateGroup(await getMasterKey(), message.updatedGroup, message.updatePrimaryObjects, updateGroupPendingStoreState);
                         break;
 
                     case RuntimeMessages.DeleteGroup:
