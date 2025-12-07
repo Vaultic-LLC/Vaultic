@@ -1,52 +1,26 @@
 import { createApp } from 'vue';
 import './style.css';
 import App from './App.vue';
-import { environment } from '../../lib/Main/Environment';
-import { coreAPIResolver } from '../../lib/Main/CoreAPIResolver';
-import * as rendererAPI from '../../lib/Renderer/API';
-import { CryptUtility } from '../../lib/Utilities/CryptUtility';
-import { HashUtility } from '@/lib/Utilities/HashUtility';
-import { DataUtility } from '@/lib/Utilities/DataUtility';
-import { DeviceInfo } from '@vaultic/shared/Types/Device';
-import { CVaulticHelper } from '@/lib/Helpers/VaulticHelper';
-import { createDataSource, deleteDatabase } from '@/lib/Helpers/DatabaseHelper';
-import { generatorUtility, PromisifyGeneratorUtility } from '@/lib/Utilities/GeneratorUtility';
+import PrimeVue from 'primevue/config';
+import Aura from '@primeuix/themes/aura';
+import ConfirmationService from 'primevue/confirmationservice';
+import appStore from '@/lib/renderer/Objects/Stores/AppStore';
+import setupStoreModifyBridges from '@/lib/Helpers/StoreModifyBridgeHelper';
+import setExtensionAPI from '@/lib/Helpers/ExtensionAPI';
 
-let currentSession: string = "";
-async function setSession(tokenHash: string): Promise<void>
-{
-    currentSession = tokenHash;
-}
-
-async function getSession(): Promise<string>
-{
-    return currentSession;
-}
-
-environment.init({
-    isTest: false,
-    sessionHandler:
-    {
-        setSession,
-        getSession
-    },
-    utilities:
-    {
-        crypt: new CryptUtility(),
-        hash: new HashUtility(),
-        generator: generatorUtility,
-        data: new DataUtility()
-    },
-    database:
-    {
-        createDataSource,
-        deleteDatabase
-    },
-    getDeviceInfo: () => ({} as DeviceInfo),
-    hasConnection: () => Promise.resolve(true)
+const app = createApp(App);
+app.use(PrimeVue, {
+    theme: {
+        preset: Aura,
+        options: {
+            darkModeSelector: '.darkMode',
+        }
+    }
 });
 
-const apiResolver = coreAPIResolver.toPlatformDependentAPIResolver(() => Promise.resolve({} as DeviceInfo), new CVaulticHelper(), new PromisifyGeneratorUtility());
+appStore.popups.hideAccountSetup();
+setupStoreModifyBridges();
+setExtensionAPI();
 
-rendererAPI.api.setAPIResolver(apiResolver);
-createApp(App).mount('#app');
+app.use(ConfirmationService);
+app.mount('#app');

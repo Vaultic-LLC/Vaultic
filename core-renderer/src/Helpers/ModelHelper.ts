@@ -318,14 +318,14 @@ export function getPasswordValueTableRowModels<T extends IPrimaryDataObject>(col
     }
 }
 
-export function getEmptyTableMessage(dataName: string)
+export function getEmptyTableMessage(dataName: string, addSuggestion: boolean = true)
 {
-    return `You currently don't have any ${dataName}. Click '+' to add one`
+    return `You currently don't have any ${dataName}. ${addSuggestion ? "Click '+' to add one" : ""}`
 }
 
-export function getNoValuesApplyToFilterMessage(dataName: string)
+export function getNoValuesApplyToFilterMessage(dataName: string, addSuggestion: boolean = true)
 {
-    return `There are no ${dataName} that apply to all active filters. Please try deactivating some filters or add more ${dataName}`
+    return `There are no ${dataName} that apply to all active filters. Please try deactivating some filters ${addSuggestion ? "or add more " + dataName : ""}`
 }
 
 export function getObjectPopupEmptyTableMessage(emptyDataName: string, currentDataName: string, tab: string, creating: boolean)

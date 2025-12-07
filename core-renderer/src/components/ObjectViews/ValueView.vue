@@ -2,7 +2,7 @@
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition" :hideButtons="readOnly" :isSensitive="true">
         <VaulticFieldset :centered="true">
-            <TextInputField class="valueView__name" :color="color" :label="'Name'" v-model="valuesState.n" :width="'50%'"
+            <TextInputField class="valueView__name valueView__inputField" :color="color" :label="'Name'" v-model="valuesState.n" :width="'50%'"
                 :maxWidth="''" />
         </VaulticFieldset>
         <VaulticFieldset :centered="true">
@@ -22,16 +22,16 @@
             </div>
         </VaulticFieldset>
         <VaulticFieldset :centered="true">
-            <EncryptedInputField ref="valueInputField" class="valueView__value" :colorModel="colorModel" :label="'Value'"
+            <EncryptedInputField ref="valueInputField" class="valueView__value valueView__inputField" :colorModel="colorModel" :label="'Value'"
                 v-model="valuesState.v" :isInitiallyEncrypted="isInitiallyEncrypted"
                 :showUnlock="true" :showCopy="true" :showRandom="showRandom" :randomValueType="randomValueType"
                 :required="true" :width="'50%'" :maxWidth="''" :minWidth="'150px'" @onDirty="valueIsDirty = true"  />
         </VaulticFieldset>
         <VaulticFieldset :centered="true">
-            <ObjectMultiSelect :label="'Groups'" :color="color" v-model="selectedGroups" :options="groupOptions" :width="'50%'" :maxWidth="''" />
+            <ObjectMultiSelect :label="'Groups'" class="valueView__inputField" :color="color" v-model="selectedGroups" :options="groupOptions" :width="'50%'" :maxWidth="''" />
         </VaulticFieldset>
         <VaulticFieldset :centered="true" :fillSpace="true" :static="true">
-            <TextAreaInputField class="valueView__additionalInfo" :colorModel="colorModel" :label="'Additional Information'"
+            <TextAreaInputField class="valueView__additionalInfo valueView__inputField" :colorModel="colorModel" :label="'Additional Information'"
                 v-model="valuesState.additionalInformation" :width="'50%'" :height="''" :maxHeight="''"
                 :minWidth="'216px'" :minHeight="''" :maxWidth="''" />
         </VaulticFieldset>
@@ -313,5 +313,20 @@ export default defineComponent({
     align-items: start;
     flex-direction: column;
     row-gap: clamp(3px, 0.5vw, 10px);
+}
+
+.valueView__inputField {
+    width: 50% !important;
+}
+
+@media (max-width: 850px) {
+    .valueView__inputField,
+    .valueView__valueTypeContainer {
+        width: 100% !important;
+    }
+
+    .valueView__additionalInfo {
+        min-height: 300px !important;
+    }
 }
 </style>

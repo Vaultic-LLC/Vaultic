@@ -1,0 +1,56 @@
+<template>
+    <div class="vaultDropDownContainer">
+      <ObjectSingleSelect :label="'Vault'" :color="color" v-model="selectedVault"
+          :options="vaults" :width="'100%'" :minWidth="''" :maxWidth="''" :height="'100%'" :minHeight="''" :maxHeight="''" @update:model-value="onVaultSelected" />
+    </div>
+  </template>
+
+<script lang="ts" setup>
+import { RuntimeMessages } from '../../Types/RuntimeMessages';
+import syncManager from '../../Utilities/SyncManager';
+
+import ObjectSingleSelect from '../../renderer/components/InputFields/ObjectSingleSelect.vue';
+import { ObjectSelectOptionModel } from '../../renderer/Types/Models';
+import { DisplayVault } from '@vaultic/shared/Types/Entities';
+import app from '../../renderer/Objects/Stores/AppStore';
+import vaultManager from '@/lib/Utilities/VaultManager';
+
+const selectedVault: Ref<ObjectSelectOptionModel | null> = ref(null);
+const vaults: Ref<ObjectSelectOptionModel[]> = ref([]);
+
+const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
+
+async function setVaults(): Promise<void>
+{
+    vaults.value = (await browser.runtime.sendMessage({ 
+        type: RuntimeMessages.GetVaults,
+    }) as DisplayVault[]).map(v => ({
+        id: v.vaultID.toString(),
+        label: v.name,
+        backingObject: v
+    })) ?? [];
+
+    selectedVault.value = vaults.value.find(v => v.backingObject?.vaultID == vaultManager.currentVault!.vaultID) ?? null;
+}
+
+async function onVaultSelected(model: ObjectSelectOptionModel)
+{
+    await vaultManager.loadVault(model.backingObject?.userVaultID ?? 0);
+    selectedVault.value = model;
+}
+
+onMounted(async() => 
+{
+    setVaults();
+    syncManager.addAfterSyncCallback(1, setVaults);
+});
+
+</script>
+
+<style scoped>
+.vaultDropDownContainer {
+    width: 175px;
+    height: 35px
+}
+
+</style>

@@ -1,6 +1,6 @@
 <template>
     <div class="unknownResponsePopup">
-        <ObjectPopup :preventClose="true" :height="'20%'" :width="'30%'" :minWidth="'300px'" :minHeight="'200px'"
+        <ObjectPopup :preventClose="true" :height="'20%'" :width="'30%'" :minWidth="'240px'" :minHeight="'200px'"
             :closePopup="onOk">
             <div class="unknownResponsePopup__content">
                 <div class="unknownResponsePopup__title">
@@ -9,7 +9,7 @@
                 <div class="unknownResponsePopup__body">
                     <div>
                         {{ computedMessage }}
-                        <ButtonLink v-if="showContactSupport" :color="primaryColor" :text="'Contact Support'" @onClick="contactSupport" />
+                        <ButtonLink v-if="showContactSupport" :fontSize="'clamp(10px, 1vw, 20px)'" :color="primaryColor" :text="'Contact Support'" @onClick="contactSupport" />
                     </div>
                 </div>
                 <div class="unknownResponsePopup__buttons">

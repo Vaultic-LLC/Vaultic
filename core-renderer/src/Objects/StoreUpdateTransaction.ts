@@ -3,7 +3,7 @@ import { TypedMethodResponse } from "@vaultic/shared/Types/MethodResponse";
 import { api } from "../API";
 import { defaultHandleFailedResponse } from "../Helpers/ResponseHelper";
 import { Store, StoreEvents } from "./Stores/Base";
-import { PendingStoreState, StateKeys, StoreState } from "@vaultic/shared/Types/Stores";
+import { ModifyBridge, PendingStoreState, StateKeys, StoreState } from "@vaultic/shared/Types/Stores";
 import app from "./Stores/AppStore";
 
 export enum Entity
@@ -15,7 +15,7 @@ export enum Entity
 
 interface StoreUpdateState
 {
-    store: Store<StoreState, StateKeys>;
+    store: Store<StoreState, StateKeys, StoreEvents, ModifyBridge | undefined>;
     pendingState: PendingStoreState<StoreState, StateKeys>;
     postSave?: () => void;
 }
@@ -41,7 +41,7 @@ export default class StoreUpdateTransaction
 
     private addStore(
         updateStoreStates: Dictionary<StoreUpdateState>,
-        store: Store<any, StateKeys, StoreEvents>,
+        store: Store<any, StateKeys, StoreEvents, ModifyBridge | undefined>,
         pendingState: PendingStoreState<StoreState, StateKeys>,
         postSave: ((() => void) | undefined) = undefined)
     {
@@ -58,17 +58,17 @@ export default class StoreUpdateTransaction
         };
     }
 
-    updateUserStore(store: Store<any, StateKeys, StoreEvents>, pendingState: PendingStoreState<StoreState, StateKeys>, postSave: ((() => void) | undefined) = undefined)
+    updateUserStore(store: Store<any, StateKeys, StoreEvents, ModifyBridge | undefined>, pendingState: PendingStoreState<StoreState, StateKeys>, postSave: ((() => void) | undefined) = undefined)
     {
         this.addStore(this.userStoreUpdateStates, store, pendingState, postSave);
     }
 
-    updateUserVaultStore(store: Store<any, StateKeys, StoreEvents>, pendingState: PendingStoreState<StoreState, StateKeys>, postSave: ((() => void) | undefined) = undefined)
+    updateUserVaultStore(store: Store<any, StateKeys, StoreEvents, ModifyBridge | undefined>, pendingState: PendingStoreState<StoreState, StateKeys>, postSave: ((() => void) | undefined) = undefined)
     {
         this.addStore(this.userVaultStoreUpdateStates, store, pendingState, postSave);
     }
 
-    updateVaultStore(store: Store<any, StateKeys, StoreEvents>, pendingState: PendingStoreState<StoreState, StateKeys>, postSave: ((() => void) | undefined) = undefined)
+    updateVaultStore(store: Store<any, StateKeys, StoreEvents, ModifyBridge | undefined>, pendingState: PendingStoreState<StoreState, StateKeys>, postSave: ((() => void) | undefined) = undefined)
     {
         this.addStore(this.vaultStoreUpdateStates, store, pendingState, postSave);
     }

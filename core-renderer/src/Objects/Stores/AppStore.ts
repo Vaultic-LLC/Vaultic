@@ -125,6 +125,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
 
     private internalIsSyncing: Ref<boolean>;
     private internalForceReadOnly: Ref<boolean>;
+    private internalIsBrowserExtension: Ref<boolean>;
 
     private internalProcessIsRunning: boolean;
 
@@ -163,6 +164,8 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
     set isSyncingVal(val: boolean) { this.internalIsSyncing.value = val; }
     get forceReadOnly() { return this.internalForceReadOnly; }
     set forceReadOnlyVal(val: boolean) { this.internalForceReadOnly.value = val; }
+    get isBrowserExtension() { return this.internalIsBrowserExtension.value; }
+    set isBrowserExtension(val: boolean) { this.internalIsBrowserExtension.value = val; }
 
     constructor()
     {
@@ -221,6 +224,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
 
         this.internalIsSyncing = ref(false);
         this.internalForceReadOnly = ref(false);
+        this.internalIsBrowserExtension = ref(false);
 
         this.internalProcessIsRunning = false;
     }
@@ -230,7 +234,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
         return defaultAppStoreState();
     }
 
-    private calcAutolockTime(time: AutoLockTime): number
+    public calcAutolockTime(time: AutoLockTime): number
     {
         switch (time)
         {
@@ -255,6 +259,11 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
     {
         hideAll();
 
+        // All of these should always be false for the browser extension
+        redirect = redirect && !this.isBrowserExtension;
+        expireSession = expireSession && !this.isBrowserExtension;
+        syncData = syncData && !this.isBrowserExtension;
+
         if (redirect)
         {
             this.internalPopupStore.showAccountSetup(AccountSetupView.SignIn, undefined, undefined, false);
@@ -278,7 +287,8 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
         }
         else
         {
-            await api.cache.clear();
+            // need ? for extension since api is undefined
+            await api?.cache?.clear();
         }
 
         if (expireSession && this.isOnline === true)
@@ -299,6 +309,11 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
         clearTimeout(this.autoLockTimeoutID);
         this.autoLockTimeoutID = setTimeout(() =>
         {
+            if (this.isBrowserExtension)
+            {
+                return;
+            }
+
             if (this.internalProcessIsRunning)
             {
                 this.autoLockTimeoutID = undefined;
@@ -604,6 +619,12 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
         const loadResult = await this.internalLoadUserData(masterKey, secondLoad);
         this.popups.finishSyncingPopup();
         this.internalIsSyncing.value = false;
+
+        if (loadResult && app.canShowSubscriptionWidgets.value)
+        {
+            // TODO: test to make sure this isn't causing any slowness with syncing
+            await app.vaultDataBreaches.getVaultDataBreaches();
+        }
 
         return loadResult;
     }

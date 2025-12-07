@@ -35,7 +35,8 @@ export default defineComponent({
         const computedHeight: ComputedRef<string> = computed(() => props.height ? props.height : "20px");
         const computedMinHeight: ComputedRef<string> = computed(() => props.minHeight ?? "5px");
         const computedMaxHeight: ComputedRef<string> = computed(() => props.maxHeight ?? "20px");
-        const computedFontSize: ComputedRef<string> = computed(() => props.fontSize ? props.fontSize : "clamp(10px, 1vh, 20px)")
+        const computedFontSize: ComputedRef<string> = computed(() => props.fontSize ? props.fontSize : "clamp(10px, 1vh, 20px)");
+        const checkboxInputWidth: ComputedRef<string> = computed(() => `clamp(${computedMinHeight.value}, ${computedHeight.value}, ${computedMaxHeight.value})`);
 
         function onClick()
         {
@@ -62,6 +63,7 @@ export default defineComponent({
             computedMinHeight,
             computedMaxHeight,
             computedFontSize,
+            checkboxInputWidth,
             backgroundColor,
             onClick
         }
@@ -90,7 +92,7 @@ export default defineComponent({
 :deep(.checkboxInputContainer__checkbox) {
     height: 100% !important;
     aspect-ratio: 1 / 1 !important;
-    width: auto !important;
+    width: v-bind(checkboxInputWidth) !important;
 }
 
 :deep(.checkboxInputContainer__icon) {

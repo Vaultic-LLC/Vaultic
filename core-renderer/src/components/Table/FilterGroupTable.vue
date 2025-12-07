@@ -12,16 +12,14 @@
         </VaulticTable>
         <Teleport to="#body">
             <Transition name="fade">
-                <ObjectPopup v-if="showEditGroupPopup" :closePopup="onEditGroupPopupClosed" :minWidth="'800px'"
-                    :minHeight="'480px'">
+                <ObjectPopup v-if="showEditGroupPopup" :closePopup="onEditGroupPopupClosed">
                     <EditGroupPopup :model="currentlyEditingGroupModel" />
                 </ObjectPopup>
             </Transition>
         </Teleport>
         <Teleport to="#body">
             <Transition name="fade">
-                <ObjectPopup v-if="showEditFilterPopup" :closePopup="onEditFilterPopupClosed" :minWidth="'800px'"
-                    :minHeight="'480px'">
+                <ObjectPopup v-if="showEditFilterPopup" :closePopup="onEditFilterPopupClosed">
                     <EditFilterPopup :model="currentlyEditingFilterModel" />
                 </ObjectPopup>
             </Transition>

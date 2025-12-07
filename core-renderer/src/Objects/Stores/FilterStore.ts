@@ -8,7 +8,7 @@ import { IIdentifiable, PrimaryDataObjectCollection } from "@vaultic/shared/Type
 import { ReactivePassword } from "./ReactivePassword";
 import { ReactiveValue } from "./ReactiveValue";
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
-import { defaultFilterStoreState, DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import { defaultFilterStoreState, DictionaryAsList, DoubleKeyedObject, ModifyBridge, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 import { IPasswordStoreState, PasswordStoreStateKeys } from "./PasswordStore";
 import { IValueStoreState } from "./ValueStore";
@@ -60,7 +60,30 @@ const FilterStorePathRetriever: StorePathRetriever<FilterStoreStateKeys> =
 
 export type FilterStoreEvents = StoreEvents | "onPasswordFilterUpdated" | "onValueFilterUpdated";
 
-export class FilterStore extends SecondaryDataTypeStore<IFilterStoreState, FilterStoreStateKeys, FilterStoreEvents>
+export type AddFilterFunc = (
+    masterKey: string,
+    filter: Filter,
+    pendingFilterState: PendingStoreState<IFilterStoreState, FilterStoreStateKeys>) => Promise<boolean>
+
+export type UpdateFilterFunc = (
+    masterKey: string,
+    updatedFilter: Filter,
+    addedConditions: FilterCondition[],
+    removedConditions: string[],
+    pendingFilterState: PendingStoreState<IFilterStoreState, FilterStoreStateKeys>) => Promise<boolean>
+
+export type DeleteFilterFunc = (
+    masterKey: string,
+    filter: Filter) => Promise<boolean>;
+
+export interface FilterStoreModifyBridge extends ModifyBridge
+{
+    add: AddFilterFunc;
+    update: UpdateFilterFunc;
+    delete: DeleteFilterFunc;
+}
+
+export class FilterStore extends SecondaryDataTypeStore<IFilterStoreState, FilterStoreStateKeys, FilterStoreEvents, FilterStoreModifyBridge>
 {
     constructor(vault: any)
     {
@@ -77,6 +100,11 @@ export class FilterStore extends SecondaryDataTypeStore<IFilterStoreState, Filte
         filter: Filter,
         pendingFilterState: PendingStoreState<IFilterStoreState, FilterStoreStateKeys>): Promise<boolean>
     {
+        if (this.modifyBridge)
+        {
+            return await this.modifyBridge.add(masterKey, filter, pendingFilterState);
+        }
+
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         filter.id = uniqueIDGenerator.generate();
 
@@ -115,6 +143,11 @@ export class FilterStore extends SecondaryDataTypeStore<IFilterStoreState, Filte
         removedConditions: string[],
         pendingFilterState: PendingStoreState<IFilterStoreState, FilterStoreStateKeys>): Promise<boolean>
     {
+        if (this.modifyBridge)
+        {
+            return await this.modifyBridge.update(masterKey, updatedFilter, addedConditions, removedConditions, pendingFilterState);
+        }
+
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
 
         const filterToSync: { [key: string]: Filter } = {};
@@ -169,6 +202,11 @@ export class FilterStore extends SecondaryDataTypeStore<IFilterStoreState, Filte
 
     async deleteFilter(masterKey: string, filter: Filter): Promise<boolean>
     {
+        if (this.modifyBridge)
+        {
+            return await this.modifyBridge.delete(masterKey, filter);
+        }
+
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID, filter.id);
         const pendingState = this.getPendingState()!;
 

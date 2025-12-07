@@ -47,6 +47,7 @@ import app from "../../Objects/Stores/AppStore";
 import { AtRiskType, DataType, Password, VaultAndBreachCount } from '../../Types/DataTypes';
 import { ReactivePassword } from '../../Objects/Stores/ReactivePassword';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
+import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
 
 export default defineComponent({
     name: "BreachedPasswords",
@@ -189,16 +190,17 @@ export default defineComponent({
             }
 
             backingVaultsAndBreachCount = new Map();
-            const rows: TableRowModel[] = [];           
+            const rows: TableRowModel[] = [];
 
-            app.vaultDataBreaches.vaultDataBreachCountByVaultID.forEach((v, k, map) => 
+            OH.forEach(app.vaultDataBreaches.vaultDataBreachCountByVaultID, (k, v) => 
             {
-                const vault = app.userVaultsByVaultID.get(k);
+                const vaultID = Number(k);
+                const vault = app.userVaultsByVaultID.get(vaultID);
                 if (vault)
                 {
                     const vaultAndBreachCount: VaultAndBreachCount = 
                     {
-                        vaultID: k,
+                        vaultID: vaultID,
                         vault: vault.name,
                         breachCount: v
                     }

@@ -64,8 +64,9 @@
         </Teleport>
         <Teleport to="#body">
 			<Transition name="fade">
-				<ObjectPopup v-if="popupStore.addDataTypePopupIsShowing" :minWidth="'800px'" :minHeight="'480px'"
-					:closePopup="popupStore.hideAddDataTypePopup">
+				<ObjectPopup v-if="popupStore.addDataTypePopupIsShowing" :width="isBrowserExtension ? '85%' : undefined" 
+                    :height="isBrowserExtension ? '480px' : ''" :minWidth="''" :minHeight="''" 
+                    :closePopup="popupStore.hideAddDataTypePopup">
 					<AddObjectPopup :initalActiveContent="popupStore.initialAddDataTypePopupContent" />
 				</ObjectPopup>
 			</Transition>
@@ -123,11 +124,19 @@
                 </ObjectPopup>
 			</Transition>
 		</Teleport>
+        <Teleport to="#body">
+			<Transition name="fade">
+                <ObjectPopup v-if="popupStore.notificationPopupIsShowing" :width="isBrowserExtension ? '85%' : undefined" 
+                    :height="isBrowserExtension ? '480px' : ''" :minWidth="''" :minHeight="''" :closePopup="popupStore.hideNotificationPopup">
+                    <NotificationView :notifications="popupStore.notifications" />
+                </ObjectPopup>
+			</Transition>
+		</Teleport>
     </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { computed, ComputedRef, defineComponent } from 'vue';
 
 import LoadingPopup from './Loading/LoadingPopup.vue';
 import AlertPopup from './AlertPopup.vue';
@@ -147,6 +156,7 @@ import DeviceView from './ObjectViews/DeviceView.vue';
 import SyncingPopup from './Loading/SyncingPopup.vue';
 import VerifyEmailView from './Account/VerifyEmailView.vue';
 import DeleteAccountView from './Account/DeleteAccountView.vue';
+import NotificationView from './ObjectViews/NotificationView.vue';
 
 import app from "../Objects/Stores/AppStore";
 import { DataType } from '../Types/DataTypes';
@@ -174,11 +184,15 @@ export default defineComponent({
         SyncingPopup,
         VerifyEmailView,
         DeleteAccountView,
+        NotificationView,
     },
     setup()
     {
+        const isBrowserExtension: ComputedRef<boolean> = computed(() => app.isBrowserExtension);
+
         return {
             popupStore: app.popups,
+            isBrowserExtension,
             PopupNames,
             DataType,
         }
