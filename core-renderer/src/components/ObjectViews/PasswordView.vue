@@ -2,29 +2,29 @@
     <ObjectView :title="'Password'" :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition" :hideButtons="readOnly" :isSensitive="true">
         <VaulticFieldset>
-            <TextInputField class="passwordView__passwordFor" :color="color" :label="'Password For'"
-                v-model="passwordState.f" :width="'50%'" :maxWidth="''" :maxHeight="''" />
-            <TextInputField class="passwordView__username" :color="color" :label="'Username'" v-model="passwordState.l"
+            <TextInputField class="passwordView__passwordFor passwordView__inputField" :color="color" :label="'Password For'"
+                v-model="passwordState.f" :maxWidth="''" :maxHeight="''" />
+            <TextInputField class="passwordView__username passwordView__inputField" :color="color" :label="'Username'" v-model="passwordState.l"
                 :width="'50%'" :maxWidth="''" :maxHeight="''" />
         </VaulticFieldset>
         <VaulticFieldset>
-            <EncryptedInputField ref="passwordInputField" class="passwordView__password" :colorModel="colorModel"
+            <EncryptedInputField ref="passwordInputField" class="passwordView__password passwordView__inputField" :colorModel="colorModel"
                 :label="'Password'" v-model="passwordState.p" :isInitiallyEncrypted="isInitiallyEncrypted" 
                 :showRandom="true" :showUnlock="true" :required="true"
                 showCopy="true" :width="'50%'" :maxWidth="''" :maxHeight="''" @onDirty="passwordIsDirty = true" />
-            <TextInputField class="passwordView__domain" :inputGroupAddon="'www'" :color="color" 
+            <TextInputField class="passwordView__domain passwordView__inputField" :inputGroupAddon="'www'" :color="color" 
                 :label="'Domain'" v-model="passwordState.d" :showToolTip="true" :additionalValidationFunction="validateDomain"
                 :toolTipMessage="'Domain is used to search for Breached Passwords. An example is facebook.com'"
                 :toolTipSize="'clamp(15px, 1vw, 28px)'" :width="'50%'" :maxWidth="''" :maxHeight="''" />
         </VaulticFieldset>
         <VaulticFieldset>
-            <TextInputField ref="emailField" class="passwordView__email" :color="color" :label="'Email'" v-model="passwordState.e"
+            <TextInputField ref="emailField" class="passwordView__email passwordView__inputField" :color="color" :label="'Email'" v-model="passwordState.e"
                 :width="'50%'" :isEmailField="true" :maxWidth="''" :maxHeight="''" />
-            <ObjectMultiSelect :label="'Groups'" :color="color" v-model="selectedGroups" :options="groupOptions" :width="'50%'" 
+            <ObjectMultiSelect :label="'Groups'" class="passwordView__inputField" :color="color" v-model="selectedGroups" :options="groupOptions" :width="'50%'" 
                 :maxWidth="''" :maxHeight="''" />
         </VaulticFieldset>
         <VaulticFieldset :fillSpace="true" :static="true">
-            <TextAreaInputField class="passwordView__additionalInformation" :colorModel="colorModel"
+            <TextAreaInputField class="passwordView__additionalInformation passwordView__inputField" :colorModel="colorModel"
                 :label="'Additional Information'" v-model="passwordState.a" :width="'50%'"
                 :height="''" :minWidth="'216px'" :minHeight="''" :maxHeight="''" :maxWidth="''" />
             <VaulticTable ref="tableRef" id="passwordView__table" :color="color" :columns="tableColumns" 
@@ -463,5 +463,25 @@ export default defineComponent({
     justify-content: center;
     align-items: center;
     column-gap: clamp(10px, 1vw, 25px);
+}
+
+.passwordView__inputField {
+    width: 50% !important;
+}
+
+@media (max-width: 850px) {
+    #passwordView__table {
+        position: relative;
+        width: 100%;
+    }
+
+    .passwordView__additionalInformation {
+        min-height: 300px !important;
+    }
+
+    .passwordView__additionalInformation,
+    .passwordView__inputField {
+        width: 100% !important;
+    }
 }
 </style>

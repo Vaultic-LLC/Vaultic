@@ -1,13 +1,13 @@
 <template>
     <ObjectView :color="groupColor" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition" :hideButtons="readOnly">
-        <TextInputField :label="'Name'" :color="groupColor" v-model="groupState.n"
+        <TextInputField class="groupView__inputField" :label="'Name'" :color="groupColor" v-model="groupState.n"
             :width="'50%'" :maxWidth="''" />
-        <ColorPickerInputField :label="'Color'" :color="groupColor" v-model="groupState.c"
+        <ColorPickerInputField class="groupView__inputField" :label="'Color'" :color="groupColor" v-model="groupState.c"
             :width="'50%'" :minWidth="'125px'" :maxWidth="''" />
-        <ObjectSingleSelect :label="'Icon'" :color="groupColor" v-model="selectedIcon"
+        <ObjectSingleSelect class="groupView__inputField" :label="'Icon'" :color="groupColor" v-model="selectedIcon"
             :options="allIcons" :width="'50%'" :minWidth="'125px'" :maxWidth="''" @update:model-value="onIconSelected" />
-        <ObjectMultiSelect :label="selectLabel" :color="groupColor" v-model="selectedDataObjectOptions" :options="allDataObjectsOptions" 
+        <ObjectMultiSelect class="groupView__inputField" :label="selectLabel" :color="groupColor" v-model="selectedDataObjectOptions" :options="allDataObjectsOptions" 
             :width="'50%'" :maxWidth="''" />
     </ObjectView>
 </template>
@@ -293,5 +293,15 @@ export default defineComponent({
     grid-column: 4 / span 9;
     min-width: 410px;
     min-height: 182px;
+}
+
+.groupView__inputField {
+    width: 50% !important;
+}
+
+@media (max-width: 850px) {
+    .groupView__inputField {
+        width: 100% !important;
+    }
 }
 </style>

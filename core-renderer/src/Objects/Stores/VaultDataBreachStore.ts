@@ -2,49 +2,64 @@ import { Store, StoreEvents } from "./Base";
 import { defaultHandleFailedResponse } from "../../Helpers/ResponseHelper";
 import { api } from "../../API"
 import { VaultDataBreach } from "@vaultic/shared/Types/ClientServerTypes";
-import { ref, Ref } from "vue";
+import { computed, ComputedRef } from "vue";
 import app from "./AppStore";
 import { ReactivePassword } from "./ReactivePassword";
 import { BreachRequestVault } from "@vaultic/shared/Types/DataTypes";
 import { Password } from "../../Types/DataTypes";
-import { StateKeys, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import { ModifyBridge, StateKeys, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
+
+interface VaultDataBreachStoreState extends StoreState
+{
+    vaultDataBreaches: VaultDataBreach[];
+    vaultDataBreachesByPasswordID: { [key: string]: VaultDataBreach };
+    vaultDataBreacheCountByVaultID: { [key: number]: number};
+    failedToLoadDataBreaches: boolean;
+}
 
 type DataBreachStoreEvent = StoreEvents | "onBreachDismissed" | "onBreachesUpdated";
 
-export class VaultDataBreachStore extends Store<StoreState, StateKeys, DataBreachStoreEvent>
+export interface VaultDataBreachStoreModifyBridge extends ModifyBridge
 {
-    private internalVaultDataBreaches: Ref<VaultDataBreach[]>;
-    private internalVaultDataBreachesByPasswordID: Ref<Map<string, VaultDataBreach>>;
-    private internalVaultDataBreacheCountByVaultID: Ref<Map<number, number>>;
-    private internalFailedToLoadDataBreaches: Ref<boolean>;
+    dismissVaultDataBreach: (vaultDataBreachID: number) => Promise<boolean>;
+}
+
+export class VaultDataBreachStore extends Store<VaultDataBreachStoreState, StateKeys, DataBreachStoreEvent, VaultDataBreachStoreModifyBridge>
+{
+    private internalVaultDataBreaches: ComputedRef<VaultDataBreach[]>;
+    private internalVaultDataBreachesByPasswordID: ComputedRef<{ [key: string]: VaultDataBreach }>;
+    private internalVaultDataBreacheCountByVaultID: ComputedRef<{ [key: number]: number }>;
+    private internalFailedToLoadDataBreaches: ComputedRef<boolean>;
+    private internalLoadedDataBreaches: ComputedRef<boolean>;
 
     get vaultDataBreaches() { return this.internalVaultDataBreaches.value; }
     get vaultBreachesByPasswordID() { return this.internalVaultDataBreachesByPasswordID; }
     get vaultDataBreachCountByVaultID() { return this.internalVaultDataBreacheCountByVaultID.value; }
     get failedToLoadDataBreaches() { return this.internalFailedToLoadDataBreaches.value; }
+    get loadedDataBreaches() { return this.internalLoadedDataBreaches.value; }
 
     constructor()
     {
         super(StoreType.VaultDataBreach);
 
-        this.internalVaultDataBreaches = ref([]);
-        this.internalVaultDataBreachesByPasswordID = ref(new Map());
-        this.internalVaultDataBreacheCountByVaultID = ref(new Map());
-        this.internalFailedToLoadDataBreaches = ref(false);
+        this.internalVaultDataBreaches = computed(() => this.state.vaultDataBreaches);
+        this.internalVaultDataBreachesByPasswordID = computed(() => this.state.vaultDataBreachesByPasswordID);
+        this.internalVaultDataBreacheCountByVaultID = computed(() => this.state.vaultDataBreacheCountByVaultID);
+        this.internalFailedToLoadDataBreaches = computed(() => this.state.failedToLoadDataBreaches);
+        this.internalLoadedDataBreaches = computed(() => this.state.loadedDataBreaches);
     }
 
     protected defaultState()
     {
         return {
-            version: 0
+            version: 0,
+            vaultDataBreaches: [],
+            vaultDataBreachesByPasswordID: {},
+            vaultDataBreacheCountByVaultID: {},
+            failedToLoadDataBreaches: false,
+            loadedDataBreaches: false
         };
-    }
-
-    public resetToDefault(): void
-    {
-        this.internalVaultDataBreaches.value = [];
-        this.internalVaultDataBreachesByPasswordID.value = new Map();
-        this.internalVaultDataBreacheCountByVaultID.value = new Map();
     }
 
     public async getVaultDataBreaches(): Promise<boolean>
@@ -96,7 +111,9 @@ export class VaultDataBreachStore extends Store<StoreState, StateKeys, DataBreac
         const response = await api.server.vault.getVaultDataBreaches(JSON.stringify(postData));
         if (!response.Success)
         {
-            this.internalFailedToLoadDataBreaches.value = true;
+            this.state.failedToLoadDataBreaches = true;
+            this.state.loadedDataBreaches = true;
+
             return false;
         }
 
@@ -110,7 +127,9 @@ export class VaultDataBreachStore extends Store<StoreState, StateKeys, DataBreac
             this.emit("onBreachesUpdated");
         }
 
-        this.internalFailedToLoadDataBreaches.value = false;
+        this.state.failedToLoadDataBreaches = false;
+        this.state.loadedDataBreaches = true;
+
         return true;
     };
 
@@ -193,26 +212,31 @@ export class VaultDataBreachStore extends Store<StoreState, StateKeys, DataBreac
             return false;
         }
 
+        if (this.modifyBridge)
+        {
+            return await this.modifyBridge.dismissVaultDataBreach(vaultDataBreachID);
+        }
+
         const response = await api.server.vault.dismissVaultDataBreach(app.currentVault.userOrganizationID, app.currentVault.vaultID, vaultDataBreachID);
         if (response.Success)
         {
-            this.internalVaultDataBreaches.value = this.internalVaultDataBreaches.value.filter(b => b.VaultDataBreachID != vaultDataBreachID);
-            this.internalVaultDataBreachesByPasswordID.value.forEach((v, k, map) =>
+            this.state.vaultDataBreaches = this.state.vaultDataBreaches.filter(b => b.VaultDataBreachID != vaultDataBreachID);
+            OH.forEach(this.state.vaultDataBreachesByPasswordID, (k, v) =>
             {
                 if (v.VaultDataBreachID == vaultDataBreachID)
                 {
-                    this.internalVaultDataBreachesByPasswordID.value.delete(k);
+                    delete this.state.vaultDataBreachesByPasswordID[k];
                 }
             });
 
-            const currentBreachCount = this.internalVaultDataBreacheCountByVaultID.value.get(app.currentVault.vaultID);
+            const currentBreachCount = this.state.vaultDataBreacheCountByVaultID[app.currentVault.vaultID];
             if (currentBreachCount == 1)
             {
-                this.internalVaultDataBreacheCountByVaultID.value.delete(app.currentVault.vaultID);
+                delete this.state.vaultDataBreacheCountByVaultID[app.currentVault.vaultID];
             }
             else
             {
-                this.internalVaultDataBreacheCountByVaultID.value.set(app.currentVault.vaultID, currentBreachCount! - 1);
+                this.state.vaultDataBreacheCountByVaultID[app.currentVault.vaultID] = currentBreachCount - 1;
             }
 
             this.emit('onBreachDismissed');
@@ -249,15 +273,15 @@ export class VaultDataBreachStore extends Store<StoreState, StateKeys, DataBreac
             return false;
         }
 
-        vaultIDs.forEach(v =>
+        vaultIDs.forEach(vaultID =>
         {
-            this.internalVaultDataBreacheCountByVaultID.value.delete(v);
-            this.internalVaultDataBreaches.value = this.internalVaultDataBreaches.value.filter(b => b.VaultID != v);
-            this.internalVaultDataBreachesByPasswordID.value.forEach((value, k, map) =>
+            delete this.state.vaultDataBreacheCountByVaultID[vaultID];
+            this.state.vaultDataBreaches = this.state.vaultDataBreaches.filter(b => b.VaultID != vaultID);
+            OH.forEach(this.state.vaultDataBreachesByPasswordID, (k, vaultDataBreach) =>
             {
-                if (value.VaultID == v)
+                if (vaultDataBreach.VaultID == vaultID)
                 {
-                    this.internalVaultDataBreachesByPasswordID.value.delete(k);
+                    delete this.state.vaultDataBreachesByPasswordID[k];
                 }
             })
         });
@@ -269,7 +293,7 @@ export class VaultDataBreachStore extends Store<StoreState, StateKeys, DataBreac
     // TOOD: make sure this still works after removing PasswordID as a parameter
     private setBreach(dataBreach: VaultDataBreach)
     {
-        let currentBreachCount = this.internalVaultDataBreacheCountByVaultID.value.get(dataBreach.VaultID)
+        let currentBreachCount = this.state.vaultDataBreacheCountByVaultID[dataBreach.VaultID];
         if (currentBreachCount === undefined)
         {
             currentBreachCount = 1;
@@ -279,9 +303,9 @@ export class VaultDataBreachStore extends Store<StoreState, StateKeys, DataBreac
             currentBreachCount += 1;
         }
 
-        this.internalVaultDataBreaches.value.push(dataBreach);
-        this.internalVaultDataBreachesByPasswordID.value.set(dataBreach.PasswordID, dataBreach);
-        this.internalVaultDataBreacheCountByVaultID.value.set(dataBreach.VaultID, currentBreachCount);
+        this.state.vaultDataBreaches.push(dataBreach);
+        this.state.vaultDataBreachesByPasswordID[dataBreach.PasswordID] = dataBreach;
+        this.state.vaultDataBreacheCountByVaultID[dataBreach.VaultID] = currentBreachCount;
     }
 }
 

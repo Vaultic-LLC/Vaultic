@@ -7,7 +7,7 @@ export class DataUtility extends CoreDataUtility
 	{
 		return new Promise((resolve) =>
 		{
-			deflate(Buffer.from(value, 'utf-8'), (err, result) =>
+			deflate(Buffer.from(value, 'utf8'), (err, result) =>
 			{
 				if (err)
 				{
@@ -15,7 +15,7 @@ export class DataUtility extends CoreDataUtility
 					return;
 				}
 
-				resolve(result.toString('latin1'));
+				resolve(result.toString('base64'));
 			});
 		});
 	}
@@ -24,16 +24,42 @@ export class DataUtility extends CoreDataUtility
 	{
 		return new Promise((resolve) =>
 		{
-			inflate(Buffer.from(value, 'latin1'), (err, result) =>
+			try
 			{
-				if (err)
+				inflate(Buffer.from(value, 'base64'), (err, result) =>
 				{
-					resolve('');
-					return;
-				}
+					if (err)
+					{
+						// May be due to old data format, try to uncompress with latin1
+						inflate(Buffer.from(value, 'latin1'), (err, result) =>
+						{
+							if (err)
+							{
+								resolve(err);
+								return;
+							}
 
-				resolve(result.toString('utf-8'));
-			});
+							resolve(result.toString('utf8'));
+						});
+						return;
+					}
+
+					resolve(result.toString('utf8'));
+				});
+			}
+			catch (err)
+			{
+				inflate(Buffer.from(value, 'latin1'), (err, result) =>
+				{
+					if (err)
+					{
+						resolve(err);
+						return;
+					}
+
+					resolve(result.toString('utf8'));
+				});
+			}
 		});
 	}
 }

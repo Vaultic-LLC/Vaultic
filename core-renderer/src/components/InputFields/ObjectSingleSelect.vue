@@ -241,9 +241,9 @@ export default defineComponent({
 }
 
 .objectSingleSelectContainer__selectLabel {
-    font-size: var(--input-font-size);
-    padding-block-start: clamp(17px, 1vw, 24px) !important;
-    padding-block-end: clamp(2px, 0.4vw, 5px) !important;
+    font-size: var(--input-font-size) !important;
+    padding-block-start: clamp(13px, 1vw, 24px) !important;
+    padding-block-end: clamp(5px, 0.4vw, 5px) !important;
 }
 
 .objectSingleSelectContainer__label {
@@ -252,7 +252,6 @@ export default defineComponent({
 
 .objectSingleSelectContainer__clearIcon {
     margin: 0 !important;
-    transform: translateY(-50%);
 }
 
 .objectSingleSelectContainer__clearIcon,

@@ -10,7 +10,7 @@ import { AtRiskType, IPrimaryDataObject, Password, RelatedDataTypeChanges, Secur
 import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 import { IFilterStoreState, FilterStoreStateKeys } from "./FilterStore";
 import { GroupStoreState } from "./GroupStore";
-import { CurrentAndSafeStructure, defaultPasswordStoreState, DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import { CurrentAndSafeStructure, defaultPasswordStoreState, DictionaryAsList, DoubleKeyedObject, ModifyBridge, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 import { isOld } from "../../Helpers/DataTypeHelper";
 
@@ -64,7 +64,35 @@ const PasswordStorePathRetriever: StorePathRetriever<PasswordStoreStateKeys> =
 
 export type PasswordStoreEvents = StoreEvents | "onCheckPasswordBreach" | "onCheckPasswordsForBreach";
 
-export class PasswordStore extends PrimaryDataTypeStore<IPasswordStoreState, PasswordStoreStateKeys, PasswordStoreEvents>
+export type AddPasswordFunc = (
+    masterKey: string,
+    password: Password,
+    addedSecurityQuestions: SecurityQuestion[],
+    pendingPasswordStoreState: PendingStoreState<IPasswordStoreState, PasswordStoreStateKeys>) => Promise<boolean>
+
+export type UpdatePasswordFunc = (
+    masterKey: string,
+    updatingPassword: Password,
+    passwordWasUpdated: boolean,
+    addedSecurityQuestions: SecurityQuestion[],
+    updatedSecurityQuestionQuestions: SecurityQuestion[],
+    updatedSecurityQuestionAnswers: SecurityQuestion[],
+    deletedSecurityQuestions: string[],
+    addingGroups: DictionaryAsList,
+    pendingPasswordState: PendingStoreState<IPasswordStoreState, PasswordStoreStateKeys>) => Promise<UpdatePasswordResponse>
+
+export type DeletePasswordFunc = (
+    masterKey: string,
+    password: ReactivePassword) => Promise<boolean>;
+
+export interface PasswordStoreModifyBridge extends ModifyBridge
+{
+    add: AddPasswordFunc;
+    update: UpdatePasswordFunc;
+    delete: DeletePasswordFunc;
+}
+
+export class PasswordStore extends PrimaryDataTypeStore<IPasswordStoreState, PasswordStoreStateKeys, PasswordStoreEvents, PasswordStoreModifyBridge>
 {
     constructor(vault: VaultStoreParameter)
     {
@@ -87,6 +115,11 @@ export class PasswordStore extends PrimaryDataTypeStore<IPasswordStoreState, Pas
         addedSecurityQuestions: SecurityQuestion[],
         pendingPasswordStoreState: PendingStoreState<IPasswordStoreState, PasswordStoreStateKeys>): Promise<boolean>
     {
+        if (this.modifyBridge)
+        {
+            return await this.modifyBridge.add(masterKey, password, addedSecurityQuestions, pendingPasswordStoreState);
+        }
+
         const filterStoreState = app.currentVault.filterStore.getPendingState()!;
         const groupStoreState = app.currentVault.groupStore.getPendingState()!;
 
@@ -177,6 +210,11 @@ export class PasswordStore extends PrimaryDataTypeStore<IPasswordStoreState, Pas
         addingGroups: DictionaryAsList,
         pendingPasswordState: PendingStoreState<IPasswordStoreState, PasswordStoreStateKeys>): Promise<UpdatePasswordResponse>
     {
+        if (this.modifyBridge)
+        {
+            return await this.modifyBridge.update(masterKey, updatingPassword, passwordWasUpdated, addedSecurityQuestions, updatedSecurityQuestionQuestions, updatedSecurityQuestionAnswers, deletedSecurityQuestions, addingGroups, pendingPasswordState);
+        }
+
         const currentPassword: ReactivePassword | undefined = pendingPasswordState.getObject('dataTypesByID.dataType', updatingPassword.id);
         if (!currentPassword)
         {
@@ -311,6 +349,11 @@ export class PasswordStore extends PrimaryDataTypeStore<IPasswordStoreState, Pas
         masterKey: string,
         password: ReactivePassword): Promise<boolean>
     {
+        if (this.modifyBridge)
+        {
+            return await this.modifyBridge.delete(masterKey, password);
+        }
+
         // TODO: should just hide the delete button for the vaultic password? Is this even needed anymore? 
         // Can users update their email another way, like via stripe and then I have a webhook for that?
         if (password.v)
@@ -354,9 +397,9 @@ export class PasswordStore extends PrimaryDataTypeStore<IPasswordStoreState, Pas
             return false;
         }
 
-        if (app.isOnline && app.vaultDataBreaches.vaultBreachesByPasswordID.value.has(password.id))
+        if (app.isOnline && app.vaultDataBreaches.vaultBreachesByPasswordID.value[password.id])
         {
-            await app.vaultDataBreaches.dismissVaultDataBreach(app.vaultDataBreaches.vaultBreachesByPasswordID.value.get(password.id)!.VaultDataBreachID);
+            await app.vaultDataBreaches.dismissVaultDataBreach(app.vaultDataBreaches.vaultBreachesByPasswordID.value[password.id]!.VaultDataBreachID);
         }
 
         app.currentVault.passwordsByDomain = this.state.o;

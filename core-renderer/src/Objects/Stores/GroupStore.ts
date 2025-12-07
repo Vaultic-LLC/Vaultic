@@ -8,7 +8,7 @@ import { uniqueIDGenerator } from "@vaultic/shared/Utilities/UniqueIDGenerator";
 import { IPasswordStoreState, PasswordStoreStateKeys } from "./PasswordStore";
 import { IValueStoreState } from "./ValueStore";
 import { IFilterStoreState, FilterStoreStateKeys } from "./FilterStore";
-import { defaultGroupStoreState, DictionaryAsList, DoubleKeyedObject, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
+import { defaultGroupStoreState, DictionaryAsList, DoubleKeyedObject, ModifyBridge, PendingStoreState, StorePathRetriever, StoreState, StoreType } from "@vaultic/shared/Types/Stores";
 import { OH } from "@vaultic/shared/Utilities/PropertyManagers";
 
 export interface IGroupStoreState extends StoreState
@@ -46,7 +46,29 @@ const GroupStorePathRetriever: StorePathRetriever<SecondarydataTypeStoreStateKey
 export type GroupStoreEvents = StoreEvents | "onPasswordGroupUpdated" | "onValueGroupUpdated";
 export type GroupStoreState = IGroupStoreState;
 
-export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, SecondarydataTypeStoreStateKeys, GroupStoreEvents>
+export type AddGroupFunc = (
+    masterKey: string,
+    group: Group,
+    pendingStoreState: PendingStoreState<GroupStoreState, SecondarydataTypeStoreStateKeys>) => Promise<boolean>
+
+export type UpdateGroupFunc = (
+    masterKey: string,
+    updatedGroup: Group,
+    updatedPrimaryObjects: DictionaryAsList,
+    pendingGroupStoreState: PendingStoreState<GroupStoreState, SecondarydataTypeStoreStateKeys>) => Promise<boolean>
+
+export type DeleteGroupFunc = (
+    masterKey: string,
+    group: Group) => Promise<boolean>;
+
+export interface GroupStoreModifyBridge extends ModifyBridge
+{
+    add: AddGroupFunc;
+    update: UpdateGroupFunc;
+    delete: DeleteGroupFunc;
+}
+
+export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, SecondarydataTypeStoreStateKeys, GroupStoreEvents, GroupStoreModifyBridge>
 {
     protected internalPasswordGroups: ComputedRef<Group[]>;
     protected internalValueGroups: ComputedRef<Group[]>;
@@ -72,6 +94,11 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
         group: Group,
         pendingStoreState: PendingStoreState<GroupStoreState, SecondarydataTypeStoreStateKeys>): Promise<boolean>
     {
+        if (this.modifyBridge)
+        {
+            return await this.modifyBridge.add(masterKey, group, pendingStoreState);
+        }
+
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
         if (group.t == DataType.Passwords)
         {
@@ -166,6 +193,11 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
         updatedPrimaryObjects: DictionaryAsList,
         pendingGroupStoreState: PendingStoreState<GroupStoreState, SecondarydataTypeStoreStateKeys>): Promise<boolean>
     {
+        if (this.modifyBridge)
+        {
+            return await this.modifyBridge.update(masterKey, updatedGroup, updatedPrimaryObjects, pendingGroupStoreState);
+        }
+
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID);
 
         let currentGroup = pendingGroupStoreState.state.p[updatedGroup.id] ?? pendingGroupStoreState.state.v[updatedGroup.id];
@@ -226,6 +258,11 @@ export class GroupStore extends SecondaryDataTypeStore<GroupStoreState, Secondar
 
     async deleteGroup(masterKey: string, group: Group): Promise<boolean>
     {
+        if (this.modifyBridge)
+        {
+            return await this.modifyBridge.delete(masterKey, group);
+        }
+
         const transaction = new StoreUpdateTransaction(this.vault.userVaultID, group.id);
         const pendingState = this.getPendingState()!;
 

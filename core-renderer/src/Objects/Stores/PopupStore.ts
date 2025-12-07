@@ -9,6 +9,7 @@ import { DataType } from "../../Types/DataTypes";
 import { Organization } from "@vaultic/shared/Types/DataTypes";
 import { ClientDevice } from "@vaultic/shared/Types/Device";
 import { api } from "../../API";
+import { VaulticNotification } from "@vaultic/shared/Types/Props";
 
 export type PopupStore = ReturnType<typeof createPopupStore>
 
@@ -123,6 +124,9 @@ export function createPopupStore()
     const onVerifyEmailPopupSuccess: Ref<() => void> = ref(() => { });
 
     const deleteAccountPopupIsShowing: Ref<boolean> = ref(false);
+
+    const notificationPopupIsShowing: Ref<boolean> = ref(false);
+    const notifications: Ref<VaulticNotification[]> = ref([]);
 
     function addOnEnterHandler(index: number, callback: () => void)
     {
@@ -441,7 +445,18 @@ export function createPopupStore()
     function hideDeleteAccountPopup()
     {
         deleteAccountPopupIsShowing.value = false;
+    }
 
+    function showNotificationPopup(notifs: VaulticNotification[])
+    {
+        notificationPopupIsShowing.value = true;
+        notifications.value = notifs;
+    }
+
+    function hideNotificationPopup()
+    {
+        notificationPopupIsShowing.value = false;
+        notifications.value = [];
     }
 
     return {
@@ -491,6 +506,8 @@ export function createPopupStore()
         get onVerifyEmailPopupClose() { return onVerifyEmailPopupClose.value },
         get onVerifyEmailPopupSuccess() { return onVerifyEmailPopupSuccess.value },
         get deleteAccountPopupIsShowing() { return deleteAccountPopupIsShowing.value },
+        get notificationPopupIsShowing() { return notificationPopupIsShowing.value },
+        get notifications() { return notifications.value },
         closeAllPopupsOnLock,
         addOnEnterHandler,
         removeOnEnterHandler,
@@ -528,6 +545,8 @@ export function createPopupStore()
         hideSyncingPopup,
         showVerifyEmailPopup,
         showDeleteAccountPopup,
-        hideDeleteAccountPopup
+        hideDeleteAccountPopup,
+        showNotificationPopup,
+        hideNotificationPopup
     }
 }

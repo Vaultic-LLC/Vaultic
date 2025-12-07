@@ -7,8 +7,8 @@ module.exports = {
 			unpackDir: "native_modules"
 		},
 		appBundleId: 'com.vaultic.vaultic',
-		appVersion: '1.1.0',
-		buildVersion: '1.1.0',
+		appVersion: '1.2.0',
+		buildVersion: '1.2.0',
 		icon: './resources/icon',
 		ignore: [
 			/^\/src/,

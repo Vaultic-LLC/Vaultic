@@ -105,7 +105,7 @@ export default defineComponent({
 
         onMounted(() =>
         {
-            const dataBreach: VaultDataBreach | undefined = app.vaultDataBreaches.vaultBreachesByPasswordID.value.get(props.passwordID);
+            const dataBreach: VaultDataBreach | undefined = app.vaultDataBreaches.vaultBreachesByPasswordID.value[props.passwordID];
             if (dataBreach)
             {
                 vaultDataBreach.value = dataBreach;

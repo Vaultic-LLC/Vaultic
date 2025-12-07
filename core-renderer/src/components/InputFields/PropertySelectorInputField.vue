@@ -235,7 +235,6 @@ export default defineComponent({
 
 :deep(.dropDownContainer__clearIcon) {
     margin: 0 !important;
-    transform: translateY(-50%);
 }
 
 :deep(.dropDownContainer__clearIcon),

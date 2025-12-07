@@ -2,7 +2,7 @@
     <ObjectView :color="color" :creating="creating" :defaultSave="onSave" :key="refreshKey"
         :gridDefinition="gridDefinition" :hideButtons="readOnly">
         <VaulticFieldset :centered="true">
-            <TextInputField class="filterView__name" :label="'Name'" :color="color" v-model="filterState.n"
+            <TextInputField class="filterView__name filterView__inputField" :label="'Name'" :color="color" v-model="filterState.n"
                 :width="'50%'" :maxWidth="''" :fadeIn="false" />
         </VaulticFieldset>
         <VaulticFieldset :centered="true" :fill-space="true" :end="true">
@@ -314,5 +314,19 @@ export default defineComponent({
     height: 70%;
     min-height: 200px;
     transform: translateY(-15%);
+}
+
+.filterView__inputField {
+    width: 50% !important;
+}
+
+@media (max-width: 850px) {
+    #addFilterTable {
+        width: 100%;
+    }
+
+    .filterView__inputField {
+        width: 100% !important;
+    }
 }
 </style>
