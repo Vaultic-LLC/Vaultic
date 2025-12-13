@@ -22,8 +22,6 @@ import { LogUserInResponse } from "@vaultic/shared/Types/Responses";
 import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
 import { RandomValueType } from "@vaultic/shared/Types/Fields";
 import { defaultPassword, Password } from '@/lib/renderer/Types/DataTypes';
-import { PendingStoreState } from '@vaultic/shared/Types/Stores';
-import { IPasswordStoreState, PasswordStoreStateKeys } from '@/lib/renderer/Objects/Stores/PasswordStore';
 
 export default defineBackground(() => 
 {
@@ -56,7 +54,7 @@ export default defineBackground(() =>
     let isInitialized = false;
     const initPromise = initializeSqlJs().then(() => {
         environment.init({
-            isTest: true,
+            isTest: false,
             sessionHandler:
             {
                 setSession,

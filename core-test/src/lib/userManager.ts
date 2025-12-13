@@ -350,7 +350,7 @@ class UserManager
     async createNewUser(ctx: TestContext, email?: string, masterKey?: string): Promise<User | undefined> 
     {
         const masterKeyToUse = masterKey ?? `test${this._createdUsers}`;
-        const vaulticKey = JSON.stringify({ algorithm: Algorithm.XCHACHA20_POLY1305, key: masterKey });
+        const vaulticKey = JSON.stringify({ algorithm: Algorithm.XCHACHA20_POLY1305, key: masterKeyToUse });
         const emailToUse = email ?? `test${new Date().getTime()}@gmail.com`;
 
         const registerResponse = await this.registerUser(ctx, emailToUse, masterKeyToUse, vaulticKey);
