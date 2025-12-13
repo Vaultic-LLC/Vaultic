@@ -181,7 +181,23 @@ export default defineConfig({
         resources: ['icon/icon.png'],
         matches: ['<all_urls>']
       }
-    ]
+    ],
+    browser_specific_settings: {
+        gecko: {
+            // @ts-ignore
+            data_collection_permissions: {
+                "required": ["personallyIdentifyingInfo", "authenticationInfo"]
+            }
+        }
+    },
+    icons: {
+        '16': 'icon/icon.png',
+        '48': 'icon/icon.png',
+        '128': 'icon/icon.png'
+    },
+    name: 'Vaultic',
+    short_name: 'Vaultic',
+    description: 'The most secure password manager available'
   },
   vite: () => ({
     plugins: [
