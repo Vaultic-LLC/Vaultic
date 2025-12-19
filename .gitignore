@@ -28,6 +28,11 @@ extension/package-lock.json
 extension/lib/Main
 extension/lib/Renderer
 
+mobile/node_modules
+mobile/package-lock.json
+mobile/src/Core/Main
+mobile/src/Core/Renderer
+
 New_Distribution_Provisioning_Profile.provisionprofile
 New_Development_Profile.provisionprofile
 Developer_ID_Application_Profile.provisionprofile
