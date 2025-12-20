@@ -7,11 +7,11 @@
   "scripts": {
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
-    "build": "wxt build",
-    "build:firefox": "wxt build -b firefox",
-    "build:safari": "wxt build -b safari",
-    "zip": "wxt zip",
-    "zip:firefox": "wxt zip -b firefox",
+    "build": "npm run copy && wxt build",
+    "build:firefox": "npm run copy && wxt build -b firefox",
+    "build:safari": "npm run copy && wxt build -b safari",
+    "zip": "npm run copy && wxt zip",
+    "zip:firefox": "npm run copy && wxt zip -b firefox",
     "compile": "vue-tsc --noEmit",
     "postinstall": "wxt prepare",
     "copy": "node ../copy.js src=../core-main/src dest=./lib/main && node ../copy.js src=../core-renderer/src dest=./lib/renderer"

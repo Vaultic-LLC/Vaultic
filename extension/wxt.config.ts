@@ -195,8 +195,8 @@ export default defineConfig({
         '48': 'icon/icon.png',
         '128': 'icon/icon.png'
     },
-    name: 'Vaultic',
-    short_name: 'Vaultic',
+    name: 'Vaultic Extension',
+    short_name: 'Vaultic Extension',
     description: 'The most secure password manager available'
   },
   vite: () => ({
