@@ -171,7 +171,6 @@ function reorderVaulticEntityPlugin() {
 export default defineConfig({
   modules: ['@wxt-dev/module-vue'],
   manifest: {
-    permissions: ['storage'],
     host_permissions: [
       'https://*.vaulticserver.vaultic.co/*',
       'https://vaultic-sts.vaulticserver.vaultic.co/*'
