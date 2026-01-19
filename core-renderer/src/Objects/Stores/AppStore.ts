@@ -126,6 +126,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
     private internalIsSyncing: Ref<boolean>;
     private internalForceReadOnly: Ref<boolean>;
     private internalIsBrowserExtension: Ref<boolean>;
+    private internalIsMobile: Ref<boolean>;
 
     private internalProcessIsRunning: boolean;
 
@@ -166,6 +167,8 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
     set forceReadOnlyVal(val: boolean) { this.internalForceReadOnly.value = val; }
     get isBrowserExtension() { return this.internalIsBrowserExtension.value; }
     set isBrowserExtension(val: boolean) { this.internalIsBrowserExtension.value = val; }
+    get isMobile() { return this.internalIsMobile.value; }
+    set isMobile(val: boolean) { this.internalIsMobile.value = val; }
 
     constructor()
     {
@@ -225,6 +228,7 @@ export class AppStore extends Store<AppStoreState, AppStoreStateKeys, AppStoreEv
         this.internalIsSyncing = ref(false);
         this.internalForceReadOnly = ref(false);
         this.internalIsBrowserExtension = ref(false);
+        this.internalIsMobile = ref(true);
 
         this.internalProcessIsRunning = false;
     }

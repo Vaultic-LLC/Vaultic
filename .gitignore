@@ -32,6 +32,19 @@ mobile/node_modules
 mobile/package-lock.json
 mobile/src/Core/Main
 mobile/src/Core/Renderer
+# Mobile platform build artifacts and local config
+mobile/android/.gradle
+mobile/android/build
+mobile/android/app/build
+mobile/android/local.properties
+mobile/android/capacitor-cordova-android-plugins
+mobile/ios/DerivedData
+mobile/ios/xcuserdata
+mobile/ios/App/build
+mobile/ios/App/output
+mobile/ios/App/Pods
+mobile/ios/App/App/public
+mobile/ios/capacitor-cordova-ios-plugins
 
 New_Distribution_Provisioning_Profile.provisionprofile
 New_Development_Profile.provisionprofile

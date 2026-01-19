@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Vaultic</string>
+    <string name="title_activity_main">Vaultic</string>
+    <string name="package_name">com.vaulticmobile.vaultic</string>
+    <string name="custom_url_scheme">com.vaulticmobile.vaultic</string>
+</resources>

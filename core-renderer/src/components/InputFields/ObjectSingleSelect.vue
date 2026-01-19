@@ -54,7 +54,7 @@
                         };
                     }
                 }" :invalid="isInvalid" :filter="true" :disabled="disabled" v-model="selectedValue" 
-                showClear :inputId="id" :options="options" optionLabel="label" :fluid="true" :labelStyle="{'text-align': 'left'}"
+                :showClear="showClearButton" :inputId="id" :options="options" optionLabel="label" :fluid="true" :labelStyle="{'text-align': 'left'}"
                 :loading="loading" :placeHolder="loading === true ? 'Loading...' : undefined" :emptyMessage="emptyMessage"
                 :emptyFilterMessage="noResultsMessage" :virtualScrollerOptions="{ itemSize: 50 }" 
                 @update:model-value="onOptionClick" @filter="(e) => $.emit('onSearch', e.value)">
@@ -100,12 +100,13 @@ export default defineComponent({
     },
     emits: ["update:modelValue", "onSearch"],
     props: ["modelValue", "options", "label", "color", 'isOnWidget', 'height', 'minHeight', 'maxHeight',
-        'width', 'minWidth', 'maxWidth', 'required', 'disabled', 'loading', 'emptyMessage', 'noResultsMessage'],
+        'width', 'minWidth', 'maxWidth', 'required', 'disabled', 'loading', 'emptyMessage', 'noResultsMessage', 'showClear'],
     setup(props, ctx)
     {
         const id = ref(useId());
         const refreshKey: Ref<string> = ref('');
 
+        const showClearButton: ComputedRef<boolean> = computed(() => props.showClear ?? true);
         const errorColor: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.r);
         const selectBackgroundColor: Ref<string> = ref(widgetBackgroundHexString()); 
 
@@ -200,6 +201,7 @@ export default defineComponent({
             computedMaxHeight,
             computedEmptyMessage,
             computedNoResultsMessage,
+            showClearButton,
             onOptionClick,
             invalidate
         }

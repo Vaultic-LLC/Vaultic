@@ -1,13 +1,18 @@
 <template>
     <div class="passwordValueTableContainer">
-        <VaulticTable ref="tableRef" id="passwordValueTable" :class="{ 'isBrowserExtension': isBrowserExtension }" :color="color" 
+        <VaulticTable ref="tableRef" id="passwordValueTable" :class="{ 'isBrowserExtension': isBrowserExtension, 'isMobile': isMobile }" :color="color" 
             :columns="tableColumns" :headerTabs="headerTabs" :emptyMessage="emptyTableMessage" :dataSources="tableDataSources"
-            :searchBarSizeModel="searchBarSizeModel" :allowPinning="!readOnly && !isBrowserExtension" :onPin="!isBrowserExtension ? onPin : undefined" 
-            :onEdit="onEdit" :onDelete="onDelete" :maxCellWidth="isBrowserExtension ? '23vw' : '10vw'">
+            :searchBarSizeModel="searchBarSizeModel" :allowPinning="!readOnly && !isBrowserExtension && !isMobile" :onPin="!isBrowserExtension ? onPin : undefined" 
+            :onEdit="isMobile ? undefined : onEdit" :onDelete="isMobile ? undefined : onDelete" :maxCellWidth="isBrowserExtension ? '23vw' : '10vw'" :allowSearching="!isMobile"
+            :infiniteScroll="isMobile" :initalRowsToLoad="initalRowsToLoad" :headerTableControlsClass="isMobile ? 'mobileHeaderTableControls' : undefined"
+            :onAdditionalRowButtonClicked="isMobile ? onAdditionalRowButtonClicked : undefined" :useSearchIcon="isMobile" :searchIconClass="'passwordValueTableContainer__searchIcon'">
             <template #tableControls>
                 <Transition name="fade" mode="out-in">
                     <AddDataTableItemButton v-if="!readOnly" :color="color" :initalActiveContentOnClick="activeTable" />
                 </Transition>
+            </template>
+            <template #additionalRowButton>
+                <IonIcon class="rowIcon" :name="'menu-outline'" :tooltip="'Menu'" />
             </template>
         </VaulticTable>
         <Teleport to="#body">
@@ -24,6 +29,34 @@
                 </ObjectPopup>
             </Transition>
         </Teleport>
+        <Popover ref="popover"
+                :pt="{
+                    root: ({state}: {state: any}) =>
+                    {
+                        helpPopupIsOpen = state.visible;
+                        return 'signInViewContainer__helpPopover';
+                    }
+                }">
+                <div class="signInViewContainer__helpPopoverContent">
+                    <div class="signInViewContainer__helpPopoverSection">
+                        <PopupButton :color="color" :text="mobileContextPinText"
+                            :width="'5vw'" :minWidth="'70px'" :maxWidth="'130px'" :height="'3vh'" :minHeight="'30px'"
+                            :maxHeight="'45px'" :fontSize="'clamp(12px, 0.8vw, 18px)'" :fallbackClickHandler="mobileContextMenuActiveData?.onPin" />
+                    </div>
+                    <div class="signInViewContainer__helpPopoverSectionSeperator"></div>
+                    <div class="signInViewContainer__helpPopoverSection">
+                        <PopupButton :color="color" :text="'Edit'"
+                            :width="'5vw'" :minWidth="'70px'" :maxWidth="'130px'" :height="'3vh'" :minHeight="'30px'"
+                            :maxHeight="'45px'" :fontSize="'clamp(12px, 0.8vw, 18px)'" :fallbackClickHandler="mobileContextMenuActiveData?.onEdit"/>
+                    </div>
+                    <div class="signInViewContainer__helpPopoverSectionSeperator"></div>
+                    <div class="signInViewContainer__helpPopoverSection">
+                        <PopupButton :color="color" :text="'Delete'"
+                            :width="'5vw'" :minWidth="'70px'" :maxWidth="'130px'" :height="'3vh'" :minHeight="'30px'"
+                            :maxHeight="'45px'" :fontSize="'clamp(12px, 0.8vw, 18px)'" :fallbackClickHandler="mobileContextMenuActiveData?.onDelete"/>
+                    </div>
+                </div>
+            </Popover>
     </div>
 </template>
 
@@ -35,8 +68,11 @@ import AddDataTableItemButton from './Controls/AddDataTableItemButton.vue';
 import EditPasswordPopup from '../ObjectPopups/EditPopups/EditPasswordPopup.vue';
 import EditValuePopup from '../ObjectPopups/EditPopups/EditValuePopup.vue';
 import VaulticTable from './VaulticTable.vue';
+import IonIcon from '../Icons/IonIcon.vue';
+import Popover from 'primevue/popover';
+import PopupButton from '../InputFields/PopupButton.vue';
 
-import { HeaderTabModel, TableDataSources, TableColumnModel, ComponentSizeModel } from '../../Types/Models';
+import { HeaderTabModel, TableDataSources, TableColumnModel, ComponentSizeModel, TableRowModel } from '../../Types/Models';
 import { IGroupableSortedCollection } from "../../Objects/DataStructures/SortedCollections"
 import { getEmptyTableMessage, getNoValuesApplyToFilterMessage, getPasswordValueTableRowModels } from '../../Helpers/ModelHelper';
 import app from "../../Objects/Stores/AppStore";
@@ -57,11 +93,15 @@ export default defineComponent({
         AddDataTableItemButton,
         EditPasswordPopup,
         EditValuePopup,
+        IonIcon,
+        Popover,
+        PopupButton,
     },
     setup()
     {
         const tableRef: Ref<TableTemplateComponent | null> = ref(null);
         const isBrowserExtension: ComputedRef<boolean> = computed(() => app.isBrowserExtension);
+        const isMobile: ComputedRef<boolean> = computed(() => app.isMobile);
         const activeTable: Ref<number> = ref(app.activePasswordValuesTable);
         const readOnly: ComputedRef<boolean> = computed(() => app.currentVault.isReadOnly.value);
         const color: ComputedRef<string> = computed(() => app.activePasswordValuesTable == DataType.Passwords ?
@@ -84,6 +124,13 @@ export default defineComponent({
 
         let initalizedPasswordModels = false;
         let initalizedValueModels = false;
+
+        // Load more rows on mobile so the table will actually fill up the entire screen and infiite scroll will work.
+        const initalRowsToLoad: Ref<number | undefined> = ref(isMobile.value ? 25 : undefined);
+        const mobileContextPinText: Ref<string> = ref("Pin");
+        const mobileContextMenuActiveData: Ref<{ target: EventTarget | null, onPin: () => void, onEdit: () => void, onDelete: () => void } | undefined> = ref(undefined);
+        const helpPopupIsOpen: Ref<boolean> = ref(false);
+        const popover: Ref<any> = ref();
 
         const searchBarSizeModel: Ref<ComponentSizeModel> = ref({
             width: '9vw',
@@ -115,13 +162,21 @@ export default defineComponent({
             {
                 models.push(new TableColumnModel("Groups", "g").setIsGroupIconCell(true).setData({ 'color': color }).setStartingWidth('clamp(70px, 4.5vw, 105px)'));
                 models.push(new TableColumnModel("Password For", "f"));
-                models.push(new TableColumnModel("Username", "l"));
+
+                if (!isMobile.value)
+                {
+                    models.push(new TableColumnModel("Username", "l"));
+                }
             }
             else
             {
                 models.push(new TableColumnModel("Groups", "g").setIsGroupIconCell(true).setData({ 'color': color }).setStartingWidth('clamp(70px, 4.5vw, 105px)'));
                 models.push(new TableColumnModel("Name", "n"));
-                models.push(new TableColumnModel("Type", "y"));
+
+                if (!isMobile.value)
+                {
+                    models.push(new TableColumnModel("Type", "y"));
+                }
             }
 
             return models;
@@ -155,7 +210,7 @@ export default defineComponent({
             return "";
         });
 
-        const headerTabs: HeaderTabModel[] = [
+        const headerTabs: HeaderTabModel[] = isMobile.value ? [] : [
             {
                 name: 'Passwords',
                 active: computed(() => app.activePasswordValuesTable == DataType.Passwords),
@@ -489,6 +544,51 @@ export default defineComponent({
             }
         }
 
+        function onAdditionalRowButtonClicked(event: MouseEvent, tableRowModel: TableRowModel, dataType: any)
+        {
+            event.stopPropagation();
+            event.preventDefault();
+
+            mobileContextPinText.value = tableRowModel.isPinned ? "Unpin" : "Pin";
+            mobileContextMenuActiveData.value = 
+            { 
+                target: event.currentTarget, 
+                onPin: () => 
+                {
+                    onPin(tableRowModel.isPinned ?? false, dataType),
+                    cleanupMobileContextMenuActiveData();
+                },
+                onEdit: () => 
+                {
+                    onEdit(dataType),
+                    cleanupMobileContextMenuActiveData();
+                },
+                onDelete: () => 
+                {
+                    onDelete(dataType),
+                    cleanupMobileContextMenuActiveData();
+                }
+            };
+
+            popover.value.toggle({currentTarget: event.currentTarget}); 
+            helpPopupIsOpen.value = !helpPopupIsOpen.value;
+        }
+
+        function cleanupMobileContextMenuActiveData()
+        {
+            mobileContextMenuActiveData.value = undefined;
+            onHelpUnfocus();
+        }
+
+        function onHelpUnfocus()
+        {
+            if (helpPopupIsOpen.value)
+            {
+                popover.value.toggle({currentTarget: mobileContextMenuActiveData.value?.target}); 
+                helpPopupIsOpen.value = false;
+            }
+        }
+
         onMounted(() =>
         {
             init();
@@ -587,6 +687,7 @@ export default defineComponent({
 
         return {
             isBrowserExtension,
+            isMobile,
             tableColumns,
             readOnly,
             tableRef,
@@ -600,11 +701,17 @@ export default defineComponent({
             emptyTableMessage,
             tableDataSources,
             searchBarSizeModel,
+            helpPopupIsOpen,
+            popover,
+            mobileContextPinText,
+            mobileContextMenuActiveData,
+            initalRowsToLoad,
             onEditPasswordPopupClose,
             onEditValuePopupClose,
             onPin,
             onEdit,
             onDelete,
+            onAdditionalRowButtonClicked,
         }
     }
 })
@@ -624,6 +731,22 @@ export default defineComponent({
     width: 100%;
     left: unset;
     top: unset;
+}
+
+#passwordValueTable.isMobile {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    left: unset;
+    top: unset;
+}
+
+.vaulticTableContainer__headerCell.vaulticTableContainer__ControlsHeaderCell.mobileHeaderTableControls {
+    width: 20px !important;
+}
+
+.passwordValueTableContainer__searchIcon {
+
 }
 
 @media (max-width: 1300px) {

@@ -613,4 +613,10 @@ export default defineComponent({
     margin-top: 15px;
     margin-bottom: 15px;
 }
+
+@media (max-width: 600px) {
+    .signInViewContainer__contentBottom {
+        display: none;
+    }
+}
 </style>

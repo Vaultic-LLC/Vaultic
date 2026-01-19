@@ -35,4 +35,8 @@
     --input-label-active-top: clamp(3px, 0.5vw, 10px);
     --input-label-active-font-size: clamp(8px, 0.5vw, 13px);
     --input-padding-block-start: clamp(20px, 1vw, 25px);
+
+    --mobile-table-selector-height: 25px;
+    --mobile-table-selector-margin-top: 20px;
+    --mobile-home-content-gap: 15px;
 }

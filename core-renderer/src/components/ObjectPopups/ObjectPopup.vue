@@ -381,4 +381,14 @@ export default defineComponent({
 .pulsingCircles .circle.circleThree {
     animation-delay: 4s;
 }
+
+@media (max-width: 600px) {
+    .objectyPopup {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        min-width: 0;
+        border-radius: 0;
+    }
+}
 </style>

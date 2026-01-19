@@ -1,8 +1,8 @@
 <template>
     <div class="vaulticTableContainer">
         <DataTable scrollable lazy :first="firstRow" :rows="rowsToDisplay" :value="rowValues" :sortField="defaultSortField"
-            :sortOrder="defaultSortOrder" :totalRecords="totalRecords" :paginator="!hidePaginator" :rowsPerPageOptions="[5, 15, 30, 50]" 
-            :loading="loading" resizableColumns columnResizeMode="fit" class="vaulticTableContainer__dataTable"
+            :sortOrder="defaultSortOrder" :totalRecords="totalRecords" :paginator="!doHidePaginator" :rowsPerPageOptions="[5, 15, 30, 50]" 
+            :loading="loading" resizableColumns columnResizeMode="fit" class="vaulticTableContainer__dataTable" :class="{ 'isMobile': isMobile }"
             @update:sortOrder="onSortOrder" @update:sortField="onSortField" @value-change="calcScrollbarColor" @page="onPage"
             :pt="{
                 thead: 'vaulticTableContainer__thead',
@@ -17,7 +17,7 @@
                 columnResizeIndicator: 'vaulticTableContainer__columnResizeIndicator',
                 tableContainer: () =>
                 {
-                    const height = hidePaginator ? '100%' : 'calc(100% - clamp(40px, 5vh, 60px))';
+                    const height = doHidePaginator ? '100%' : 'calc(100% - clamp(40px, 5vh, 60px))';
                     return {
                         id: tableContainerID,
                         class: 'vaulticTableContainer__dataTableTableContainer',
@@ -128,7 +128,7 @@
             </Column>
             <Column :columnKey="'tableControls'" class="w-24 !text-end vaulticTableContainer__column" :reorderableColumn="false"
                 :pt="{
-                    headerCell:['vaulticTableContainer__headerCell', 'vaulticTableContainer__ControlsHeaderCell'],
+                    headerCell:['vaulticTableContainer__headerCell', 'vaulticTableContainer__ControlsHeaderCell', headerTableControlsClass],
                     columnHeaderContent: 'vaulticTableContainer__headerControlsContent'
                 }">
                 <template #header="">
@@ -153,6 +153,9 @@
                         <div v-if="onDelete" class="vaulticTableContainer__rowIconButton" @click="deleteConfirm(getBackingObject((data as TableRowModel).id))">
                             <IonIcon class="rowIcon delete" :name="'trash-outline'" :tooltip="'Delete'" />
                         </div>
+                        <div v-if="onAdditionalRowButtonClicked" class="vaulticTableContainer__rowIconButton" @click="(e) => onAdditionalRowButtonClicked(e, data, getBackingObject((data as TableRowModel).id))">
+                            <slot name="additionalRowButton"></slot>
+                        </div>
                     </div>
                 </template>
             </Column>
@@ -161,7 +164,7 @@
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, onMounted, onUnmounted, Ref, ref, useId, watch } from 'vue';
+import { computed, ComputedRef, defineComponent, inject, onMounted, onUnmounted, Ref, ref, useId, watch } from 'vue';
 
 import TableHeaderTab from './Header/TableHeaderTab.vue';
 import DataTable, { DataTablePageEvent } from "primevue/datatable";
@@ -190,6 +193,7 @@ import { useConfirm } from "primevue/useconfirm";
 import { rowChunkAmount } from '../../Constants/Misc';
 import app from '../../Objects/Stores/AppStore';
 import tippy, { Instance, Tippy } from 'tippy.js';
+import { CustomSearchProviderKey } from '../../Constants/Keys';
 
 // Base Component for all Tables.
 // --- Scrollbar Color Usage ---
@@ -218,15 +222,17 @@ export default defineComponent({
         EncryptedInputCell,
         PermissionsCell,
         VaultListCell,
-        IonIcon
+        IonIcon,
     },
     props: ['color', 'dataSources', 'pinnedValues', 'columns', 'scrollbarSize', 'border', 'emptyMessage', 'backgroundColor',
         'headerTabs', 'allowSearching', 'allowPinning', 'onPin', 'onEdit', 'onDelete', 'searchBarSizeModel', 'loading', 'hidePaginator',
-        'smallRows', 'maxCellWidth'],
+        'smallRows', 'maxCellWidth', 'infiniteScroll', 'initalRowsToLoad', 'headerTableControlsClass', 'onAdditionalRowButtonClicked', 
+        'useSearchIcon', 'searchIconClass'],
     setup(props)
     {
         const tableContainerID = ref(useId());
 
+        const isMobile: ComputedRef<boolean> = computed(() => app.isMobile);
         const resizeObserver: ResizeObserver = new ResizeObserver(onResize);
         const key: Ref<string> = ref('');
         const tableContainer: Ref<HTMLElement | null> = ref(null);
@@ -236,7 +242,9 @@ export default defineComponent({
         const backgroundColor: ComputedRef<string> = computed(() => props.backgroundColor ? props.backgroundColor : widgetBackgroundHexString());
         const scrollbarClass: ComputedRef<string> = computed(() => props.scrollbarSize == 0 ? "small" : props.scrollbarSize == 1 ? "medium" : "");
         const maxCellWidth: ComputedRef<string> = computed(() => props.maxCellWidth ?? "none");
+        const doHidePaginator: ComputedRef<boolean> = computed(() => props.hidePaginator == true || props.infiniteScroll == true);
 
+        const customSearchProvider: Ref<string> = inject(CustomSearchProviderKey, ref(""));
         const showSearchBar: ComputedRef<boolean> = computed(() => props.allowSearching != undefined ? props.allowSearching : true);
         const tableDataSources: TableDataSources = props.dataSources;    
         let activeTableDataSource: TableDataSouce = tableDataSources.dataSources[tableDataSources.activeIndex()];
@@ -459,7 +467,7 @@ export default defineComponent({
             allRows.value = activeTableDataSource.pinnedCollection?.calculatedValues != undefined ? Array.from(activeTableDataSource.pinnedCollection?.calculatedValues) : [];
             allRows.value = allRows.value.concat(activeTableDataSource.collection.calculatedValues);
 
-            rowValues.value = allRows.value.slice(0, rowChunkAmount);
+            rowValues.value = allRows.value.slice(0, props.initalRowsToLoad ?? rowChunkAmount);
             scrollToTop();
         }
         
@@ -467,13 +475,13 @@ export default defineComponent({
         {
             firstRow.value = e.first;
             rowsToDisplay.value = e.rows;
-            rowValues.value = allRows.value.slice(e.first, e.first + Math.min(e.rows, rowChunkAmount));
+            rowValues.value = allRows.value.slice(e.first, e.first + (props.initalRowsToLoad ?? Math.min(e.rows, rowChunkAmount)));
             scrollToTop();
         }
 
         function loadNextChunk()
         {
-            const rowsToLoad = Math.min(20, rowsToDisplay.value - rowValues.value.length);
+            const rowsToLoad = props.infiniteScroll ? Math.min(20, allRows.value.length - rowValues.value.length) : Math.min(20, rowsToDisplay.value - rowValues.value.length);
             const start = firstRow.value + rowValues.value.length;
 
             rowValues.value = rowValues.value.concat(allRows.value.slice(start, start + rowsToLoad));
@@ -530,6 +538,11 @@ export default defineComponent({
         {
             setTimeout(calcScrollbarColor, 1);
         });
+
+        watch(customSearchProvider, (newValue) =>
+        {
+            onSearch(newValue);
+        });
     
         onMounted(() =>
         {
@@ -570,6 +583,7 @@ export default defineComponent({
         // });
 
         return {
+            isMobile,
             totalRecords,
             firstRow,
             rowsToDisplay,
@@ -591,6 +605,7 @@ export default defineComponent({
             defaultSortOrder,
             scrollbarClass,
             maxCellWidth,
+            doHidePaginator,
             onTextClick,
             checkScrollHeight,
             scrollToTop,
@@ -604,7 +619,7 @@ export default defineComponent({
             onPage,
             getBackingObject,
             showGroupTooltip,
-            hideGroupTooltip
+            hideGroupTooltip,
         }
     },
 })
@@ -693,6 +708,11 @@ export default defineComponent({
     max-width: v-bind(maxCellWidth)
 }
 
+/* vw doesn't work well on mobile, unset it */
+.isMobile :deep(.vaulticTableContainer__column) {
+    max-width: unset;
+}
+
 :deep(.vaulticTableContainer__sortIcon) {
     transition: 0.3s;
     font-size: clamp(12px, 0.8vw, 16px);
@@ -773,6 +793,10 @@ export default defineComponent({
     justify-content: space-around;
     padding-right: 20px;
     align-items: center
+}
+
+.isMobile .vaulticTableContainer__rowIconButtonsContainer {
+    padding-right: 0;
 }
 
 .vaulticTableContainer__rowIconButton {
