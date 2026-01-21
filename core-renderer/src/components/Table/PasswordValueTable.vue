@@ -745,10 +745,6 @@ export default defineComponent({
     width: 20px !important;
 }
 
-.passwordValueTableContainer__searchIcon {
-
-}
-
 @media (max-width: 1300px) {
     #passwordValueTable {
         left: 35%;

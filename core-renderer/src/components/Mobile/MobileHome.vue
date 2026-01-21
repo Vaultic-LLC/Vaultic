@@ -285,7 +285,7 @@ export default defineComponent({
 }
 
 .mobileHome__syncButton:hover {
-    color: grey;
+    color: v-bind(color);
 }
 
 .mobileHomeContent {

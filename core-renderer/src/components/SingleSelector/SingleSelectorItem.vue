@@ -94,7 +94,7 @@ export default defineComponent({
     display: flex;
     position: relative;
     overflow: hidden;
-    animation: tableSelectorOneNotHover .2s linear forwards;
+    /* animation: tableSelectorOneNotHover .2s linear forwards; */
     background: v-bind(background);
     display: flex;
     justify-content: center;

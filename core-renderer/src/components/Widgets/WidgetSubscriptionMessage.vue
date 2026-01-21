@@ -1,5 +1,5 @@
 <template>
-    <div class="widgetSubscriptionMessage">
+    <div class="widgetSubscriptionMessage" :class="{ mobile: isMobile }">
         <div class="widgetSubscriptionMessage__content">
             <div v-if="isLoading" class="widgetSubscriptionMessage__loadingContainer">
                 <LoadingIndicator :color="color" />
@@ -11,7 +11,7 @@
                 <div class="widgetSubscriptionMessage__message">
                     {{ message }}
                 </div>
-                <div class="widgetSubscriptionMessage__buttons" v-if="isOnline">
+                <div class="widgetSubscriptionMessage__buttons" v-if="isOnline && !isMobile">
                     <PopupButton :color="color" :text="'Subscribe'" :width="'5vw'" :minWidth="'75px'" :minHeight="'23px'" @onClick="subscribe" />
                     <PopupButton :color="color" :text="'Refresh'" :width="'5vw'" :minWidth="'75px'" :minHeight="'23px'" @onClick="refresh" />                              
                 </div>
@@ -41,11 +41,12 @@ export default defineComponent({
     },
     setup()
     {
+        const isMobile: ComputedRef<boolean> = computed(() => app.isMobile);
         const isLoading: Ref<boolean> = ref(false);
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentPrimaryColor.value);
         const isOnline: ComputedRef<boolean> = computed(() => app.isOnline);
         const message: ComputedRef<string> = computed(() => !isOnline.value ? "Please sign into Online Mode to view this Widget" 
-            : app.userLicense != LicenseStatus.Active ? "Please subscribe to view this Widget" : "");
+            : app.userLicense != LicenseStatus.Active ? isMobile.value ? "Please subscribe on your computer to view this feature" : "Please subscribe to view this Widget" : "");
 
         async function refresh()
         {
@@ -78,6 +79,7 @@ export default defineComponent({
         
         return {
             isLoading,
+            isMobile,
             message,
             color,
             isOnline,
@@ -146,5 +148,9 @@ export default defineComponent({
     padding-left: 10px;
     padding-right: 10px;
     font-size: clamp(10px, 0.7vw, 16px);
+}
+
+.widgetSubscriptionMessage.mobile .widgetSubscriptionMessage__message {
+    font-size: 15px;
 }
 </style>
