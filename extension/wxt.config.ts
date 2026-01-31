@@ -171,7 +171,6 @@ function reorderVaulticEntityPlugin() {
 export default defineConfig({
   modules: ['@wxt-dev/module-vue'],
   manifest: {
-    permissions: ['storage'],
     host_permissions: [
       'https://*.vaulticserver.vaultic.co/*',
       'https://vaultic-sts.vaulticserver.vaultic.co/*'
@@ -181,7 +180,23 @@ export default defineConfig({
         resources: ['icon/icon.png'],
         matches: ['<all_urls>']
       }
-    ]
+    ],
+    browser_specific_settings: {
+        gecko: {
+            // @ts-ignore
+            data_collection_permissions: {
+                "required": ["personallyIdentifyingInfo", "authenticationInfo"]
+            }
+        }
+    },
+    icons: {
+        '16': 'icon/icon.png',
+        '48': 'icon/icon.png',
+        '128': 'icon/icon.png'
+    },
+    name: 'Vaultic Extension',
+    short_name: 'Vaultic Extension',
+    description: 'The most secure password manager available'
   },
   vite: () => ({
     plugins: [

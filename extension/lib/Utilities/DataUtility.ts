@@ -8,20 +8,39 @@ export class DataUtility extends CoreDataUtility
         const bytes = new TextEncoder().encode(value);
         const deflated = deflate(bytes);
     
-        const binaryString = String.fromCharCode(...deflated);
-        return btoa(binaryString);
+        //@ts-ignore
+        return deflated.toBase64();
 	}
 
 	async uncompress(value: string): Promise<string>
 	{
-        const binaryString = atob(value);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++)
+        try 
         {
-            bytes[i] = binaryString.charCodeAt(i);
+            //@ts-ignore
+            const bytes = Uint8Array.fromBase64(value);
+            const inflated = inflate(bytes);
+            return new TextDecoder('utf-8').decode(inflated);
         }
+        catch (error)
+        {
+            // fallback to trying to decode latin1
+            try
+            {
+                const bytes = new Uint8Array(value.length);
+                for (let i = 0; i < value.length; i++) 
+                {
+                    bytes[i] = value.charCodeAt(i) & 0xFF;
+                }
 
-        const inflated = inflate(bytes);
-        return new TextDecoder('utf-8').decode(inflated);
+                const inflated = inflate(bytes);
+                return new TextDecoder().decode(inflated);
+            }
+            catch (error)
+            {
+                console.log(`Error decoding latin1: ${error}`);
+            }
+        }
+    
+        return "";
 	}
 }
