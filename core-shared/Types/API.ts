@@ -60,10 +60,13 @@ export interface CoreHelpers
     auth?: AuthHelper;
 }
 
+/** Error code when device has no secure lock screen (PIN/pattern/password). Used by mobile biometric auth. */
+export const AUTH_ERROR_SECURE_LOCK_SCREEN_REQUIRED = 'SECURE_LOCK_SCREEN_REQUIRED';
+
 export interface AuthHelper
 {
     isBiometricAvailable: () => Promise<boolean>;
-    promptToStoreBiometric: (key: string, email: string) => Promise<boolean>;
+    promptToStoreBiometric: (key: string, email: string) => Promise<{ success: boolean; errorCode?: string }>;
     promptToUnlockBiometric: () => Promise<{ key: string, email: string } | false>;
 }
 

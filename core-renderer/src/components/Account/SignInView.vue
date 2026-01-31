@@ -101,6 +101,7 @@ import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
 import { exportLogs } from '../../Helpers/ImportExportHelper';
 import { VaulticKey } from '@vaultic/shared/Types/Keys';
+import { AUTH_ERROR_SECURE_LOCK_SCREEN_REQUIRED } from '@vaultic/shared/Types/API';
 
 export default defineComponent({
     name: "SignInView",

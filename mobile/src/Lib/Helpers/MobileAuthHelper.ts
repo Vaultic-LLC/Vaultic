@@ -6,7 +6,8 @@ const biometricAuthPlugin = registerPlugin<BiometricAuthPlugin>('BiometricAuthPl
 interface BiometricAuthPlugin 
 {
     isAvailable(): Promise<{ available: boolean }>;
-    enable(options: { masterKey: string, email: string }): Promise<{ success: boolean }>;
+    isDeviceSecure(): Promise<{ secure: boolean }>;
+    enable(options: { masterKey: string, email: string }): Promise<{ success: boolean; errorCode?: string }>;
     unlock(): Promise<{ success: boolean, key?: string, email?: string }>;
 }
 
@@ -23,15 +24,24 @@ export class MobileAuthHelper implements AuthHelper
         return false;
     }
 
-    async promptToStoreBiometric(key: string, email: string): Promise<boolean>
+    async isDeviceSecure(): Promise<boolean>
+    {
+        const result = await biometricAuthPlugin.isDeviceSecure();
+        return typeof result === 'object' && 'secure' in result && result.secure === true;
+    }
+
+    async promptToStoreBiometric(key: string, email: string): Promise<{ success: boolean; errorCode?: string }>
     {
         const result = await biometricAuthPlugin.enable({ masterKey: key, email: email });
         if (typeof result === 'object' && 'success' in result)
         {
-            return result.success === true;
+            return {
+                success: result.success === true,
+                ...(result.errorCode != null && { errorCode: result.errorCode })
+            };
         }
 
-        return false;
+        return { success: false };
     }
 
     async promptToUnlockBiometric(): Promise<{ key: string, email: string } | false>

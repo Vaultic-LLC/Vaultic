@@ -16,6 +16,7 @@ import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
+import android.app.KeyguardManager
 
 private const val KEY_ALIAS = "VaulticBiometricKey"
 private const val ANDROID_KEYSTORE = "AndroidKeyStore"
@@ -25,6 +26,9 @@ private const val PREF_IV = "iv"
 private const val PREF_EMAIL = "email"
 private const val TAG = "BiometricVaultHelper"
 
+/** Error code returned when device has no secure lock screen (PIN/pattern/password). */
+const val ERROR_SECURE_LOCK_SCREEN_REQUIRED = "SECURE_LOCK_SCREEN_REQUIRED"
+
 class BiometricVaultHelper(private val context: Context) {
 
     private val executor = ContextCompat.getMainExecutor(context)
@@ -32,6 +36,13 @@ class BiometricVaultHelper(private val context: Context) {
     private val prefs: SharedPreferences by lazy {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
+
+    private val keyguardManager: KeyguardManager by lazy {
+        context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+    }
+
+    /** Returns true if the device has a secure lock screen (PIN, pattern, or password). Required for KeyStore keys with user authentication. */
+    fun isDeviceSecure(): Boolean = keyguardManager.isDeviceSecure
 
     fun isBiometricAvailable(): Boolean {
         val bm = BiometricManager.from(context)
@@ -48,9 +59,14 @@ class BiometricVaultHelper(private val context: Context) {
         AutofillKeyCache.clear()
     }
 
-    fun promptToStore(masterKey: String, email: String?, onResult: (Boolean) -> Unit) {
+    fun promptToStore(masterKey: String, email: String?, onResult: (Boolean, String?) -> Unit) {
+        if (!isDeviceSecure()) {
+            onResult(false, ERROR_SECURE_LOCK_SCREEN_REQUIRED)
+            return
+        }
         val cipher = getCipher(true) ?: run {
-            onResult(false); return
+            onResult(false, null)
+            return
         }
         val prompt = buildPrompt("Enable biometric unlock", "Use biometrics to enable autofill unlock")
         val biometricPrompt = BiometricPrompt(context as androidx.fragment.app.FragmentActivity, executor,
@@ -69,22 +85,22 @@ class BiometricVaultHelper(private val context: Context) {
                                 .putString(PREF_IV, Base64.encodeToString(iv, Base64.NO_WRAP))
                                 .putString(PREF_EMAIL, email)
                                 .apply()
-                            onResult(true)
+                            onResult(true, null)
                         } else {
-                            onResult(false)
+                            onResult(false, null)
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Encrypt failed", e)
-                        onResult(false)
+                        onResult(false, null)
                     }
                 }
 
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                    onResult(false)
+                    onResult(false, null)
                 }
 
                 override fun onAuthenticationFailed() {
-                    onResult(false)
+                    onResult(false, null)
                 }
             })
         biometricPrompt.authenticate(prompt, BiometricPrompt.CryptoObject(cipher))
@@ -105,7 +121,8 @@ class BiometricVaultHelper(private val context: Context) {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     try {
                         val decrypted = result.cryptoObject?.cipher?.doFinal(Base64.decode(cipherText, Base64.NO_WRAP))
-                        val payloadStr = decrypted?.toString(Charsets.UTF_8)
+                        // Decode bytes to UTF-8 string (ByteArray.toString() returns "[B@...", not decoded content)
+                        val payloadStr = decrypted?.decodeToString()
                         val payload = if (!payloadStr.isNullOrBlank()) JSONObject(payloadStr) else null
                         val masterKey = payload?.optString("masterKey")
                         val email = payload?.optString("email", null) ?: prefs.getString(PREF_EMAIL, null)

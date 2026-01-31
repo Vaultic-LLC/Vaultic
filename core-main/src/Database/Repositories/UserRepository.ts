@@ -489,11 +489,15 @@ class UserRepository extends VaulticRepository<User> implements IUserRepository
                 return TypedMethodResponse.fail(errorCodes.NO_USER);
             }
 
+            console.log('Getting app store state')
+
             const decryptedAppStoreState = await StoreState.getUsableState(masterKey, currentUser.appStoreState.state);
             if (!decryptedAppStoreState)
             {
                 return decryptedAppStoreState.addToErrorMessage("AppStoreState");
             }
+
+            console.log('Getting user preferences store state')
 
             let usableUserPreferencesState = await StoreState.getUsableState('', currentUser.userPreferencesStoreState.state);
             if (!usableUserPreferencesState.success)

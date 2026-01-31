@@ -92,6 +92,7 @@ export class StoreState extends VaulticEntity implements IStoreState
 
         if (decrypt && key)
         {
+            console.log(`Decrypting store state with key: ${key}`);
             const result = await environment.utilities.crypt.symmetricDecrypt(key, state);
             if (!result.success)
             {
@@ -101,7 +102,17 @@ export class StoreState extends VaulticEntity implements IStoreState
             value = result.value;
         }
 
-        const decompressed = await environment.utilities.data.uncompress(value!);
+        console.log(`Uncompressing store state: ${value}`);
+        let decompressed: string | undefined;
+        try
+        {
+            decompressed = await environment.utilities.data.uncompress(value!);
+        }
+        catch (e)
+        {
+            await environment.repositories.logs.log(undefined, e instanceof Error ? e.message : String(e), "Uncompress store state");
+            return TypedMethodResponse.fail();
+        }
         if (!decompressed)
         {
             return TypedMethodResponse.fail();

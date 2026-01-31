@@ -20,6 +20,12 @@ class BiometricAuthPlugin : Plugin() {
     }
 
     @PluginMethod
+    fun isDeviceSecure(call: PluginCall) {
+        val result = JSObject().apply { put("secure", helper.isDeviceSecure()) }
+        call.resolve(result)
+    }
+
+    @PluginMethod
     fun enable(call: PluginCall) {
         val masterKey = call.getString("masterKey")
         val email = call.getString("email")
@@ -27,8 +33,11 @@ class BiometricAuthPlugin : Plugin() {
             call.reject("masterKey is required")
             return
         }
-        helper.promptToStore(masterKey, email) { success ->
-            val result = JSObject().apply { put("success", success) }
+        helper.promptToStore(masterKey, email) { success, errorCode ->
+            val result = JSObject().apply {
+                put("success", success)
+                if (errorCode != null) put("errorCode", errorCode)
+            }
             call.resolve(result)
         }
     }
