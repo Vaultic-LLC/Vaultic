@@ -24,6 +24,25 @@
 
         </activity>
 
+        <service
+            android:name=".autofill.VaulticAutofillService"
+            android:label="@string/autofill_service_label"
+            android:permission="android.permission.BIND_AUTOFILL_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.autofill.AutofillService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.autofill"
+                android:resource="@xml/autofill_service_configuration" />
+            <!-- TODO: replace label/icon/placeholders once branding and settings activity are finalized -->
+        </service>
+
+        <activity
+            android:name=".autofill.BiometricUnlockActivity"
+            android:exported="false"
+            android:theme="@style/Theme.AppCompat.Dialog" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -38,4 +57,5 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.BIND_AUTOFILL_SERVICE" />
 </manifest>

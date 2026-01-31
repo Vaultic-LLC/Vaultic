@@ -7,9 +7,10 @@ import ConfirmationService from 'primevue/confirmationservice';
 import appStore from '@/lib/renderer/Objects/Stores/AppStore';
 import setupStoreModifyBridges from '@/lib/Helpers/StoreModifyBridgeHelper';
 import setExtensionAPI from '@/lib/Helpers/ExtensionAPI';
+import app from '@/lib/renderer/Objects/Stores/AppStore';
 
-const app = createApp(App);
-app.use(PrimeVue, {
+const appUI = createApp(App);
+appUI.use(PrimeVue, {
     theme: {
         preset: Aura,
         options: {
@@ -22,5 +23,8 @@ appStore.popups.hideAccountSetup();
 setupStoreModifyBridges();
 setExtensionAPI();
 
-app.use(ConfirmationService);
-app.mount('#app');
+app.userPreferences.loadLastUsersPreferences().then(() =>
+{
+    appUI.use(ConfirmationService);
+    appUI.mount('#app');
+});

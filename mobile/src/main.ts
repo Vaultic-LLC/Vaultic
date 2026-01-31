@@ -16,8 +16,15 @@ import { HashUtility } from './Lib/Utilities/HashUtility';
 import { CryptUtility } from './Lib/Utilities/CryptUtility';
 import { createDataSource, deleteDatabase } from './Lib/Helpers/DatabaseHelper';
 import app from './Core/Renderer/Objects/Stores/AppStore';
+import { postHookHandler } from './Lib/Helpers/PostHookHander';
+import { MobileAuthHelper } from './Lib/Helpers/MobileAuthHelper';
 
-const apiResolver = coreAPIResolver.toPlatformDependentAPIResolver(() => Promise.resolve({} as DeviceInfo), new CVaulticHelper(), new PromisifyGeneratorUtility());
+const apiResolver = coreAPIResolver.toPlatformDependentAPIResolver(
+    () => Promise.resolve({} as DeviceInfo), 
+    new CVaulticHelper(), 
+    new PromisifyGeneratorUtility(),
+    new MobileAuthHelper());
+
 rendererAPI.api.setAPIResolver(apiResolver);
 
 let currentSession: string = "";
@@ -50,6 +57,7 @@ environment.init({
         createDataSource,
         deleteDatabase
     },
+    postHooks: postHookHandler,
     getDeviceInfo: () => ({
         deviceName: "VaulticMobile",
         model: "Vaultic",
@@ -61,17 +69,19 @@ environment.init({
 }).then(() => 
 {
     app.isMobile = true;
-    
-    const appUI = createApp(App);
-    appUI.use(PrimeVue, {
-        theme: {
-            preset: Aura,
-            options: {
-                darkModeSelector: '.darkMode',
+    app.userPreferences.loadLastUsersPreferences().then(() =>
+    {
+        const appUI = createApp(App);
+        appUI.use(PrimeVue, {
+            theme: {
+                preset: Aura,
+                options: {
+                    darkModeSelector: '.darkMode',
+                }
             }
-        }
-    });
-    
-    appUI.use(ConfirmationService);
-    appUI.mount('#app');
+        });
+        
+        appUI.use(ConfirmationService);
+        appUI.mount('#app');
+    });  
 });

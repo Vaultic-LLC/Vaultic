@@ -161,6 +161,11 @@ export default defineComponent({
                 const response = await api.helpers.server.logUserIn(masterKey.value, email.value, false, reloadAllData.value, mfaCode);
                 if (response.success && response.value!.Success)
                 {
+                    if (api.helpers.auth?.isBiometricAvailable())
+                    {
+                        await api.helpers.auth.promptToStoreBiometric(masterKey.value, email.value);
+                    }
+
                     mfaIsShowing.value = false;
                     app.isOnline = true;
 
@@ -394,6 +399,19 @@ export default defineComponent({
             api.environment.hasConnection().then((result: boolean) =>
             {
                 onlineMode.value = result;
+                if (api.helpers.auth?.isBiometricAvailable())
+                {
+                    api.helpers.auth.promptToUnlockBiometric().then((result: { key: string, email: string } | false) =>
+                    {
+                        if (result)
+                        {
+                            masterKey.value = result.key;
+                            email.value = result.email;
+
+                            onSubmit();
+                        }
+                    });
+                }
             });
 
             api.repositories.users.getLastUsedUserInfo().then((user) =>

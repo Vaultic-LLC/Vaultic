@@ -4,4 +4,7 @@
     <string name="title_activity_main">Vaultic</string>
     <string name="package_name">com.vaulticmobile.vaultic</string>
     <string name="custom_url_scheme">com.vaulticmobile.vaultic</string>
+    <string name="autofill_service_label">Vaultic Autofill (TODO label)</string>
+    <string name="autofill_service_description">Autofill passwords from Vaultic (TODO description)</string>
+    <string name="autofill_logo_content_description">Vaultic autofill option</string>
 </resources>

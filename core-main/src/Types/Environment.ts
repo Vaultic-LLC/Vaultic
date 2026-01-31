@@ -7,6 +7,7 @@ import CoreGeneratorUtility from "../Utilities/CoreGeneratorUtility";
 import { CoreHashUtility } from "../Utilities/CoreHashUtility";
 import { VaulticRepositories } from "../Database/Repositories";
 import { VaulticCache } from "../Cache";
+import { PostTransactionHooks } from "@vaultic/shared/Types/Repositories";
 
 // List of stuff that core-main needs that is platform dependent 
 export interface InternalEnvironment
@@ -20,6 +21,7 @@ export interface InternalEnvironment
         generator: CoreGeneratorUtility;
         data: CoreDataUtility;
     };
+    postHooks?: PostTransactionHooks,
     database:
     {
         createDataSource: (isTest: boolean) => DataSource;
@@ -44,6 +46,7 @@ export interface Environment
     repositories: VaulticRepositories;
     cache: VaulticCache;
     failedToInitalizeDatabase: boolean;
+    postHooks?: PostTransactionHooks;
     setupDatabase: () => Promise<void>;
     recreateDatabase: () => Promise<boolean>;
     getDeviceInfo: () => DeviceInfo;

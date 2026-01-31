@@ -15,11 +15,6 @@ export class VaulticRepository<T extends VaulticEntity>
         return undefined;
     }
 
-    protected getRepositoryExtension(): any 
-    {
-        return {}
-    }
-
     init()
     {
         const repository = this.getRepository();
@@ -29,6 +24,38 @@ export class VaulticRepository<T extends VaulticEntity>
         }
 
         this.repository = repository;
+    }
+
+    protected async postInsert(key: string, entity: T | DeepPartial<T>): Promise<void> 
+    { 
+        if (environment.postHooks)
+        {
+            await environment.postHooks.postInsert(this.repository.metadata.tableName, key, JSON.stringify(entity));
+        }
+    }
+
+    protected async postUpdate(key: string, entity: T | DeepPartial<T>): Promise<void> 
+    { 
+        if (environment.postHooks)
+        {
+            await environment.postHooks.postUpdate(this.repository.metadata.tableName, key, JSON.stringify(entity));
+        }
+    }
+
+    protected async postOverride(findBy: number | FindOptionsWhere<T>, entity: DeepPartial<T>): Promise<void> 
+    { 
+        if (environment.postHooks && typeof findBy === 'number')
+        {
+            await environment.postHooks.postOverride(this.repository.metadata.tableName, findBy, JSON.stringify(entity));
+        }
+    }
+
+    protected async postDelete(findBy: number | FindOptionsWhere<T>): Promise<void> 
+    { 
+        if (environment.postHooks && typeof findBy === 'number')
+        {
+            await environment.postHooks.postDelete(this.repository.metadata.tableName, findBy);
+        }
     }
 
     public async retrieveReactive(predicate: (repository: Repository<T>) => Promise<T | null>): Promise<T | null>
@@ -111,6 +138,8 @@ export class VaulticRepository<T extends VaulticEntity>
         {
             const repo = manager.withRepository(this.repository);
             await repo.insert(this.getSavableEntity(entity) as any);
+
+            await this.postInsert(key, entity);
         }
         catch (e)
         {
@@ -130,6 +159,8 @@ export class VaulticRepository<T extends VaulticEntity>
         {
             const repo = manager.withRepository(this.repository);
             await repo.insert(entity as any);
+
+            await this.postInsert('', entity);
         }
         catch (e)
         {
@@ -178,7 +209,14 @@ export class VaulticRepository<T extends VaulticEntity>
         try 
         {
             const result = await repo.update(entity.identifier(), mockEntity);
-            return result.affected == 1;
+
+            const succeeded = result.affected == 1;
+            if (succeeded)
+            {
+                await this.postUpdate(key, entity);
+            }
+
+            return succeeded;
         }
         catch (e)
         {
@@ -194,6 +232,8 @@ export class VaulticRepository<T extends VaulticEntity>
         {
             const repo = manager.withRepository(this.repository);
             await repo.update(findBy, entity as any);
+
+            await this.postOverride(findBy, entity);
         }
         catch (e)
         {
@@ -243,6 +283,8 @@ export class VaulticRepository<T extends VaulticEntity>
         try
         {
             await repo.delete(findBy);
+            await this.postDelete(findBy);
+
             return true;
         }
         catch (e)

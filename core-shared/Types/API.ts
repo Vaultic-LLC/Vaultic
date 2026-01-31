@@ -57,6 +57,14 @@ export interface CoreHelpers
     validation: Promisify<ValidationHelper>;
     server: ServerHelper;
     repositories: RepositoryHelper;
+    auth?: AuthHelper;
+}
+
+export interface AuthHelper
+{
+    isBiometricAvailable: () => Promise<boolean>;
+    promptToStoreBiometric: (key: string, email: string) => Promise<boolean>;
+    promptToUnlockBiometric: () => Promise<{ key: string, email: string } | false>;
 }
 
 // Not all things in the api are available in core-main so this is a subset of things that are
@@ -79,7 +87,11 @@ export class CoreAPIResolver
         this.repositories = repositories;
     }
 
-    toPlatformDependentAPIResolver(getDeviceInfo: () => Promise<DeviceInfo>, vaulticHelper: VaulticHelper, generatorUtility: Promisify<ClientGeneratorUtility>): PlatformDependentAPIResolver
+    toPlatformDependentAPIResolver(
+        getDeviceInfo: () => Promise<DeviceInfo>, 
+        vaulticHelper: VaulticHelper, 
+        generatorUtility: Promisify<ClientGeneratorUtility>,
+        authHelper?: AuthHelper): PlatformDependentAPIResolver
     {
         return {
             ...this,
@@ -88,6 +100,7 @@ export class CoreAPIResolver
             {
                 ...this.helpers,
                 vaultic: vaulticHelper,
+                auth: authHelper,
             },
             utilities:
             {

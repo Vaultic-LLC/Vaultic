@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>Vaultic Autofill (TODO rename)</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.example.vaultic.autofill.extension.TODO_REPLACE</string>
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionAttributes</key>
+		<dict>
+			<key>ASCredentialProviderExtensionSupportedCredentialTypes</key>
+			<array>
+				<string>ASPasswordCredential</string>
+			</array>
+		</dict>
+		<key>NSExtensionPointIdentifier</key>
+		<string>com.apple.authentication-services.credential-provider</string>
+		<key>NSExtensionPrincipalClass</key>
+		<string>CredentialProviderViewController</string>
+	</dict>
+</dict>
+</plist>
+

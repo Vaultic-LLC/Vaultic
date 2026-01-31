@@ -30,6 +30,7 @@ class Environment
     get repositories() { return this.internalRepositories; }
     get server() { return this.internalServer; }
     get cache() { return this.internalCache; }
+    get postHooks() { return this.internalEnvironment.postHooks; }
 
     get failedToInitalizeDatabase() { return this.internalFailedToInitalizeDatabase; }
 
