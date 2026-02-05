@@ -41,7 +41,7 @@ export default defineComponent({
 <style>
 #mobileDashboard {
     width: 100vw;
-    height: 100vh;
+    height: calc(100% - 35px);
     display: flex;
     flex-direction: column;
 }

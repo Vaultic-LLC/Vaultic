@@ -65,7 +65,9 @@ export const AUTH_ERROR_SECURE_LOCK_SCREEN_REQUIRED = 'SECURE_LOCK_SCREEN_REQUIR
 
 export interface AuthHelper
 {
+    isDeviceSecure: () => Promise<boolean>;
     isBiometricAvailable: () => Promise<boolean>;
+    hasStoredBiometricCredentials: () => Promise<boolean>;
     promptToStoreBiometric: (key: string, email: string) => Promise<{ success: boolean; errorCode?: string }>;
     promptToUnlockBiometric: () => Promise<{ key: string, email: string } | false>;
 }

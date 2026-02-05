@@ -48,11 +48,11 @@ export default defineComponent({
 <style>
 .mobileTabSelector {
     width: 100%;
-    height: 60px;
+    height: 90px;
     color: white;
     display: flex;
     justify-content: space-around;
-    align-items: center;
+    align-items: flex-start;
     font-size: 25px;
     border-top: 1px solid white;
 }
@@ -65,6 +65,10 @@ export default defineComponent({
 .mobileTabSelector__text {
     font-size: 12px;
     transition: 0.3s;
+}
+
+.mobileTabSelector__tab {
+    margin-top: 5px;
 }
 
 .mobileTabSelector__tab--active {

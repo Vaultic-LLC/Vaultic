@@ -7,6 +7,7 @@ interface BiometricAuthPlugin
 {
     isAvailable(): Promise<{ available: boolean }>;
     isDeviceSecure(): Promise<{ secure: boolean }>;
+    hasStoredCredentials(): Promise<{ stored: boolean }>;
     enable(options: { masterKey: string, email: string }): Promise<{ success: boolean; errorCode?: string }>;
     unlock(): Promise<{ success: boolean, key?: string, email?: string }>;
 }
@@ -28,6 +29,12 @@ export class MobileAuthHelper implements AuthHelper
     {
         const result = await biometricAuthPlugin.isDeviceSecure();
         return typeof result === 'object' && 'secure' in result && result.secure === true;
+    }
+
+    async hasStoredBiometricCredentials(): Promise<boolean>
+    {
+        const result = await biometricAuthPlugin.hasStoredCredentials();
+        return typeof result === 'object' && 'stored' in result && result.stored === true;
     }
 
     async promptToStoreBiometric(key: string, email: string): Promise<{ success: boolean; errorCode?: string }>

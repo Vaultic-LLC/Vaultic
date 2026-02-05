@@ -26,6 +26,12 @@ class BiometricAuthPlugin : Plugin() {
     }
 
     @PluginMethod
+    fun hasStoredCredentials(call: PluginCall) {
+        val result = JSObject().apply { put("stored", helper.hasStoredKey()) }
+        call.resolve(result)
+    }
+
+    @PluginMethod
     fun enable(call: PluginCall) {
         val masterKey = call.getString("masterKey")
         val email = call.getString("email")
@@ -33,13 +39,16 @@ class BiometricAuthPlugin : Plugin() {
             call.reject("masterKey is required")
             return
         }
-        helper.promptToStore(masterKey, email) { success, errorCode ->
-            val result = JSObject().apply {
-                put("success", success)
-                if (errorCode != null) put("errorCode", errorCode)
+        val act = activity ?: bridge.activity
+        act?.runOnUiThread {
+            helper.promptToStore(masterKey, email) { success, errorCode ->
+                val result = JSObject().apply {
+                    put("success", success)
+                    if (errorCode != null) put("errorCode", errorCode)
+                }
+                call.resolve(result)
             }
-            call.resolve(result)
-        }
+        } ?: call.reject("Activity not available")
     }
 
     @PluginMethod
@@ -50,19 +59,22 @@ class BiometricAuthPlugin : Plugin() {
 
     @PluginMethod
     fun unlock(call: PluginCall) {
-        helper.promptToDecrypt { key, email ->
-            if (!key.isNullOrBlank()) {
-                val result = JSObject().apply {
-                    put("success", true)
-                    put("key", key)
-                    put("email", email)
+        val act = activity ?: bridge.activity
+        act?.runOnUiThread {
+            helper.promptToDecrypt { key, email ->
+                if (!key.isNullOrBlank()) {
+                    val result = JSObject().apply {
+                        put("success", true)
+                        put("key", key)
+                        put("email", email)
+                    }
+                    call.resolve(result)
+                } else {
+                    val result = JSObject().apply { put("success", false) }
+                    call.resolve(result)
                 }
-                call.resolve(result)
-            } else {
-                val result = JSObject().apply { put("success", false) }
-                call.resolve(result)
             }
-        }
+        } ?: call.reject("Activity not available")
     }
 }
 

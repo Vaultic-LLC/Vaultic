@@ -264,7 +264,8 @@ export default defineComponent({
 <style>
 .mobileHome {
     flex-grow: 1;
-    height: calc(100vh - 60px);
+    /* 60 for the tab, 15 for top padding */
+    height: calc(100vh - 125px);
     position: relative;
     display: flex;
     flex-direction: column;

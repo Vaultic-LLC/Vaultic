@@ -1,7 +1,7 @@
 <template>
     <Popups />
     <ConfirmDialog></ConfirmDialog>
-    <div id="mainUI" class="mainUI">
+    <div id="mainUI" class="mainUI" :class="{ 'mobile': isMobile }">
         <template v-if="isMobile">
             <MobileDashboard />
         </template>
@@ -207,6 +207,11 @@ div {
 h2 {
     margin-top: min(5px, 10%);
     margin-bottom: min(5px, 10%);
+}
+
+.mainUI.mobile {
+    height: 100%;
+    position: relative;
 }
 
 .tempWidget {
