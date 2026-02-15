@@ -1,41 +1,46 @@
 <template>
     <Popups />
     <ConfirmDialog></ConfirmDialog>
-    <div id="mainUI" class="mainUI">
-        <SideDrawer />
-        <div class="center">
-            <ColorPaletteContainer />
+    <div id="mainUI" class="mainUI" :class="{ 'mobile': isMobile }">
+        <template v-if="isMobile">
+            <MobileDashboard />
+        </template>
+        <template v-else>
+            <SideDrawer />
+            <div class="center">
+                <ColorPaletteContainer />
+                <Transition name="fade" mode="out-in">
+                    <BreachedPasswords v-if="isVaultView" />
+                </Transition>
+                <Transition name="fade" mode="out-in">
+                    <div id="tables" v-if="isVaultView">
+                        <FilterGroupTable />
+                        <PasswordValueTable />
+                    </div>
+                    <div v-else>
+                        <AccountInfoWidget />
+                        <OrganizationDeviceTable />
+                    </div>
+                </Transition>
+            </div>
             <Transition name="fade" mode="out-in">
-                <BreachedPasswords v-if="isVaultView" />
+                <PasswordValueGauges v-if="isVaultView" />
             </Transition>
             <Transition name="fade" mode="out-in">
-                <div id="tables" v-if="isVaultView">
-                    <FilterGroupTable />
-                    <PasswordValueTable />
-                </div>
-                <div v-else>
-                    <AccountInfoWidget />
-                    <OrganizationDeviceTable />
+                <FilterGroupGauges v-if="isVaultView" />
+            </Transition>
+            <Transition name="fade" mode="out-in">
+                <div v-if="isVaultView" class="tempWidget secureProgressChartWidget">
+                    <PasswordStrengthProgressChart />
                 </div>
             </Transition>
-        </div>
-        <Transition name="fade" mode="out-in">
-            <PasswordValueGauges v-if="isVaultView" />
-        </Transition>
-        <Transition name="fade" mode="out-in">
-            <FilterGroupGauges v-if="isVaultView" />
-        </Transition>
-        <Transition name="fade" mode="out-in">
-            <div v-if="isVaultView" class="tempWidget secureProgressChartWidget">
-                <PasswordStrengthProgressChart />
-            </div>
-        </Transition>
-        <Transition name="fade" mode="out-in">
-            <div class="tempWidget loginHistoryCalendarWidget" v-if="isVaultView">
-                <LoginHistoryCalendar />
-            </div>
-        </Transition>
-        <MenuWidget />
+            <Transition name="fade" mode="out-in">
+                <div class="tempWidget loginHistoryCalendarWidget" v-if="isVaultView">
+                    <LoginHistoryCalendar />
+                </div>
+            </Transition>
+            <MenuWidget />         
+        </template>
     </div>
 </template>
 
@@ -57,10 +62,11 @@ import AboutIconCard from "./components/Widgets/IconCards/AboutIconCard.vue"
 import LayoutIconCard from './components/Widgets/IconCards/LayoutIconCard.vue';
 import Popups from './components/Popups.vue';
 import MenuWidget from "./components/Widgets/IconCards/MenuWidget.vue"
-import SideDrawer from "./components/SideDrawer.vue"
+import SideDrawer from "./components/SideDrawers/SideDrawer.vue"
 import OrganizationDeviceTable from './components/Table/OrganizationDeviceTable.vue';
 import ConfirmDialog from "primevue/confirmdialog";
 import AccountInfoWidget from './components/Widgets/AccountInfoWidget.vue';
+import MobileDashboard from './components/MobileDashboard.vue';
 
 import { AccountSetupView } from './Types/Models';
 import { getLinearGradientFromColor } from './Helpers/ColorHelper';
@@ -90,13 +96,15 @@ export default defineComponent({
         SideDrawer,
         OrganizationDeviceTable,
         ConfirmDialog,
-        AccountInfoWidget
+        AccountInfoWidget,
+        MobileDashboard
     },
     setup()
     {
         const isVaultView: ComputedRef<boolean> = computed(() => app.isVaultView);
         const isOnline: ComputedRef<boolean> = computed(() => app.isOnline);
         const finishedMounting: Ref<boolean> = ref(false);
+        const isMobile: ComputedRef<boolean> = computed(() => app.isMobile);
 
         const currentColorPalette: ComputedRef<ColorPalette> = computed(() => app.userPreferences.currentColorPalette);
         //let backgroundClr: Ref<string> = ref('#0f111d');
@@ -141,6 +149,7 @@ export default defineComponent({
 
         let clr = "#0f111d";
         return {
+            isMobile,
             isVaultView,
             AppView,
             currentColorPalette,
@@ -198,6 +207,11 @@ div {
 h2 {
     margin-top: min(5px, 10%);
     margin-bottom: min(5px, 10%);
+}
+
+.mainUI.mobile {
+    height: 100%;
+    position: relative;
 }
 
 .tempWidget {

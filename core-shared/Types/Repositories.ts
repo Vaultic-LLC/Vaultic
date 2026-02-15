@@ -61,3 +61,11 @@ export interface ClientLogRepository
     getExportableLogData: () => Promise<string>;
     log: (errorCode?: number, message?: string, callStack?: string) => Promise<boolean>;
 }
+
+export interface PostTransactionHooks
+{
+    postInsert: (table: string,key: string, entity: string) => Promise<void>;
+    postUpdate: (table: string, key: string, entity: string) => Promise<void>;
+    postOverride: (table: string, findBy: number, entity: string) => Promise<void>;
+    postDelete: (table: string, findBy: number) => Promise<void>;
+}

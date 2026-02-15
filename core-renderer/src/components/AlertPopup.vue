@@ -21,6 +21,14 @@
                         :minWidth="'75px'" :maxWidth="'100px'" :height="'30%'" :minHeight="'30px'" :maxHeight="'35px'"
                         :fontSize="'clamp(15px, 0.7vw, 20px)'" @onClick="onRightButtonClick">
                     </PopupButton>
+                    <PopupButton v-if="rightButton" :color="primaryColor" :text="rightButton?.text" :width="'6vw'"
+                        :minWidth="'75px'" :maxWidth="'100px'" :height="'30%'" :minHeight="'30px'" :maxHeight="'35px'"
+                        :fontSize="'clamp(15px, 0.7vw, 20px)'" @onClick="onRightButtonClick">
+                    </PopupButton>
+                    <PopupButton :color="primaryColor" :text="'Copy Logs'" :width="'6vw'"
+                        :minWidth="'75px'" :maxWidth="'100px'" :height="'30%'" :minHeight="'30px'" :maxHeight="'35px'"
+                        :fontSize="'clamp(15px, 0.7vw, 20px)'" @onClick="onCopyLogsClick">
+                    </PopupButton>
                 </div>
             </div>
         </ObjectPopup>
@@ -37,6 +45,7 @@ import ButtonLink from './InputFields/ButtonLink.vue';
 import app from "../Objects/Stores/AppStore";
 import { popups } from '../Objects/Stores/PopupStore';
 import { ButtonModel } from '../Types/Models';
+import { api } from '../API';
 
 export default defineComponent({
     name: "AlertPopup",
@@ -100,6 +109,14 @@ export default defineComponent({
             window.open('mailto:Vaultic.help@outlook.com')
         }
 
+        function onCopyLogsClick()
+        {
+            api.repositories.logs.getExportableLogData().then((result) =>
+            {
+                app.copyToClipboard(result);
+            });
+        }
+
         onMounted(() =>
         {
             app.popups.addOnEnterHandler(popupInfo.enterOrder!, onLeftButtonClick);
@@ -119,7 +136,8 @@ export default defineComponent({
             onLeftButtonClick,
             onRightButtonClick,
             onOk,
-            contactSupport
+            contactSupport,
+            onCopyLogsClick
         }
     }
 })

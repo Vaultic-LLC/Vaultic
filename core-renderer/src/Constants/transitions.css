@@ -52,3 +52,14 @@
 .listFade-leave-active {
     position: absolute;
 }
+
+.shiftRight-enter-active,
+.shiftRight-leave-active {
+    transition: all 0.1s linear;
+    left: 0px;
+}
+
+.shiftRight-enter-from,
+.shiftRight-leave-to {
+    left: -200px;
+}

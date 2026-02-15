@@ -2,6 +2,8 @@ import { MigrationInterface, QueryRunner, Table, TableColumnOptions, TableForeig
 
 export class CreateSchema1722604318830 implements MigrationInterface
 {
+    name = "CreateSchema1722604318830";
+
     public async up(queryRunner: QueryRunner): Promise<void>
     {
         const vaulticEntityProperties: TableColumnOptions[] = [

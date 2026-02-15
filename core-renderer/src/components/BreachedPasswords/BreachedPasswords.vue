@@ -1,5 +1,5 @@
 <template>
-    <div class="breachedPasswordsContainer">
+    <div class="breachedPasswordsContainer" :class="{ mobile: isMobile, loaded: loaded }">
         <div class="breachedPasswordsContainer__content">
             <div v-if="canLoadWidget" class="breachedPasswordsContainer__scanButton" :class="{ scanning: scanning }"
                 @click="startScan(true)">
@@ -24,7 +24,7 @@
                         :allowSearching="false" :hidePaginator="true" :allowPinning="false" :smallRows="true" />
                 </div>
                 <div class="breachedPasswordsContainer__metric">
-                    <SmallMetricGauge :model="metricModel" />
+                    <SmallMetricGauge :model="metricModel" :sizeOverride="isMobile ? '125px' : undefined" :fontSizeOverride="isMobile ? '24px' : undefined" />
                 </div>
             </div>
             <div class="breachedPasswordsContainer__items" v-else>
@@ -35,7 +35,7 @@
 </template>
 
 <script lang="ts">
-import { ComputedRef, Reactive, Ref, computed, defineComponent, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { ComputedRef, Reactive, Ref, computed, defineComponent, inject, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 
 import SmallMetricGauge from '../Dashboard/SmallMetricGauge.vue';
 import WidgetErrorMessage from '../Widgets/WidgetErrorMessage.vue';
@@ -48,6 +48,8 @@ import { AtRiskType, DataType, Password, VaultAndBreachCount } from '../../Types
 import { ReactivePassword } from '../../Objects/Stores/ReactivePassword';
 import { SortedCollection } from '../../Objects/DataStructures/SortedCollections';
 import { OH } from '@vaultic/shared/Utilities/PropertyManagers';
+import { ActiveMobileTabKey } from '../../Constants/Keys';
+import { MobileTabItem } from '../../Types/Components';
 
 export default defineComponent({
     name: "BreachedPasswords",
@@ -60,12 +62,19 @@ export default defineComponent({
     },
     setup()
     {
+        const isMobile: ComputedRef<boolean> = computed(() => app.isMobile);
+
         const canLoadWidget: ComputedRef<boolean> = computed(() => app.canShowSubscriptionWidgets.value);
         const color: ComputedRef<string> = computed(() => app.userPreferences.currentColorPalette.p.p);
         const scanning: Ref<boolean> = ref(false);
         const failedToLoad: ComputedRef<boolean> = computed(() => app.vaultDataBreaches.failedToLoadDataBreaches);
         let backingVaultsAndBreachCount: Map<string, VaultAndBreachCount> = new Map();
         const vaultAndBreachCountCollection: SortedCollection = new SortedCollection([], () => backingVaultsAndBreachCount, "vault");
+
+        const activeMobileTab: Ref<string> | undefined = inject(ActiveMobileTabKey);
+
+        // this is just to make sure button transitions don't trigger while they are loading in
+        const loaded: Ref<boolean> = ref(false);
 
         const tableDataSources: Reactive<TableDataSources> = reactive(
         {
@@ -123,10 +132,16 @@ export default defineComponent({
                     {
                         app.activePasswordValuesTable = DataType.Passwords;
                         app.currentVault.passwordStore.toggleAtRiskType(DataType.Passwords, AtRiskType.Breached);
+
+                        // Navigate to the home tab to show the users the passwords that are breached
+                        if (app.currentVault.passwordStore.activeAtRiskPasswordType == AtRiskType.Breached && isMobile.value && activeMobileTab)
+                        {
+                            activeMobileTab.value = MobileTabItem.Home;
+                        }
                     }
                 };
             }
-        })
+        });
 
         async function startScan(notifyComplete: boolean)
         {
@@ -242,6 +257,8 @@ export default defineComponent({
             app.currentVault.passwordStore.addEvent("onCheckPasswordsForBreach", checkPasswordsForBreach);
 
             setRows();
+
+            setTimeout(() => loaded.value = true, 100);
         });
 
         onUnmounted(() =>
@@ -254,6 +271,8 @@ export default defineComponent({
         });
 
         return {
+            isMobile,
+            loaded,
             canLoadWidget,
             color,
             scanning,
@@ -284,6 +303,19 @@ export default defineComponent({
     align-items: center;
     border-radius: 20px;
     background: rgb(44 44 51 / 16%);
+}
+
+/* This widget is styled like the entire page on mobile */
+.breachedPasswordsContainer.mobile {
+    position: relative;
+    top: unset;
+    left: unset;
+    height: 100%;
+    width: 100%;
+    min-width: unset;
+    min-height: unset;
+    border-radius: unset;
+    background: unset;
 }
 
 /* @media (max-width: 1300px) {
@@ -321,6 +353,10 @@ export default defineComponent({
     flex-grow: 1;
 }
 
+.breachedPasswordsContainer.mobile .breachedPasswordsContainer__items {
+    flex-direction: column-reverse;
+}
+
 .breeachedPasswordTable {
     position: relative;
     width: 60%;
@@ -339,6 +375,13 @@ export default defineComponent({
     height: 100%;
     /* background: rgb(44 44 51 / 16%); */
     border-radius: 20px;
+}
+
+.breachedPasswordsContainer.mobile .breachedPasswordsContainer__map {
+    background: unset;
+    border-radius: unset;
+    width: 100%;
+    height: 175%;
 }
 
 .breachedPasswordsContainer__metric {
@@ -371,9 +414,17 @@ export default defineComponent({
     color: white;
     border-radius: clamp(7px, 0.4vw, 0.425rem);
     border: clamp(1.5px, 0.1vw, 2px) solid v-bind(color);
-    transition: 0.3s;
     font-size: clamp(10px, 0.8vw, 17px);
     cursor: pointer;
+}
+
+.breachedPasswordsContainer.loaded .breachedPasswordsContainer__scanButton {
+    transition: 0.3s;
+}
+
+.breachedPasswordsContainer.mobile .breachedPasswordsContainer__scanButton {
+    width: 50px;
+    height: 25px;
 }
 
 .breachedPasswordsContainer__scanButton.scanning {
@@ -402,9 +453,17 @@ export default defineComponent({
     color: white;
     border-radius: clamp(7px, 0.4vw, 0.425rem);
     border: clamp(1.5px, 0.1vw, 2px) solid v-bind(color);
-    transition: 0.3s;
     font-size: clamp(10px, 0.8vw, 17px);
     cursor: pointer;
+}
+
+.breachedPasswordsContainer.loaded .breachedPasswordsContainer__clearButton {
+    transition: 0.3s;
+}
+
+.breachedPasswordsContainer.mobile .breachedPasswordsContainer__clearButton {
+    width: 50px;
+    height: 25px;
 }
 
 .breachedPasswordsContainer__clearButton:hover {
@@ -415,5 +474,9 @@ export default defineComponent({
     position: relative;
     height: 100%;
     width: 93%;
+}
+
+.breachedPasswordsContainer.mobile #breachPasswordsByVault {
+    width: 100%;
 }
 </style>

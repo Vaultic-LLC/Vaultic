@@ -57,6 +57,19 @@ export interface CoreHelpers
     validation: Promisify<ValidationHelper>;
     server: ServerHelper;
     repositories: RepositoryHelper;
+    auth?: AuthHelper;
+}
+
+/** Error code when device has no secure lock screen (PIN/pattern/password). Used by mobile biometric auth. */
+export const AUTH_ERROR_SECURE_LOCK_SCREEN_REQUIRED = 'SECURE_LOCK_SCREEN_REQUIRED';
+
+export interface AuthHelper
+{
+    isDeviceSecure: () => Promise<boolean>;
+    isBiometricAvailable: () => Promise<boolean>;
+    hasStoredBiometricCredentials: () => Promise<boolean>;
+    promptToStoreBiometric: (key: string, email: string) => Promise<{ success: boolean; errorCode?: string }>;
+    promptToUnlockBiometric: () => Promise<{ key: string, email: string } | false>;
 }
 
 // Not all things in the api are available in core-main so this is a subset of things that are
@@ -79,7 +92,11 @@ export class CoreAPIResolver
         this.repositories = repositories;
     }
 
-    toPlatformDependentAPIResolver(getDeviceInfo: () => Promise<DeviceInfo>, vaulticHelper: VaulticHelper, generatorUtility: Promisify<ClientGeneratorUtility>): PlatformDependentAPIResolver
+    toPlatformDependentAPIResolver(
+        getDeviceInfo: () => Promise<DeviceInfo>, 
+        vaulticHelper: VaulticHelper, 
+        generatorUtility: Promisify<ClientGeneratorUtility>,
+        authHelper?: AuthHelper): PlatformDependentAPIResolver
     {
         return {
             ...this,
@@ -88,6 +105,7 @@ export class CoreAPIResolver
             {
                 ...this.helpers,
                 vaultic: vaulticHelper,
+                auth: authHelper,
             },
             utilities:
             {

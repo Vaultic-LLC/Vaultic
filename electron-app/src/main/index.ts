@@ -78,7 +78,7 @@ else
 				contextIsolation: true,
 				preload: join(__dirname, '../preload/index.js'),
 				backgroundThrottling: false,
-				devTools: !app.isPackaged
+				devTools: true
 			}
 		});
 

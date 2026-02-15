@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en" class="darkMode">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- Allow wasm (requires wasm-unsafe-eval) and runtime eval used by wasm bootstrap; keep default + stripe + basic assets -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self' https://js.stripe.com/v3/;
+      script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' blob:;
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data:;
+      connect-src 'self' https://vaultic-sts.vaulticserver.vaultic.co https://*.vaulticserver.vaultic.co;
+      worker-src 'self' blob:;
+    " />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+	<meta name=" viewport" content="width=device-width,initial-scale=1,minimum-scale=1.0" charset="UTF-8" />
+    <title>vaultic-mobile</title>
+  </head>
+  <body id="body">
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

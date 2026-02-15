@@ -43,3 +43,10 @@ export interface ObjectViewComponent extends Component
 {
     addWarning: (message: string) => void;
 }
+
+export enum MobileTabItem
+{
+    Home = "Home",
+    Breaches = "Breaches",
+    Lock = "Lock",
+}

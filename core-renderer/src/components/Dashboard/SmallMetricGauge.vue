@@ -22,7 +22,7 @@ ChartJS.register(ArcElement, Tooltip, Legend)
 
 export default defineComponent({
     name: "SmallMetricGauge",
-    props: ['model'],
+    props: ['model', 'sizeOverride', 'fontSizeOverride'],
     components:
     {
         Doughnut
@@ -46,12 +46,19 @@ export default defineComponent({
             return props.model.pulse === true || (props.model.filledAmount / props.model.totalAmount * 100 >= app.settings.p);
         });
 
+        const size: ComputedRef<string> = computed(() => props.sizeOverride ? props.sizeOverride : "clamp(67px, 6vw, 150px)");
+
         const totalAmount: ComputedRef<number> = computed(() => props.model.totalAmount == 0 ? 1 : props.model.totalAmount);
         let fillAmount: ComputedRef<number> = computed(() => props.model.totalAmount == 0 ? 0 : props.model.filledAmount / props.model.totalAmount * 100);
         let amountOutOfTotal: ComputedRef<string> = computed(() => `${props.model.filledAmount} / ${props.model.totalAmount}`);
         const textColor: Ref<string> = computed(() => fillAmount.value == 0 ? "white" : "white");
         const textWidth: ComputedRef<string> = computed(() =>
         {
+            if (props.fontSizeOverride)
+            {
+                return props.fontSizeOverride;
+            }
+
             const digits = props.model.filledAmount.toString().length + props.model.totalAmount.toString().length;
             if (digits > 6)
             {
@@ -173,6 +180,7 @@ export default defineComponent({
             pulse,
             pulseColor,
             textWidth,
+            size,
             onClick
         }
     }
@@ -182,8 +190,8 @@ export default defineComponent({
 <style scoped>
 .smallMetricContainer {
     position: relative;
-    width: clamp(67px, 6vw, 150px);
-    height: clamp(67px, 6vw, 150px);
+    width: v-bind(size);
+    height: v-bind(size);
     display: flex;
     justify-content: center;
     align-items: center;

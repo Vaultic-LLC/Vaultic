@@ -101,6 +101,7 @@ import { defaultHandleFailedResponse } from '../../Helpers/ResponseHelper';
 import { api } from '../../API';
 import { exportLogs } from '../../Helpers/ImportExportHelper';
 import { VaulticKey } from '@vaultic/shared/Types/Keys';
+import { AUTH_ERROR_SECURE_LOCK_SCREEN_REQUIRED } from '@vaultic/shared/Types/API';
 
 export default defineComponent({
     name: "SignInView",
@@ -169,6 +170,7 @@ export default defineComponent({
 
                     if (response.value?.masterKey)
                     {
+                        await promptToStoreBiometric(response.value?.masterKey!, email.value);
                         if (await app.loadUserData(response.value?.masterKey!))
                         {
                             app.popups.hideLoadingIndicator();
@@ -179,6 +181,7 @@ export default defineComponent({
                     }
                     else
                     {
+                        await promptToStoreBiometric(masterKey.value, email.value);
                         if (await app.syncAndLoadUserData(masterKey.value, email.value, reloadAllData.value))
                         {
                             ctx.emit('onKeySuccess');
@@ -242,6 +245,19 @@ export default defineComponent({
             }
             
             app.popups.hideLoadingIndicator();
+        }
+
+        async function promptToStoreBiometric(masterKeyToUse: string, emailToUse: string)
+        {
+            const promptToStore = await api.helpers.auth?.isDeviceSecure() &&
+                await api.helpers.auth?.isBiometricAvailable() &&
+                await api.helpers.auth?.hasStoredBiometricCredentials() === false;
+
+            if (promptToStore)
+            {
+                console.log(`onSubmit Prompt to store biometric: ${masterKeyToUse} ${emailToUse}`);
+                await api.helpers.auth?.promptToStoreBiometric(masterKeyToUse, emailToUse);
+            }
         }
 
         function handleMFAFailed()
@@ -391,9 +407,24 @@ export default defineComponent({
                 ctx.emit("onNotClearedData");
             }
 
-            api.environment.hasConnection().then((result: boolean) =>
+            api.environment.hasConnection().then(async (result: boolean) =>
             {
                 onlineMode.value = result;
+                const promptToUnlock = await api.helpers.auth?.hasStoredBiometricCredentials() && api.helpers.auth?.isBiometricAvailable();
+                if (promptToUnlock)
+                {
+                    api.helpers.auth?.promptToUnlockBiometric().then((result: { key: string, email: string } | false) =>
+                    {
+                        console.log(`mounted Prompt to unlock biometric result: ${JSON.stringify(result)}`);
+                        if (result)
+                        {
+                            masterKey.value = result.key;
+                            email.value = result.email;
+
+                            onSubmit();
+                        }
+                    });
+                }
             });
 
             api.repositories.users.getLastUsedUserInfo().then((user) =>
@@ -612,5 +643,11 @@ export default defineComponent({
     background: #80808059;
     margin-top: 15px;
     margin-bottom: 15px;
+}
+
+@media (max-width: 600px) {
+    .signInViewContainer__contentBottom {
+        display: none;
+    }
 }
 </style>

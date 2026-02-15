@@ -31,18 +31,18 @@
 <script lang="ts">
 import { computed, ComputedRef, defineComponent, Ref, ref, watch, onMounted, onUnmounted } from 'vue';
 
-import TreeList from "./Tree/TreeList.vue";
-import ToggleRadioButton from './InputFields/ToggleRadioButton.vue';
-import VaulticButton from './InputFields/VaulticButton.vue';
-import UserProfilePic from './Account/UserProfilePic.vue';
-import IonIcon from './Icons/IonIcon.vue';
+import TreeList from "../Tree/TreeList.vue";
+import ToggleRadioButton from "../InputFields/ToggleRadioButton.vue";
+import VaulticButton from "../InputFields/VaulticButton.vue";
+import UserProfilePic from "../Account/UserProfilePic.vue";
+import IonIcon from "../Icons/IonIcon.vue";
 
-import app from "../Objects/Stores/AppStore";
-import { TreeNodeMember, TreeNodeListManager } from "../Types/Tree";
-import { ToggleRadioButtonModel, TreeNodeButton } from "../Types/Models";
+import app from "../../Objects/Stores/AppStore";
+import { TreeNodeMember, TreeNodeListManager } from "../../Types/Tree";
+import { ToggleRadioButtonModel, TreeNodeButton } from "../../Types/Models";
 import { Dictionary } from '@vaultic/shared/Types/DataStructures';
 import { DisplayVault, IUser, VaultType } from '@vaultic/shared/Types/Entities';
-import { AppView } from '../Types/App';
+import { AppView } from '../../Types/App';
 import { useConfirm } from 'primevue/useconfirm';
 
 export default defineComponent({
